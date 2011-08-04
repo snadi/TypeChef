@@ -117,7 +117,8 @@ case class EmptyStatement() extends Statement
 
 case class ExprStatement(expr: Expr) extends Statement
 
-case class WhileStatement(expr: Expr, s: Conditional[Statement]) extends Statement
+case class
+WhileStatement(expr: Expr, s: Conditional[Statement]) extends Statement
 
 case class DoStatement(expr: Expr, s: Conditional[Statement]) extends Statement
 

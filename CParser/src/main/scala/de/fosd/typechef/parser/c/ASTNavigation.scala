@@ -49,6 +49,7 @@ trait ASTNavigation {
         case Opt(_, v: AST) => v
         case Opt(_, v: One[AST]) => v.value
         case Opt(_, v: Choice[AST]) => firstChoice(v)
+        case x: One[AST] => x.value
       }
   }
 

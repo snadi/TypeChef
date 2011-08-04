@@ -78,6 +78,21 @@ trait VariablesImpl extends Variables with ASTNavigation {
       case InitDeclaratorI(declarator, _, _) => declarator->defines
       case AtomicNamedDeclarator(_, id, _) => Set(id)
       case o@Opt(_, _) => o->childAST->defines
+      case o@One(_) => o->childAST->defines
+      case WhileStatement(_, s) => s->defines
+      case DoStatement(_, s) => s->defines
+      case ForStatement(_, _, _, s) => s->defines
+      case CaseStatement(_, Some(s)) => s->defines
+      case DefaultStatement(Some(s)) => s->defines
+      case SwitchStatement(_, s) => s->defines
+      case IfStatement(_, thenBranch, elifs, elseBranch) => {
+          var r = thenBranch->defines ++ elifs.map(defines).foldLeft(Set[Id]())(_ ++ _)
+          if (elseBranch.getOrElse("") != "")
+            r ++ defines(elseBranch.get)
+          else
+            r
+      }
+      case ElifStatement(_, thenBranch) => thenBranch->childAST->defines
       case _ => Set()
     }
 }

@@ -35,6 +35,20 @@ class ControlFlowGraphTest extends TestCase with TestHelper with VariablesImpl {
       }
     }
     """)
+    parsePrintGetDefines("""
+    {
+      int k = 3;
+      if (k < 3) {
+        k = -1;
+      }
+      else if (k = 3) {
+        k = 0;
+      }
+      else {
+        k = 1;
+      }
+    }
+    """)
   }
 
 }

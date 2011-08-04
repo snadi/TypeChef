@@ -64,7 +64,7 @@ case class Choice[+T](feature: FeatureExpr, thenBranch: Conditional[T], elseBran
 }
 
 case class One[+T](value: T) extends Conditional[T] {
-    override def toString = value.toString
+    //override def toString = value.toString
     def flatten[U >: T](f: (FeatureExpr, U, U) => U): U = value
     def map[U](f: T => U): Conditional[U] = One(f(value))
     def mapf[U](inFeature: FeatureExpr, f: (FeatureExpr, T) => U): Conditional[U] = One(f(inFeature, value))
