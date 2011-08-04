@@ -19,15 +19,15 @@ class RefactoringTest extends FunSuite with TestHelper {
     println("new: \n" + PrettyPrinter.print(newast))
   }
 
-  test("completeFunctionPattern") {
-    applyTest("""
-      #ifdef X
-      int foo() {
-        int k = 2;
-      }
-      #endif
-    """)
-  }
+//  test("completeFunctionPattern") {
+//    applyTest("""
+//      #ifdef X
+//      int foo() {
+//        int k = 2;
+//      }
+//      #endif
+//    """)
+//  }
 
   test("oneOptOneManFunctioncall") {
     applyTest("""
@@ -122,15 +122,15 @@ class RefactoringTest extends FunSuite with TestHelper {
         """)
   }
 
-  test("refactorVariabilityIf") {
-    applyTest("""
-        int foo() {
-            #ifdef Y
-            if (x) printf("hi there\n");
-            #endif
-        }
-        """)
-  }
+//  test("refactorVariabilityIf") {
+//    applyTest("""
+//        int foo() {
+//            #ifdef Y
+//            if (x) printf("hi there\n");
+//            #endif
+//        }
+//        """)
+//  }
 
   private def assertNotVariability(ast: Attributable) {
     ast match {

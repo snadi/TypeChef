@@ -52,9 +52,9 @@ import attribution.Attributable
 import org.kiama.attribution.DynamicAttribution._
 import de.fosd.typechef.conditional._
 
-class CRefactorings extends ASTNavigation {
+class CRefactorings extends ASTNavigation with ConditionalNavigation {
 
-  override val DEBUG = true
+  val DEBUG = true
 
   private def optStmtBlock[T](a: Opt[T]): List[Opt[T]] = {
     var result = List[Opt[T]]()

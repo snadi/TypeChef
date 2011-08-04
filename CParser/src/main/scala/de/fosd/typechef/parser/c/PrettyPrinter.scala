@@ -65,7 +65,7 @@ object PrettyPrinter extends FeatureExprLookup {
 
         def sep(l: List[Opt[AST]], s: (Doc, Doc) => Doc) = {
             val r: Doc = if (l.isEmpty) Empty else l.head
-            l.drop(1).foldLeft(r)((a, b) => s(a, b))
+            l.drop(1).foldLeft(r)(s(_, _))
         }
         def seps(l: List[Opt[String]], s: (Doc, Doc) => Doc) = {
             val r: Doc = if (l.isEmpty) Empty else l.head
@@ -216,6 +216,7 @@ object PrettyPrinter extends FeatureExprLookup {
             case CompoundStatementExpr(compoundStatement: CompoundStatement) => "(" ~ compoundStatement ~ ")"
             case Pragma(command: StringLit) => "_Pragma(" ~ command ~ ")"
 
+            case _ => assert(false, "input not valid for prettyprinter "); ""
         }
     }
 

@@ -12,7 +12,7 @@ case class Opt[+T](val feature: FeatureExpr, val entry: T) extends Attributable 
     //helper function
     def and(f: FeatureExpr) = if (f == null) this else new Opt(feature.and(f), entry)
     def andNot(f: FeatureExpr) = if (f == null) this else new Opt(feature.and(f.not), entry)
-    override def toString = if (feature == FeatureExpr.base) entry.toString else "Opt(" + feature + "," + entry + ")"
+    // override def toString = 9"Opt(" + feature + "," + entry + ")"
 }
 
 
@@ -92,5 +92,10 @@ object Conditional {
         result
     }
     def toOptList[T](c: Conditional[T]): List[Opt[T]] = flatten(List(Opt(FeatureExpr.base, c)))
-
+    def toOptSet[T](c: Conditional[T]): Set[Opt[T]] = {
+      var s = Set[Opt[T]]()
+      for (i <- toOptList(c))
+        s = s + i
+      s
+    }
 }

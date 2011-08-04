@@ -1,6 +1,5 @@
 package de.fosd.typechef.parser.c
 
-import de.fosd.typechef.parser.c._
 import de.fosd.typechef.conditional._
 import org.kiama.attribution.Attribution._
 import org.kiama._
@@ -43,6 +42,16 @@ trait ASTNavigation {
         }
       }
   }
+
+  val childAST: Attributable ==> AST = attr {
+    case a =>
+      a match {
+        case Opt(_, v: AST) => v
+        case Opt(_, v: One[AST]) => v.value
+        case Opt(_, v: Choice[AST]) => firstChoice(v)
+      }
+  }
+
 
   /**try first prev and if that does not exist, then parent*/
   val prevOrParentAST: Attributable ==> AST = {case a: Attributable => val p = a -> prevAST; if (p != null) p else a -> parentAST}

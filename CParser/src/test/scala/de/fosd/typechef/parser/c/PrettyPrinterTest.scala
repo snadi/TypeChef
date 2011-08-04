@@ -30,6 +30,8 @@ class PrettyPrinterTest extends TestCase {
     }
 
     @Test def testEnum = parsePrintParse("enum e {  test,  test2}", p.enumSpecifier)
+    @Test def testdeclaration = parsePrintParse("int k = 2;", p.declaration)
+    @Test def teststatement = parsePrintParseCond("int k = 2;", p.statement)
 
     @Test def testString = parsePrintParse(""" "test" "b" """, p.stringConst)
 
@@ -169,6 +171,7 @@ class PrettyPrinterTest extends TestCase {
         parsePrintParse("void foo(){}", p.functionDef)
         parsePrintParse("void foo(){a;}", p.functionDef)
         parsePrintParse("void foo(int a) { a; }", p.functionDef)
+        parsePrintParse("void foo(){int k = 2;}", p.functionDef)
         //           parsePrintParse("""|void
         //                           |#ifdef X
         //                           |foo
@@ -179,6 +182,22 @@ class PrettyPrinterTest extends TestCase {
         //                           |void x(){}""", p.translationUnit)
         parsePrintParse("main(){}", p.functionDef)
         parsePrintParse("main(){int T=100, a=(T)+1;}", p.functionDef)
+        parsePrintParse("""
+        void foo() {
+          int k = 2;
+          int l = 3;
+          while (k <= 2) {
+            k += l;
+            if (k > 20)
+              k = -1;
+          }
+        }
+        """, p.functionDef)
+        parsePrintParse("""
+        void foo() {
+          int k = 2;
+        }
+        """, p.functionDef)
     }
 
     def testTypedefName {
