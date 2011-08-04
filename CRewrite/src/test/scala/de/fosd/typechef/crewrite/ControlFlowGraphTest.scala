@@ -8,10 +8,33 @@ class ControlFlowGraphTest extends TestCase with TestHelper with VariablesImpl {
 
   private def cp(pro: p.MultiParser[AST]) = pro ^^ { One(_) }
 
-  def testStatement = {
-    val ast = parse("""{int k = 2; }""", cp(p.compoundStatement))
+  private def parsePrintGetDefines(code: String) = {
+    val ast = parse(code, cp(p.compoundStatement))
     println("AST: " + ast.get)
     println("defines: " + defines(ast.get.asInstanceOf[One[AST]].value))
+  }
+
+  def testStatement = {
+    parsePrintGetDefines("""
+    {
+      int k = 2;
+      int l = 3;
+    }
+    """)
+    parsePrintGetDefines("""
+    {
+      int k,l = 3;
+      k = 4;
+    }
+    """)
+    parsePrintGetDefines("""
+    {
+      int k = 3;
+      while (k) {
+        int l = 2;
+      }
+    }
+    """)
   }
 
 }

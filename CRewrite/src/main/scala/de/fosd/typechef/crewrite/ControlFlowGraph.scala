@@ -66,6 +66,7 @@ trait VariablesImpl extends Variables with ASTNavigation {
       case ConditionalExpr(condition, Some(thenExpr), elseExpr) => condition->uses //++ thenExpr->uses ++ elseExpr->uses
       case AssignExpr(target, _, _) => target->uses
       case ExprList(_) => Set()
+      case _ => Set()
     }
 
 
@@ -73,11 +74,11 @@ trait VariablesImpl extends Variables with ASTNavigation {
     attr {
       case CompoundStatement(innerStatements) => innerStatements.map(defines).foldLeft(Set[Id]())(_ ++ _)
       case DeclarationStatement(decl) => decl->defines
-      case Declaration(_, List(init)) => init->defines
+      case Declaration(_, init) => init.map(defines).foldLeft(Set[Id]())(_ ++ _)
       case InitDeclaratorI(declarator, _, _) => declarator->defines
       case AtomicNamedDeclarator(_, id, _) => Set(id)
       case o@Opt(_, _) => o->childAST->defines
-      case _ => null
+      case _ => Set()
     }
 }
 
