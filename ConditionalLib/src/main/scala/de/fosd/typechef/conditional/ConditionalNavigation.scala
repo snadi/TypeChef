@@ -3,6 +3,7 @@ package de.fosd.typechef.conditional
 import org.kiama.attribution.Attribution._
 import org.kiama._
 import attribution.Attributable
+import de.fosd.typechef.featureexpr._
 
 /**
  * Simplified navigation support
@@ -44,25 +45,13 @@ trait ConditionalNavigation {
       }
   }
 
-  val nextOpt: Attributable ==> Opt[_] = attr {
-    case a =>
-      a.next[Attributable] match {
-        case c: Conditional[_] => null
-        case o: Opt[_] if (o.feature.isTautology) => null
-        case o: Opt[_] if (!o.feature.isTautology) => {
-          a match {
-            case po: Opt[_] if (o.feature.equals(po.feature)) => o
-            case _ => null
-          }
-        }
-        case null => {
-          a.parent match {
-            case o: Opt[_] => o->nextOpt
-            case _ => null
-          }
-        }
-        case _ => assert(false, "cannot call nextOpt on instances other than Choice, One, or Opt"); null
-      }
+  val nextOpt: Attributable ==> Opt[_] = attr {case o@Opt(_,_) => findNextEqualOpt(o, o.feature)}
+  private def findNextEqualOpt(a: Attributable, f: FeatureExpr): Opt[_] = {
+    a.next[Attributable] match {
+      case o@Opt(_, _) if (f.equivalentTo(o.feature)) => o
+      case o@Opt(_, _) if (!f.equivalentTo(o.feature)) => findNextEqualOpt(o, f)
+      case _ => null
+    }
   }
 
   val isVariable: Attributable ==> Boolean = attr {

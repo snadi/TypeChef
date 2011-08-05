@@ -4,7 +4,6 @@ import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.matchers.ShouldMatchers
-import de.fosd.typechef.parser.c._
 import org.kiama.attribution.Attribution._
 import org.kiama._
 import attribution.Attributable
@@ -65,6 +64,29 @@ class ASTNavigationTest extends FunSuite with ShouldMatchers with ASTNavigation 
 //        c3 -> parentOpt -> parentOpt should equal(null)
 //        c1 -> parentOpt -> parentOpt -> parentOpt should equal(null)
 //        c2 -> parentOpt -> parentOpt -> parentOpt should equal(null)
+    }
+
+    test("ast navigation nextOpt onlytrue") {
+      val stmt0 = LabelStatement(Id("stmt0"), None)
+      val stmt1 = LabelStatement(Id("stmt1"), None)
+      val stmt2 = LabelStatement(Id("stmt2"), None)
+      val optstmt0 = Opt(True, stmt0)
+      val optstmt1 = Opt(True, stmt1)
+      val optstmt2 = Opt(True, stmt2)
+      val cp = CompoundStatement(List(optstmt0, optstmt1, optstmt2))
+      optstmt0->nextOpt should be(optstmt1)
+      optstmt1->nextOpt should be(optstmt2)
+    }
+
+    test("ast navigation nextOpt conditionals") {
+      val stmt0 = LabelStatement(Id("stmt0"), None)
+      val stmt1 = LabelStatement(Id("stmt1"), None)
+      val stmt2 = LabelStatement(Id("stmt2"), None)
+      val optstmt0 = Opt(True, stmt0)
+      val optstmt1 = Opt(fa, stmt1)
+      val optstmt2 = Opt(True, stmt2)
+      val cp = CompoundStatement(List(optstmt0, optstmt1, optstmt2))
+      optstmt0->nextOpt should be(optstmt2)
     }
 
     test("ast navigation (prev and next) with Opt and Choice (tree)") {
