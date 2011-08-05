@@ -114,7 +114,23 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     """) should be(Set(Opt(FeatureExpr.base, EmptyStatement())))
   }
 
-  test("emptystatements") {
+  test("conditional labelstatements") {
+    parsePrintGetDefines("""
+    {
+      #if defined A
+        int a;
+      #elif defined B
+        int b;
+      #else
+        int c;
+      #endif
+      int d;
+    }
+    """)
+  }
+
+
+  test("labelstatements") {
     val e1 = Opt(True, LabelStatement(Id("e1"), None))
     val e2 = Opt(fx, LabelStatement(Id("e2"), None))
     val e3 = Opt(fx, LabelStatement(Id("e3"), None))

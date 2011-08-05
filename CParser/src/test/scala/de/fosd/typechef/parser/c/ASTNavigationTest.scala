@@ -89,6 +89,17 @@ class ASTNavigationTest extends FunSuite with ShouldMatchers with ASTNavigation 
       optstmt0->nextOpt should be(optstmt2)
     }
 
+    test("ast navigation getPrevOpts") {
+      val stmt0 = LabelStatement(Id("stmt0"), None)
+      val stmt1 = LabelStatement(Id("stmt1"), None)
+      val stmt2 = LabelStatement(Id("stmt2"), None)
+      val optstmt0 = Opt(True, stmt0)
+      val optstmt1 = Opt(fa, stmt1)
+      val optstmt2 = Opt(True, stmt2)
+      val cp = CompoundStatement(List(optstmt0, optstmt1, optstmt2))
+      optstmt2->prevOpts should be(List(optstmt1, optstmt0))
+    }
+
     test("ast navigation (prev and next) with Opt and Choice (tree)") {
       implicit def toOne[T](x: T): Conditional[T] = One(x)
       val stmt0 = LabelStatement(Id("stmt0"), None)
@@ -153,7 +164,7 @@ class ASTNavigationTest extends FunSuite with ShouldMatchers with ASTNavigation 
       optstmt6->nextOpt should equal(optstmt7)
       optstmt7->nextOpt should equal(null)
       optstmt6->nextOpt->nextOpt should equal(null)
-      optstmt6->prevOpt should equal(null)
+      optstmt6->prevOpt should equal(optstmt0)
       stmt8->isVariable should equal(false)
       stmt9->isVariable should equal(false)
       optstmt6->isVariable should equal(true)

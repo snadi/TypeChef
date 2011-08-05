@@ -14,35 +14,29 @@ import de.fosd.typechef.featureexpr._
 trait ConditionalNavigation {
 
   val parentOpt: Attributable ==> Opt[_] = attr { case a: Attributable => findParentOpt(a)}
-
   private def findParentOpt(a: Attributable): Opt[_] =
     a.parent match {
       case o: Opt[_] => o
       case c: Conditional[_] => Conditional.toOptList(c).head
       case a: Attributable => findParentOpt(a)
-      case null => null
-      case _ => assert(false, "cannot call findParent on instances other than Conditional or Opt"); null
+      case _ => null
     }
 
-  val prevOpt: Attributable ==> Opt[_] = attr {
-    case a =>
-      a.prev[Attributable] match {
-        case c: Conditional[_] => null
-        case o: Opt[_] if (o.feature.isTautology) => null
-        case o: Opt[_] if (!o.feature.isTautology) => {
-          a match {
-            case no: Opt[_] if (o.feature.equals(no.feature)) => o
-            case _ => null
-          }
-        }
-        case null => {
-          a.parent match {
-            case o: Opt[_] => o->prevOpt
-            case _ => null
-          }
-        }
-        case _ => assert(false, "cannot call prevOpt on instances other than Choice, One, or Opt"); null
-      }
+  val prevOpt: Attributable ==> Opt[_] = attr {case o@Opt(_, _) => findPrevEqualOpt(o, o.feature)}
+  private def findPrevEqualOpt(a: Attributable, f: FeatureExpr): Opt[_] = {
+    a.prev[Attributable] match {
+      case o@Opt(_, _) if (f.equivalentTo(o.feature)) => o
+      case o@Opt(_, _) if (!f.equivalentTo(o.feature)) => findPrevEqualOpt(o, f)
+      case _ => null
+    }
+  }
+
+  val prevOpts: Opt[_] ==> List[Opt[_]] = {case o@Opt(_, _) => getPrevOpts(o)}
+  private def getPrevOpts(a: Opt[_]): List[Opt[_]] = {
+    a.prev[Attributable] match {
+      case o@Opt(_, _) => o :: getPrevOpts(o)
+      case null => Nil
+    }
   }
 
   val nextOpt: Attributable ==> Opt[_] = attr {case o@Opt(_,_) => findNextEqualOpt(o, o.feature)}

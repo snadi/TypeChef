@@ -14,9 +14,22 @@ trait ControlFlow {
 }
 
 trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNavigation {
+  val pred: Attributable ==> Set[Opt[_]] =
+    attr {
+      case o@Opt(_, _) => {
+        var p: List[Opt[_]] = o->prevOpts
+        var r = Set[Opt[_]]()
+        r.+(p.head)
+
+        r
+      }
+    }
+
   val succ: Attributable ==> Set[Opt[_]] =
     attr {
-      case CompoundStatement(h :: _) => Set(h)
+      case CompoundStatement(h :: _) => {
+        Set(h)
+      }
       case o@Opt(_, _) => {
         val n = o->nextOpt
         if (n != null) Set(o.next, n)
