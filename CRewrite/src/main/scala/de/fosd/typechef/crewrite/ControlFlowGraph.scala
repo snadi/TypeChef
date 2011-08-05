@@ -17,7 +17,6 @@ trait ControlFlowImpl extends ControlFlow {
   val succ: Statement ==> Set[Opt[Statement]] =
     attr {
       case CompoundStatement(h :: _) => Set(h)
-      case EmptyStatement() => Set()
       case IfStatement(_, thenBranch, elifs, elseBranch) => Conditional.toOptSet(thenBranch)
       case t @ WhileStatement(_, s) => t->following ++ Conditional.toOptSet(s)
     }
@@ -77,8 +76,6 @@ trait VariablesImpl extends Variables with ASTNavigation {
       case Declaration(_, init) => init.map(defines).foldLeft(Set[Id]())(_ ++ _)
       case InitDeclaratorI(declarator, _, _) => declarator->defines
       case AtomicNamedDeclarator(_, id, _) => Set(id)
-      case o@Opt(_, _) => o->childAST->defines
-      case o@One(_) => o->childAST->defines
       case WhileStatement(_, s) => s->defines
       case DoStatement(_, s) => s->defines
       case ForStatement(_, _, _, s) => s->defines
@@ -93,6 +90,9 @@ trait VariablesImpl extends Variables with ASTNavigation {
             r
       }
       case ElifStatement(_, thenBranch) => thenBranch->childAST->defines
+      case o@Opt(_, _) => o->childAST->defines
+      case o@One(_) => o->childAST->defines
+      case c@Choice(_, thenBranch, elseBranch) => thenBranch->childAST->defines
       case _ => Set()
     }
 }

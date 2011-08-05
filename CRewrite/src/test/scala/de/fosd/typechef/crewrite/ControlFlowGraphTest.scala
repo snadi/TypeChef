@@ -2,9 +2,12 @@ package de.fosd.typechef.crewrite
 
 import de.fosd.typechef.parser.c._
 import de.fosd.typechef.conditional._
-import junit.framework.TestCase
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-class ControlFlowGraphTest extends TestCase with TestHelper with VariablesImpl {
+@RunWith(classOf[JUnitRunner])
+class RefactoringTest extends FunSuite with TestHelper with VariablesImpl {
 
   private def cp(pro: p.MultiParser[AST]) = pro ^^ { One(_) }
 
@@ -14,19 +17,25 @@ class ControlFlowGraphTest extends TestCase with TestHelper with VariablesImpl {
     println("defines: " + defines(ast.get.asInstanceOf[One[AST]].value))
   }
 
-  def testStatement = {
+  test("twoDeclarations") {
     parsePrintGetDefines("""
     {
       int k = 2;
       int l = 3;
     }
     """)
+  }
+
+  test("multipleDeclarations") {
     parsePrintGetDefines("""
     {
       int k,l = 3;
       k = 4;
     }
     """)
+  }
+
+  test("whileLoop") {
     parsePrintGetDefines("""
     {
       int k = 3;
@@ -35,6 +44,9 @@ class ControlFlowGraphTest extends TestCase with TestHelper with VariablesImpl {
       }
     }
     """)
+  }
+
+  test("ifthenelsechain") {
     parsePrintGetDefines("""
     {
       int k = 3;
@@ -51,4 +63,16 @@ class ControlFlowGraphTest extends TestCase with TestHelper with VariablesImpl {
     """)
   }
 
+  test("conditionaldeclaration") {
+    parsePrintGetDefines("""
+    {
+      int k = 3;
+      #ifdef A
+      int l = 4;
+      #else
+      int m = 4;
+      #endif
+    }
+    """)
+  }
 }
