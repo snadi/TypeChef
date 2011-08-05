@@ -9,19 +9,22 @@ import de.fosd.typechef.featureexpr._
 
 // http://code.google.com/p/kiama/source/browse/src/org/kiama/example/dataflow/Dataflow.scala
 trait ControlFlow {
-  val succ: Statement ==> Set[Opt[Statement]]
-  val following: Statement ==> Set[Opt[Statement]]
+  val succ: Attributable ==> Set[Opt[_]]
+  val following: Attributable ==> Set[Opt[_]]
 }
 
-trait ControlFlowImpl extends ControlFlow {
-  val succ: Statement ==> Set[Opt[Statement]] =
+trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNavigation {
+  val succ: Attributable ==> Set[Opt[_]] =
     attr {
       case CompoundStatement(h :: _) => Set(h)
-      case IfStatement(_, thenBranch, elifs, elseBranch) => Conditional.toOptSet(thenBranch)
-      case t @ WhileStatement(_, s) => t->following ++ Conditional.toOptSet(s)
+      case o@Opt(_, _) => {
+        val n = o->nextOpt
+        if (n != null) Set(o.next, n)
+        else Set(o.next)
+      }
     }
 
-  val following: Statement ==> Set[Opt[Statement]] =
+  val following: Attributable ==> Set[Opt[_]] =
     childAttr {
       case s => {
         case t @ IfStatement(_, _, _, _) => t->following
@@ -92,7 +95,7 @@ trait VariablesImpl extends Variables with ASTNavigation {
       case ElifStatement(_, thenBranch) => thenBranch->childAST->defines
       case o@Opt(_, _) => o->childAST->defines
       case o@One(_) => o->childAST->defines
-      case c@Choice(_, thenBranch, elseBranch) => thenBranch->childAST->defines
+      case c@Choice(_, thenBranch, elseBranch) => defines(thenBranch) ++ defines(elseBranch)
       case _ => Set()
     }
 }
