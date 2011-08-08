@@ -1,0 +1,3 @@
+T block 1 with defined(X)
+T block 2 with (!defined(X) && defined(Y))
+T block 3 with (!(!defined(X) && defined(Y)))

@@ -25,11 +25,12 @@ class FileTest extends TestHelper {
 
 
     //async.i
-    @Test def test1 {assert(check("test1.xi"))}
-    @Test def busybox_ar {assert(check("ar.xi"))}
-    @Test def boa_boa {assert(check("boa.xi"))}
-    @Test def boa_boa_pi {assert(check("boa.pi"))}
-    @Test def busybox_top_pi {assert(check("top.pi"))}
+//    @Test def test1 {assert(check("test1.xi"))}
+//    @Test def busybox_ar {assert(check("ar.xi"))}
+//    @Test def boa_boa {assert(check("boa.xi"))}
+//    @Test def boa_boa_pi {assert(check("boa.pi"))}
+//    @Test def busybox_top_pi {assert(check("top.pi"))}
+    @Test def elif_chain {assert(check("elif.pi"))}
     @Test
     @Ignore def linux_fork_pi {assert(check("fork.pi"))}
 

@@ -107,6 +107,11 @@ public class JcppFileTest extends AbstractCheckTests {
     }
 
     @Test
+    public void testElIfChain2() throws LexerException, IOException {
+        testFile("elifchain.c");
+    }
+
+    @Test
     public void testSelfDef() throws LexerException, IOException {
         testFile("selfdef.c");
     }
