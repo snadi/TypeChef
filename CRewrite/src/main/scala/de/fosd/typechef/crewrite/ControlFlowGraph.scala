@@ -9,44 +9,57 @@ import de.fosd.typechef.featureexpr._
 
 // http://code.google.com/p/kiama/source/browse/src/org/kiama/example/dataflow/Dataflow.scala
 trait ControlFlow {
-  val succ: Attributable ==> Set[Opt[_]]
-  val following: Attributable ==> Set[Opt[_]]
+  val succ: Attributable ==> Set[Attributable]
 }
 
-trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNavigation {
-  val pred: Attributable ==> Set[Opt[_]] =
+trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNavigation with FeatureExprLookup {
+  val pred: Attributable ==> Set[Attributable] =
     attr {
       case o@Opt(_, _) => {
-        var p: List[Opt[_]] = o->prevOpts
-        var r = Set[Opt[_]]()
-        r.+(p.head)
-
-        r
+        var p = prevOpts(o)
+        if (p.isEmpty) Set(o.parent)
+        else iterateOpts(o, eqOptLists(p).map(_.head))
       }
     }
 
-  val succ: Attributable ==> Set[Opt[_]] =
+  val succ: Attributable ==> Set[Attributable] =
     attr {
-      case CompoundStatement(h :: _) => {
-        Set(h)
-      }
       case o@Opt(_, _) => {
-        val n = o->nextOpt
-        if (n != null) Set(o.next, n)
-        else Set(o.next)
+        var p = nextOpts(o)
+        if (p.isEmpty) Set(o.parent.next)
+        else iterateOpts(o, eqOptLists(p).map(_.head))
       }
     }
 
-  val following: Attributable ==> Set[Opt[_]] =
-    childAttr {
-      case s => {
-        case t @ IfStatement(_, _, _, _) => t->following
-        case t @ WhileStatement(_, _) => Set(Opt(FeatureExpr.base, t))
-        case b: CompoundStatement if s isLast => b->following
-        case CompoundStatement(_) => Set(s.next)
-        case _ => Set()
+  private def iterateOpts(o: Opt[_], s: List[Opt[_]]): Set[Attributable] = {
+    var l = List[Opt[_]]()
+    for (e <-s) {
+      if (o.feature.implies(e.feature).isTautology()) return Set(e)
+      else {
+        l = l.:+(e)
+        if (l.map(_.feature).foldLeft(FeatureExpr.dead)(_ or _).isTautology())
+          return l.reverse.map(Set(_)).foldLeft(Set[Attributable]())(_ ++ _)
       }
     }
+    Set[Attributable]()
+  }
+
+  private def eqOptLists(l: List[Opt[_]]): List[List[Opt[_]]] = {
+    var r = List[List[Opt[_]]]()
+    var cl = List[Opt[_]]()
+    for (o <- l) {
+      if (cl.isEmpty) { cl = cl.+:(o) }
+      else {
+        if (cl.head.feature.equivalentTo(o.feature)) cl = cl.+:(o)
+        else {
+          r = r.:+(cl)
+          cl = List(o)
+        }
+      }
+    }
+    r = r.:+(cl)
+    r
+  }
 }
 
 trait Variables {

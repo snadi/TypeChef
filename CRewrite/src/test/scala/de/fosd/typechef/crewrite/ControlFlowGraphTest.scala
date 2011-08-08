@@ -13,6 +13,12 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
 
   private def cp(pro: p.MultiParser[AST]) = pro ^^ { One(_) }
 
+  private def parsePrintAST(code: String) = {
+    val ast = parse(code, cp(p.compoundStatement))
+    println("AST: " + ast.get.asInstanceOf[One[AST]].value)
+    println(PrettyPrinter.print(ast.get.asInstanceOf[One[AST]].value))
+  }
+
   private def parsePrintGetDefines(code: String) = {
     val ast = parse(code, cp(p.compoundStatement))
     println("AST: " + ast.get)
@@ -23,6 +29,12 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     val ast = parse(code, cp(p.compoundStatement))
     println("AST: " + ast.get)
     succ(ast.get.asInstanceOf[One[AST]].value)
+  }
+
+  private def parsePrintGetPred(code: String) = {
+    val ast = parse(code, cp(p.compoundStatement))
+    println("AST: " + ast.get)
+    pred(ast.get.asInstanceOf[One[AST]].value)
   }
 
   test("twoDeclarations") {
@@ -106,14 +118,6 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     """)
   }
 
-  test("emptystatement") {
-    parsePrintGetSucc("""
-    {
-      ;
-    }
-    """) should be(Set(Opt(FeatureExpr.base, EmptyStatement())))
-  }
-
   test("conditional labelstatements") {
     parsePrintGetDefines("""
     {
@@ -129,17 +133,35 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     """)
   }
 
-
-  test("labelstatements") {
+  test("conditional declarations pred") {
     val e1 = Opt(True, LabelStatement(Id("e1"), None))
     val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-    val e3 = Opt(fx, LabelStatement(Id("e3"), None))
-    val e4 = Opt(True, LabelStatement(Id("e4"), None))
-    val c = One(CompoundStatement(List(e1, e2, e3, e4)))
+    val e3 = Opt(fy.and(fx.not), LabelStatement(Id("e3"), None))
+    val e4 = Opt(fy.not.and(fx.not), LabelStatement(Id("e4"), None))
+    val e5 = Opt(True, LabelStatement(Id("e5"), None))
+    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5)))
     println("AST: " + c)
-    e1->succ should be (Set(e2, e4))
-    e1->succ should not be (None)
-    e2->succ should be (Set(e3))
-    e3->succ should be (Set(e4))
+    println(PrettyPrinter.print(c.value))
+    e5->pred should be (Set(e2, e3, e4))
+    e4->pred should be (Set(e1))
+    e3->pred should be (Set(e1))
+    e2->pred should be (Set(e1))
+    e1->pred should be (Set(c.value))
+  }
+
+    test("conditional declarations succ") {
+    val e1 = Opt(True, LabelStatement(Id("e1"), None))
+    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
+    val e3 = Opt(fy.and(fx.not), LabelStatement(Id("e3"), None))
+    val e4 = Opt(fy.not.and(fx.not), LabelStatement(Id("e4"), None))
+    val e5 = Opt(True, LabelStatement(Id("e5"), None))
+    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5)))
+    println("AST: " + c)
+    println(PrettyPrinter.print(c.value))
+    e1->succ should be (Set(e2, e3, e4))
+    e2->succ should be (Set(e5))
+    e3->succ should be (Set(e5))
+    e4->succ should be (Set(e5))
+    e5->succ should be (Set(null))
   }
 }

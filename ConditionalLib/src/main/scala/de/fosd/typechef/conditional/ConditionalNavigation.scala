@@ -4,6 +4,7 @@ import org.kiama.attribution.Attribution._
 import org.kiama._
 import attribution.Attributable
 import de.fosd.typechef.featureexpr._
+import de.fosd.typechef.conditional._
 
 /**
  * Simplified navigation support
@@ -11,7 +12,7 @@ import de.fosd.typechef.featureexpr._
  * parentOpt, prevOpt, and nextOpt provide navigation between
  * Attributable nodes
  */
-trait ConditionalNavigation {
+trait ConditionalNavigation extends FeatureExprLookup {
 
   val parentOpt: Attributable ==> Opt[_] = attr { case a: Attributable => findParentOpt(a)}
   private def findParentOpt(a: Attributable): Opt[_] =
@@ -35,6 +36,14 @@ trait ConditionalNavigation {
   private def getPrevOpts(a: Opt[_]): List[Opt[_]] = {
     a.prev[Attributable] match {
       case o@Opt(_, _) => o :: getPrevOpts(o)
+      case null => Nil
+    }
+  }
+
+  val nextOpts: Opt[_] ==> List[Opt[_]] = {case o@Opt(_, _) => getNextOpts(o)}
+  private def getNextOpts(a: Opt[_]): List[Opt[_]] = {
+    a.next[Attributable] match {
+      case o@Opt(_, _) => o :: getNextOpts(o)
       case null => Nil
     }
   }
