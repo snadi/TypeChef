@@ -36,16 +36,39 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     attr {
       case o@Opt(_, _) => {
         if (o.feature.equivalentTo(FeatureExpr.base)) false
-        else {
-          var p = prevOpts(o)
-          var n = nextOpts(o)
-          p = p.takeWhile({ e => o.feature.implies(e.feature).isTautology() == false})
-          n = n.takeWhile({ e => o.feature.implies(e.feature).isTautology() == false})
-          val r = p ++ List(o) ++ n
-          r.map(_.feature).foldLeft(FeatureExpr.dead)(_ or _).isTautology()
-        }
+        else detPartOfIEEChain(o)
       }
     }
+  }
+
+  private def detPartOfIEEChain(o: Opt[_]): Boolean = {
+    var l = prevOpts(o).reverse ++ List(o) ++ nextOpts(o)
+    var m = List[Opt[_]]()
+    println("l: " + l)
+    for (e <- l.reverse) {
+      println("m: " + m + " e: " + e)
+
+      if (! e.feature.equivalentTo(FeatureExpr.base)) {
+        if (m.size == 0)
+          m = m.:+(e)
+        else {
+          if (m.head.feature.implies(e.feature.not).isTautology()) {
+            m = m.:+(e)
+            if (m.map(_.feature.not).foldLeft(FeatureExpr.base)(_ and _).isContradiction()) {
+              if (m.contains(o)) return true
+              else m = List[Opt[_]](e)
+            }
+          }
+          else {
+            m = List[Opt[_]](e)
+          }
+        }
+      }
+      else {
+        m = List[Opt[_]]()
+      }
+    }
+    false
   }
 
   private def iterateOpts(o: Opt[_], s: List[Opt[_]]): Set[Attributable] = {
