@@ -9,6 +9,7 @@ import de.fosd.typechef.featureexpr._
 
 // http://code.google.com/p/kiama/source/browse/src/org/kiama/example/dataflow/Dataflow.scala
 trait ControlFlow {
+  val pred: Attributable ==> Set[Attributable]
   val succ: Attributable ==> Set[Attributable]
 }
 
@@ -31,6 +32,22 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       }
     }
 
+  val isPartOfIEEChain: Attributable ==> Boolean = {
+    attr {
+      case o@Opt(_, _) => {
+        if (o.feature.equivalentTo(FeatureExpr.base)) false
+        else {
+          var p = prevOpts(o)
+          var n = nextOpts(o)
+          p = p.takeWhile({ e => o.feature.implies(e.feature).isTautology() == false})
+          n = n.takeWhile({ e => o.feature.implies(e.feature).isTautology() == false})
+          val r = p ++ List(o) ++ n
+          r.map(_.feature).foldLeft(FeatureExpr.dead)(_ or _).isTautology()
+        }
+      }
+    }
+  }
+
   private def iterateOpts(o: Opt[_], s: List[Opt[_]]): Set[Attributable] = {
     var l = List[Opt[_]]()
     for (e <-s) {
@@ -38,7 +55,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       else {
         l = l.:+(e)
         if (l.map(_.feature).foldLeft(FeatureExpr.dead)(_ or _).isTautology())
-          return l.reverse.map(Set(_)).foldLeft(Set[Attributable]())(_ ++ _)
+          return l.map(Set(_)).foldLeft(Set[Attributable]())(_ ++ _)
       }
     }
     Set[Attributable]()
