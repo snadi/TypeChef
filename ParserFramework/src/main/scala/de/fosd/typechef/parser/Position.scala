@@ -35,6 +35,6 @@ trait WithPosition {
     }
     def hasPosition: Boolean = range.isDefined
     def getPositionFrom: Position = range.get._1
-    def getPositionTo: Position = range.get._1
+    def getPositionTo: Position = range.get._2
 }
 
