@@ -35,7 +35,7 @@ trait ConditionalNavigation extends FeatureExprLookup {
   val prevOpts: Opt[_] ==> List[Opt[_]] = {case o@Opt(_, _) => getPrevOpts(o)}
   private def getPrevOpts(a: Opt[_]): List[Opt[_]] = {
     a.prev[Attributable] match {
-      case o@Opt(_, _) => o :: getPrevOpts(o)
+      case o@Opt(_, _) => getPrevOpts(o) ++ List(o)
       case null => Nil
     }
   }

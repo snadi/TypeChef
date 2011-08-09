@@ -46,8 +46,6 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     var m = List[Opt[_]]()
     println("l: " + l)
     for (e <- l.reverse) {
-      println("m: " + m + " e: " + e)
-
       if (! e.feature.equivalentTo(FeatureExpr.base)) {
         if (m.size == 0)
           m = m.:+(e)
