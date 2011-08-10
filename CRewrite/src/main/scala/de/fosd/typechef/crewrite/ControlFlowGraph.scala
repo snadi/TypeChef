@@ -41,10 +41,39 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     }
   }
 
+  private def partitionOpts(l: List[Opt[_]]): List[(FeatureExpr, List[Opt[_]])] = {
+    var r = List[(FeatureExpr, List[Opt[_]])]()
+    var c: Option[(FeatureExpr, List[Opt[_]])] = None
+    for (e <- l) {
+      if (!c.isDefined) c = Some((e.feature, List(e)))
+      else {
+        if (c.get._1.equivalentTo(e.feature)) c = Some((c.get._1, c.get._2 ++ List(e)))
+        else { r = r.:+(c.get); c = None; }
+      }
+    }
+    r
+  }
+
+  private def elem2list[T](f: (T, T) => Boolean)(l: List[List[T]])(e: T): List[List[T]] = {
+    if (l.head.isEmpty) return List(List(e))
+    else {
+      if (f(e, l.head.head)) return (e::l.head)::l.tail
+      else return List(e)::l
+    }
+  }
+
+  private def groupOptBlocks(l: List[Opt[_]]) = {
+    val nl = List[List[Opt[_]]](List())
+    l.foldLeft(nl)(elem2list[Opt[_]](_.feature equivalentTo _.feature)(_)(_))
+  }
+
+  private def groupIfElifBlocks(l: List[List[Opt[_]]]) = {
+
+  }
+
   private def detPartOfIEEChain(o: Opt[_]): Boolean = {
-    var l = prevOpts(o).reverse ++ List(o) ++ nextOpts(o)
+    val l = prevOpts(o) ++ List(o) ++ nextOpts(o)
     var m = List[Opt[_]]()
-    println("l: " + l)
     for (e <- l.reverse) {
       if (! e.feature.equivalentTo(FeatureExpr.base)) {
         if (m.size == 0)
@@ -54,17 +83,13 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
             m = m.:+(e)
             if (m.map(_.feature.not).foldLeft(FeatureExpr.base)(_ and _).isContradiction()) {
               if (m.contains(o)) return true
-              else m = List[Opt[_]](e)
+              else m = List(e)
             }
           }
-          else {
-            m = List[Opt[_]](e)
-          }
+          else m = List(e)
         }
       }
-      else {
-        m = List[Opt[_]]()
-      }
+      else m = List[Opt[_]]()
     }
     false
   }

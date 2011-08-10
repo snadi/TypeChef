@@ -4,7 +4,6 @@ import org.kiama.attribution.Attribution._
 import org.kiama._
 import attribution.Attributable
 import de.fosd.typechef.featureexpr._
-import de.fosd.typechef.conditional._
 
 /**
  * Simplified navigation support
@@ -58,15 +57,7 @@ trait ConditionalNavigation extends FeatureExprLookup {
   }
 
   val isVariable: Attributable ==> Boolean = attr {
-    case a =>
-      a match {
-        case _: Conditional[_] => true
-        case o: Opt[_] if (o.feature.isTautology) => a.parent[Attributable]->isVariable
-        case o: Opt[_] if (!o.feature.isTautology) => true
-        case e: Attributable if (a.isRoot) => false
-        case e: Attributable => a.parent[Attributable]->isVariable
-        case _ => assert(false, "invalid element"); false
-      }
+    case a => featureExpr(a).not.isContradiction()
   }
 
   private def lastChoice[T <: Attributable](x: Choice[T]): T =
