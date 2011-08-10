@@ -54,6 +54,10 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     r
   }
 
+  // adding a new element to a list of lists according to function f
+  // function f is applied to the first element of the first list of l and the element e itself
+  // if true add e to that list
+  // if false prepend a new list to l
   private def elem2list[T](f: (T, T) => Boolean)(l: List[List[T]])(e: T): List[List[T]] = {
     if (l.head.isEmpty) return List(List(e))
     else {
@@ -62,13 +66,49 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     }
   }
 
+  // group consecutive Opts in a list and return a list of list containing consecutive (feature equivalent) opts
   private def groupOptBlocks(l: List[Opt[_]]) = {
     val nl = List[List[Opt[_]]](List())
     l.foldLeft(nl)(elem2list[Opt[_]](_.feature equivalentTo _.feature)(_)(_))
   }
 
+  // group the incoming list (list of equivalent opt blocks) into #if and #if-else blocks
   private def groupIfElifBlocks(l: List[List[Opt[_]]]) = {
+    var m = List[List[Opt[_]]]()
+    var r = List[List[Opt[_]]]()
+    for (e <- l) {
+      if (m.size == 0) m = m.:+(e)
+      else {
+        if (m.head.head.feature.implies(e.head.feature.not).isTautology) {
+          m = m.:+(e)
+          if (m.map(_.head.feature.not).foldLeft(FeatureExpr.base)(_ and _).isContradiction) {
+            r = r.:+(m.flatten)
+            m = List()
+          }
+        }
+        else {
+          r = r.:+(m.flatten)
+          m = List(e)
+        }
+      }
+      println("current m: " + m)
+    }
+    r = r.:+(m.flatten)
+    r
+  }
 
+  val mysucc: Attributable ==> List[List[Opt[_]]] = {
+    attr {
+      case o@Opt(_, _) => {
+        val l = prevOpts(o) ++ List(o) ++ nextOpts(o)
+        println("l: " + l)
+        val m = groupOptBlocks(l)
+        println("m: " + m)
+        val n = groupIfElifBlocks(m)
+        println("n: " + n)
+        n
+      }
+    }
   }
 
   private def detPartOfIEEChain(o: Opt[_]): Boolean = {
