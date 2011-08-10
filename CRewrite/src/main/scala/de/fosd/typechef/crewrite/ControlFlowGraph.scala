@@ -24,69 +24,98 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   val succ: Attributable ==> Set[Attributable] =
     attr {
       case o@Opt(_, _) => {
+//        val l = prevOpts(o) ++ List(o) ++ nextOpts(o)
+//        val m = groupOptBlocksEquivalence(l)
+//        val n = groupIfIfelseBlocks(m)
+//        getSuccs(o, n)
         Set[Attributable]()
       }
     }
 
-  // adding a new element to a list of lists according to function f
-  // function f is applied to the first element of the first list of l and the element e itself
-  // if true add e to that list
-  // if false prepend a new list to l
-  private def elem2list[T](f: (T, T) => Boolean)(l: List[List[T]])(e: T): List[List[T]] = {
-    if (l.head.isEmpty) List(List(e))
-    else {
-      if (f(e, l.head.head)) (e::l.head)::l.tail
-      else List(e)::l
-    }
+  // pack similar elements into sublists
+  private def pack[T](f: (T, T) => Boolean)(l: List[T]): List[List[T]] = {
+    if (l.isEmpty) List()
+    else (l.head::l.tail.takeWhile(f(l.head, _)))::pack(f)(l.tail.dropWhile(f(l.head, _)))
   }
 
   // group consecutive Opts in a list and return a list of list containing consecutive (feature equivalent) opts
-  private def groupOptBlocks(l: List[Opt[_]]) = {
-    val nl = List[List[Opt[_]]](List())
-    l.foldLeft(nl)(elem2list[Opt[_]](_.feature equivalentTo _.feature)(_)(_))
+  // e.g.:
+  // List(Opt(true, Id1), Opt(fa, Id2), Opt(fa, Id3)) => List(List(Opt(true, Id1)), List(Opt(fa, Id2), Opt(Id3)))
+  private def groupOptBlocksEquivalence(l: List[Opt[_]]) = {
+    pack[Opt[_]](_.feature equivalentTo _.feature)(l)
   }
 
-  // group the incoming list (list of equivalent opt blocks) into #if and #if-else blocks
-  private def groupIfIfelseBlocks(l: List[List[Opt[_]]]) = {
-    var m = List[List[Opt[_]]]()
-    var r = List[(Int, List[Opt[_]])]()
-    for (e <- l) {
-      if (m.size == 0) m = m.:+(e)
-      else {
-        if (m.head.head.feature.implies(e.head.feature.not()).isTautology()) {
-          m = m.:+(e)
-          if (m.map(_.head.feature.not()).foldLeft(FeatureExpr.base)(_ and _).isContradiction()) {
-            r = r.:+((2, m.flatten))
-            m = List()
-          }
-        }
-        else {
-          if (m.map(_.head.feature).foldLeft(FeatureExpr.base)(_ and _).isTautology()) r = r.:+((0, m.flatten))
-          else r = r.:+((1, m.flatten))
-          m = List(e)
-        }
+  // group List[Opt[_]] according to implication
+  // later one should imply the not of previous ones; therefore using l.reverse
+  private def groupOptListsImplication(l: List[List[Opt[_]]]) = {
+    pack[List[Opt[_]]]({ (x,y) => x.head.feature.implies(y.head.feature.not).isTautology()})(l.reverse)
+  }
+
+  // get type of List[List[Opt[_]]:
+  // 0 -> only true values
+  // 1 -> #if-(#elif)* block
+  // 2 -> #if-(#elif)*-#else block
+  private def determineTypeOfOptLists(l: List[List[List[Opt[_]]]]): List[(Int, List[List[Opt[_]]])] = {
+    l match {
+      case (h::t) => {
+        val f = h.map(_.head.feature)
+        if (f.map(_.not).foldLeft(FeatureExpr.base)(_ and _).isContradiction()) (2, h)::determineTypeOfOptLists(t)
+        else if (f.foldLeft(FeatureExpr.base)(_ and _).isTautology()) (0, h)::determineTypeOfOptLists(t)
+             else (1, h)::determineTypeOfOptLists(t)
       }
+      case Nil => List()
     }
-    r = r.:+((1, m.flatten))
-    r
   }
 
-  private def detSucc(o: Opt[_], l: List[(Int, List[Opt[_]])]) = {
-    var r = Set[Attributable]()
-
-    r
-  }
-
-  val mysucc: Attributable ==> List[(Int, List[Opt[_]])] = {
+  val newsucc: Attributable ==> List[(Int, List[List[Opt[_]]])] =
     attr {
       case o@Opt(_, _) => {
         val l = prevOpts(o) ++ List(o) ++ nextOpts(o)
-        val m = groupOptBlocks(l)
-        val n = groupIfIfelseBlocks(m)
-        n
+        val m = groupOptBlocksEquivalence(l)
+        val n = groupOptListsImplication(m)
+        val s = determineTypeOfOptLists(n)
+        s
       }
     }
+
+  private def keepWhile[T](p: (T) => Boolean, l: List[T]): List[T] = {
+    if (p(l.head)) l.head::(keepWhile(p, l.tail))
+    else l.head::Nil
   }
+
+  private def getSuccs(o: Opt[_], l: List[(Int, List[List[Opt[_]]])]): Set[Attributable] = {
+    var r = Set[Attributable]()
+
+    // get the list with o and all following lists
+    // var rl = l.dropWhile()
+
+    // list containing o
+//    var el = rl.drop(1)
+//    var i = el.head._2.indexWhere(_.eq(o))
+//    if (el.head._2.apply(i+1).feature.equivalentTo(o.feature)) return Set(el.head._2.apply(i+1))
+//
+//    rl = rl.drop(1)
+//    rl = keepWhile[(Int, List[Opt[_]])](_._1.==(1), rl)
+//
+//    for (e <- rl) {
+//      e match {
+//        case (0, opts) => r = r ++ Set(opts.head)
+//        case (_, opts) => r = r ++ opts.map(Set(_)).foldLeft(Set[Attributable]())(_ ++ _)
+//      }
+//    }
+    r
+  }
+
+  val mysucc: Attributable ==> List[(Int, List[List[Opt[_]]])] =
+    attr {
+      case o@Opt(_, _) => {
+        val l = prevOpts(o) ++ List(o) ++ nextOpts(o)
+        val m = groupOptBlocksEquivalence(l)
+        val n = groupOptListsImplication(m)
+        val s = determineTypeOfOptLists(n)
+        s
+      }
+    }
 }
 
 trait Variables {

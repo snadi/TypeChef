@@ -62,13 +62,13 @@ trait ConditionalNavigation extends FeatureExprLookup {
 
   private def lastChoice[T <: Attributable](x: Choice[T]): T =
     x.elseBranch match {
-      case c: Choice[T] => lastChoice(c)
+      case c: Choice[T] => lastChoice[T](c)
       case One(c) => c
     }
 
   private def firstChoice[T <: Attributable](x: Choice[T]): T =
     x.thenBranch match {
-      case c: Choice[T] => firstChoice(c)
+      case c: Choice[T] => firstChoice[T](c)
       case One(c) => c
     }
 }

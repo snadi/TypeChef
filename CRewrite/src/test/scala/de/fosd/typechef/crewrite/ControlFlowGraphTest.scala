@@ -264,15 +264,17 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
 
   test("conditional labelstatements isPartOfIEEEChain7") {
     val e0 = Opt(fx, LabelStatement(Id("e0"), None))
-    val e1 = Opt(fx.not.and(fy), LabelStatement(Id("e1"), None))
+    val e1 = Opt(True, LabelStatement(Id("e1"), None))
     val e2 = Opt(True, LabelStatement(Id("e2"), None))
     val e3 = Opt(fx, LabelStatement(Id("e3"), None))
     val e4 = Opt(fx.not.and(fy), LabelStatement(Id("e4"), None))
     val e5 = Opt(fx.not.and(fy.not), LabelStatement(Id("e5"), None))
     val e6 = Opt(fa, LabelStatement(Id("e6"), None))
-    val e7 = Opt(fa.not, LabelStatement(Id("e7"), None))
-    val e8 = Opt(fb.not, LabelStatement(Id("e8"), None))
-    val c = One(CompoundStatement(List(e0, e1, e2, e3, e4, e5, e6, e7, e8)))
+    val e7 = Opt(fa, LabelStatement(Id("e7"), None))
+    val e8 = Opt(fa.not, LabelStatement(Id("e8"), None))
+    val e9 = Opt(True, LabelStatement(Id("e9"), None))
+    val c = One(CompoundStatement(List(e0, e1, e2, e3, e4, e5, e6, e7, e8, e9)))
     println(e1->mysucc)
+    println(e0->newsucc)
   }
 }
