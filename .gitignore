@@ -8,6 +8,7 @@ bin
 jcpp.log*
 macroDebug.txt
 target/
+lib/
 lib_managed/
 src_managed/
 project/boot/
@@ -23,8 +24,12 @@ tokenstream.txt
 *.time
 *.dbg
 *.diffs
+*.log
+*.bak
+*.iml
+*.dbgSrc
+*.macroDbg
 .idea
 linux-2.6.33.3
 casestudies
-*.log
 tmp
