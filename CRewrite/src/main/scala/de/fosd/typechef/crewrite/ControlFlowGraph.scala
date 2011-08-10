@@ -59,8 +59,8 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     l match {
       case (h::t) => {
         val f = h.map(_.head.feature)
-        if (f.map(_.not).foldLeft(FeatureExpr.base)(_ and _).isContradiction()) (2, h)::determineTypeOfOptLists(t)
-        else if (f.foldLeft(FeatureExpr.base)(_ and _).isTautology()) (0, h)::determineTypeOfOptLists(t)
+        if (f.foldLeft(FeatureExpr.base)(_ and _).isTautology()) (0, h)::determineTypeOfOptLists(t)
+        else if (f.map(_.not).foldLeft(FeatureExpr.base)(_ and _).isContradiction()) (2, h)::determineTypeOfOptLists(t)
              else (1, h)::determineTypeOfOptLists(t)
       }
       case Nil => List()
@@ -87,7 +87,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     var r = Set[Attributable]()
 
     // get the list with o and all following lists
-    // var rl = l.dropWhile()
+    //var rl = l.dropWhile()
 
     // list containing o
 //    var el = rl.drop(1)
