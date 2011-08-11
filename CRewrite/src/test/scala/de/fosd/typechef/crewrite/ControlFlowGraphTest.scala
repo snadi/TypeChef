@@ -177,77 +177,73 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
 //    e3->pred should be (Set(e1))
 //  }
 //
-  test("conditional labelstatements isPartOfIEEChain") {
-    val e1 = Opt(True, LabelStatement(Id("e1"), None))
-    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-    val e3 = Opt(fx.not, LabelStatement(Id("e3"), None))
-    val e4 = Opt(True, LabelStatement(Id("e4"), None))
-    val e5 = Opt(True, LabelStatement(Id("e5"), None))
-    val e6 = Opt(fx, LabelStatement(Id("e6"), None))
-    val e7 = Opt(True, LabelStatement(Id("e7"), None))
-    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5, e6, e7)))
+//  test("conditional labelstatements isPartOfIEEChain") {
+//    val e1 = Opt(True, LabelStatement(Id("e1"), None))
+//    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
+//    val e3 = Opt(fx.not, LabelStatement(Id("e3"), None))
+//    val e4 = Opt(True, LabelStatement(Id("e4"), None))
+//    val e5 = Opt(True, LabelStatement(Id("e5"), None))
+//    val e6 = Opt(fx, LabelStatement(Id("e6"), None))
+//    val e7 = Opt(True, LabelStatement(Id("e7"), None))
+//    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5, e6, e7)))
+////    println("AST: " + c)
+////    println(PrettyPrinter.print(c.value))
+//
+//  }
+//
+//  test("conditional labelstatements isPartOfIEEChain2") {
+//    val e1 = Opt(True, LabelStatement(Id("e1"), None))
+//    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
+//    val e3 = Opt(fx.not, LabelStatement(Id("e3"), None))
+//    val e4 = Opt(True, LabelStatement(Id("e4"), None))
+//    val e5 = Opt(fx, LabelStatement(Id("e5"), None))
+//    val e6 = Opt(fy, LabelStatement(Id("e6"), None))
+//    val e7 = Opt(fy.not, LabelStatement(Id("e7"), None))
+//    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5, e6, e7)))
+////    println("AST: " + c)
+////    println(PrettyPrinter.print(c.value))
+//
+//  }
+//
+//  test("conditional labelstatements isPartOfIEEChain3") {
+//    val e1 = Opt(True, LabelStatement(Id("e1"), None))
+//    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
+//    val e3 = Opt(fx.not, LabelStatement(Id("e3"), None))
+//    val e4 = Opt(True, LabelStatement(Id("e4"), None))
+//    val e5 = Opt(fx, LabelStatement(Id("e5"), None))
+//    val e6 = Opt(fy, LabelStatement(Id("e6"), None))
+//    val e7 = Opt(fy.not, LabelStatement(Id("e7"), None))
+//    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5, e6, e7)))
+////    println("AST: " + c)
+////    println(PrettyPrinter.print(c.value))
+//
+//  }
+//
+//  test("conditional labelstatements isPartOfIEEChain4") {
+//    val e1 = Opt(True, LabelStatement(Id("e1"), None))
+//    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
+//    val e3 = Opt(fx.not.and(fy), LabelStatement(Id("e3"), None))
+//    val e4 = Opt(fx.not.and(fy.not), LabelStatement(Id("e4"), None))
+//    val e5 = Opt(fa, LabelStatement(Id("e5"), None))
+//    val e6 = Opt(fa.not, LabelStatement(Id("e6"), None))
+//    val e7 = Opt(fb.not, LabelStatement(Id("e7"), None))
+//    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5, e6, e7)))
+////    println("AST: " + c)
+////    println(PrettyPrinter.print(c.value))
+//
+//  }
+//
+//  test("conditional labelstatements isPartOfIEEChain5") {
+//    val e1 = Opt(True, LabelStatement(Id("e1"), None))
+//    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
+//    val e3 = Opt(fx, LabelStatement(Id("e3"), None))
+//    val e4 = Opt(fx.not, LabelStatement(Id("e4"), None))
+//    val c = One(CompoundStatement(List(e1, e2, e3, e4)))
 //    println("AST: " + c)
 //    println(PrettyPrinter.print(c.value))
-
-  }
-
-  test("conditional labelstatements isPartOfIEEChain2") {
-    val e1 = Opt(True, LabelStatement(Id("e1"), None))
-    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-    val e3 = Opt(fx.not, LabelStatement(Id("e3"), None))
-    val e4 = Opt(True, LabelStatement(Id("e4"), None))
-    val e5 = Opt(fx, LabelStatement(Id("e5"), None))
-    val e6 = Opt(fy, LabelStatement(Id("e6"), None))
-    val e7 = Opt(fy.not, LabelStatement(Id("e7"), None))
-    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5, e6, e7)))
-//    println("AST: " + c)
-//    println(PrettyPrinter.print(c.value))
-
-  }
-
-  test("conditional labelstatements isPartOfIEEChain3") {
-    val e1 = Opt(True, LabelStatement(Id("e1"), None))
-    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-    val e3 = Opt(fx.not, LabelStatement(Id("e3"), None))
-    val e4 = Opt(True, LabelStatement(Id("e4"), None))
-    val e5 = Opt(fx, LabelStatement(Id("e5"), None))
-    val e6 = Opt(fy, LabelStatement(Id("e6"), None))
-    val e7 = Opt(fy.not, LabelStatement(Id("e7"), None))
-    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5, e6, e7)))
-//    println("AST: " + c)
-//    println(PrettyPrinter.print(c.value))
-
-  }
-
-  test("conditional labelstatements isPartOfIEEChain4") {
-    val e1 = Opt(True, LabelStatement(Id("e1"), None))
-    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-    val e3 = Opt(fx.not.and(fy), LabelStatement(Id("e3"), None))
-    val e4 = Opt(fx.not.and(fy.not), LabelStatement(Id("e4"), None))
-    val e5 = Opt(fa, LabelStatement(Id("e5"), None))
-    val e6 = Opt(fa.not, LabelStatement(Id("e6"), None))
-    val e7 = Opt(fb.not, LabelStatement(Id("e7"), None))
-    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5, e6, e7)))
-//    println("AST: " + c)
-//    println(PrettyPrinter.print(c.value))
-
-  }
-
-  test("conditional labelstatements isPartOfIEEChain5") {
-    val e1 = Opt(True, LabelStatement(Id("e1"), None))
-    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-    val e3 = Opt(fx, LabelStatement(Id("e3"), None))
-    val e4 = Opt(fx.not, LabelStatement(Id("e4"), None))
-    val c = One(CompoundStatement(List(e1, e2, e3, e4)))
-    println("AST: " + c)
-    println(PrettyPrinter.print(c.value))
-    println(e1->mysucc)
-//    e1->isPartOfIEEChain should be(false)
-//    e2->isPartOfIEEChain should be(true)
-//    e3->isPartOfIEEChain should be(true)
-//    e4->isPartOfIEEChain should be(true)
-  }
-
+//    println(succ(e1))
+//  }
+//
   test("conditional labelstatements isPartOfIEEEChain6") {
     val e0 = Opt(fx, LabelStatement(Id("e0"), None))
     val e1 = Opt(True, LabelStatement(Id("e1"), None))
@@ -258,8 +254,18 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     val e6 = Opt(fa, LabelStatement(Id("e6"), None))
     val e7 = Opt(fa.not, LabelStatement(Id("e7"), None))
     val e8 = Opt(fb.not, LabelStatement(Id("e8"), None))
-    val c = One(CompoundStatement(List(e0, e1, e2, e3, e4, e5, e6, e7, e8)))
-    println(e1->mysucc)
+    val e9 = Opt(True, LabelStatement(Id("e9"), None))
+    val c = One(CompoundStatement(List(e0, e1, e2, e3, e4, e5, e6, e7, e8, e9)))
+    succ(e0) should be(Set(e1))
+    succ(e1) should be(Set(e2))
+    succ(e2) should be(Set(e3, e4, e5))
+    succ(e3) should be(Set(e6, e7))
+    succ(e4) should be(Set(e6, e7))
+    succ(e5) should be(Set(e6, e7))
+    succ(e6) should be(Set(e8, e9))
+    succ(e7) should be(Set(e8, e9))
+    succ(e8) should be(Set(e9))
+    println(succ(e9))
   }
 
   test("conditional labelstatements isPartOfIEEEChain7") {
@@ -274,7 +280,15 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     val e8 = Opt(fa.not, LabelStatement(Id("e8"), None))
     val e9 = Opt(True, LabelStatement(Id("e9"), None))
     val c = One(CompoundStatement(List(e0, e1, e2, e3, e4, e5, e6, e7, e8, e9)))
-    println(e1->mysucc)
-    println(e0->newsucc)
+    succ(e0) should be(Set(e1))
+    succ(e1) should be(Set(e2))
+    succ(e2) should be(Set(e3, e4, e5))
+    succ(e3) should be(Set(e6, e8))
+    succ(e4) should be(Set(e6, e8))
+    succ(e5) should be(Set(e6, e8))
+    succ(e6) should be(Set(e7))
+    succ(e7) should be(Set(e9))
+    succ(e8) should be(Set(e9))
+    println(succ(e9))
   }
 }

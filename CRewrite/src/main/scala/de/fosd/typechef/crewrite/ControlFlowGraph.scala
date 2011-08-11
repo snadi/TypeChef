@@ -24,11 +24,12 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   val succ: Attributable ==> Set[Attributable] =
     attr {
       case o@Opt(_, _) => {
-//        val l = prevOpts(o) ++ List(o) ++ nextOpts(o)
-//        val m = groupOptBlocksEquivalence(l)
-//        val n = groupIfIfelseBlocks(m)
-//        getSuccs(o, n)
-        Set[Attributable]()
+        val l = prevOpts(o) ++ List(o) ++ nextOpts(o)
+        val m = groupOptBlocksEquivalence(l)
+        val n = groupOptListsImplication(m)
+        val s = determineTypeOfOptLists(n)
+        val t = getSuccs(o, s.reverse)
+        t
       }
     }
 
@@ -67,55 +68,40 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     }
   }
 
-  val newsucc: Attributable ==> List[(Int, List[List[Opt[_]]])] =
-    attr {
-      case o@Opt(_, _) => {
-        val l = prevOpts(o) ++ List(o) ++ nextOpts(o)
-        val m = groupOptBlocksEquivalence(l)
-        val n = groupOptListsImplication(m)
-        val s = determineTypeOfOptLists(n)
-        s
-      }
-    }
-
-  private def keepWhile[T](p: (T) => Boolean, l: List[T]): List[T] = {
-    if (p(l.head)) l.head::(keepWhile(p, l.tail))
-    else l.head::Nil
+  // similar to takeWhile except it takes one element more
+  private def takeWhileFollow[T](p: (T) => Boolean, l: List[T]): List[T] = {
+    l.takeWhile(p) ++ l.dropWhile(p).take(1)
   }
 
+  // get all succ nodes of o
   private def getSuccs(o: Opt[_], l: List[(Int, List[List[Opt[_]]])]): Set[Attributable] = {
     var r = Set[Attributable]()
 
     // get the list with o and all following lists
-    //var rl = l.dropWhile()
+    // iterate each sublist of the incoming tuples (Int, List[List[Opt[_]]] combine equality check
+    // with foldLeft and drop tuples in which o does not occur
+    var rl = l.dropWhile(_._2.map(_.map(_.eq(o)).foldLeft(false)(_ || _)).foldLeft(false)(_ || _).unary_!)
+    var el = rl.head
+    rl = rl.drop(1)
 
-    // list containing o
-//    var el = rl.drop(1)
-//    var i = el.head._2.indexWhere(_.eq(o))
-//    if (el.head._2.apply(i+1).feature.equivalentTo(o.feature)) return Set(el.head._2.apply(i+1))
-//
-//    rl = rl.drop(1)
-//    rl = keepWhile[(Int, List[Opt[_]])](_._1.==(1), rl)
-//
-//    for (e <- rl) {
-//      e match {
-//        case (0, opts) => r = r ++ Set(opts.head)
-//        case (_, opts) => r = r ++ opts.map(Set(_)).foldLeft(Set[Attributable]())(_ ++ _)
-//      }
-//    }
-    r
-  }
+    // take all if blocks plus the next one
+    rl = takeWhileFollow[(Int, List[List[Opt[_]]])](_._1.==(1), rl)
 
-  val mysucc: Attributable ==> List[(Int, List[List[Opt[_]]])] =
-    attr {
-      case o@Opt(_, _) => {
-        val l = prevOpts(o) ++ List(o) ++ nextOpts(o)
-        val m = groupOptBlocksEquivalence(l)
-        val n = groupOptListsImplication(m)
-        val s = determineTypeOfOptLists(n)
-        s
+    // take tuple with o and examine it
+    var il = el._2.filter(_.contains(o)).head.span(_.ne(o))._2.drop(1)
+
+    if (! il.isEmpty) r = r ++ Set(il.head)
+    //else if (rl.isEmpty) r = r ++ succ(o.parent)
+    else {
+      for (e <- rl) {
+        e match {
+          case (0, opts) => r = r ++ Set(opts.head.head)
+          case (_, opts) => r = r ++ opts.map({ x => Set(x.head)}).foldLeft(Set[Attributable]())(_ ++ _)
+        }
       }
     }
+    r
+  }
 }
 
 trait Variables {
