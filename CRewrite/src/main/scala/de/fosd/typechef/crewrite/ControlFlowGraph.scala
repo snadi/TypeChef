@@ -11,6 +11,7 @@ import de.fosd.typechef.featureexpr._
 trait ControlFlow {
   val pred: Attributable ==> Set[Attributable]
   val succ: Attributable ==> Set[Attributable]
+  val following: Attributable ==> Set[Attributable]
 }
 
 trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNavigation with FeatureExprLookup {
@@ -25,11 +26,14 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     attr {
       case o@Opt(_, _) => {
         val l = prevOpts(o) ++ List(o) ++ nextOpts(o)
-        val m = groupOptBlocksEquivalence(l)
-        val n = groupOptListsImplication(m)
-        val s = determineTypeOfOptLists(n)
-        val t = getSuccs(o, s.reverse)
-        t
+        getSuccs(o, determineTypeOfOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l))).reverse)
+      }
+    }
+
+  val following: Attributable ==> Set[Attributable] =
+    attr {
+      case o@Opt(_, _) => {
+        Set[Attributable]()
       }
     }
 
