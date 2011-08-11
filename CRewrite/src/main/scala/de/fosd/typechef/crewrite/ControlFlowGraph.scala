@@ -26,7 +26,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     attr {
       case o@Opt(_, _) => {
         val l = prevOpts(o) ++ List(o) ++ nextOpts(o)
-        getSuccs(o, determineTypeOfOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l))).reverse)
+        getSuccFromKnown(o, determineTypeOfOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l))).reverse)
       }
     }
 
@@ -78,8 +78,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   }
 
   // get all succ nodes of o
-  private def getSuccs(o: Opt[_], l: List[(Int, List[List[Opt[_]]])]): Set[Attributable] = {
-    var r = Set[Attributable]()
+  private def getSuccFromKnown(o: Opt[_], l: List[(Int, List[List[Opt[_]]])]): Set[Attributable] = {
 
     // get the list with o and all following lists
     // iterate each sublist of the incoming tuples (Int, List[List[Opt[_]]] combine equality check
@@ -94,14 +93,19 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     // take tuple with o and examine it
     var il = el._2.filter(_.contains(o)).head.span(_.ne(o))._2.drop(1)
 
-    if (! il.isEmpty) r = r ++ Set(il.head)
+    if (! il.isEmpty) Set(il.head)
     //else if (rl.isEmpty) r = r ++ succ(o.parent)
-    else {
-      for (e <- rl) {
-        e match {
-          case (0, opts) => r = r ++ Set(opts.head.head)
-          case (_, opts) => r = r ++ opts.map({ x => Set(x.head)}).foldLeft(Set[Attributable]())(_ ++ _)
-        }
+    else getSuccFromUnknown(rl)
+  }
+
+  // get all succ nodes of an unknown input node; useful for cases in which successor nodes occur
+  // in a different block
+  private def getSuccFromUnknown(l: List[(Int, List[List[Opt[_]]])]) = {
+    var r = Set[Attributable]()
+    for (e <- l) {
+      e match {
+        case (0, opts) => r = r ++ Set(opts.head.head)
+        case (_, opts) => r = r ++ opts.map({ x=> Set(x.head)}).foldLeft(Set[Attributable]())(_ ++ _)
       }
     }
     r
