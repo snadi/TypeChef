@@ -59,6 +59,8 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     parsePrintAST("""
     {
       while (k) {
+        int l;
+        int m;
       }
     }
     """)
