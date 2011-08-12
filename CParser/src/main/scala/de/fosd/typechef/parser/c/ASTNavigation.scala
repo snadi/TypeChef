@@ -43,17 +43,37 @@ trait ASTNavigation {
       }
   }
 
+  val nextAST: Attributable ==> AST = attr {
+    case a =>
+    (a.next[Attributable]: @unchecked) match {
+      case c: Choice[AST] => firstChoice(c)
+      case o: One[AST] => o.value
+      case a: AST => a
+      case Opt(_, v: Choice[AST]) => firstChoice(v)
+      case Opt(_, v: One[AST]) => v.value
+      case Opt(_, v: AST) => v
+      case null => {
+        a.parent match {
+          case o: Opt[_] => nextAST(o)
+          case c: Choice[AST] => nextAST(c)
+          case c: One[AST] => nextAST(c)
+          case _ => null
+        }
+      }
+    }
+  }
+
   val prevASTElems: Attributable ==> List[AST] = {
     attr {
       case null => List()
-      case s => prevASTElems(s.prev) ++ List(childAST(s))
+      case s => prevASTElems(prevAST(s)) ++ List(childAST(s))
     }
   }
 
   val nextASTElems: Attributable ==> List[AST] = {
     attr {
       case null => List()
-      case s => childAST(s)::nextASTElems(s.next)
+      case s => childAST(s)::nextASTElems(nextAST(s))
     }
   }
 

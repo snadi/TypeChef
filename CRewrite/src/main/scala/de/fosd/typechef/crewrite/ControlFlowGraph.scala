@@ -18,15 +18,17 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
 
   val succ: Attributable ==> Set[AST] =
     attr {
-      case o@Opt(_, _) => {
-        val a = prevASTElems(o) ++ nextASTElems(o).drop(1)
+      case o: Opt[AST] => succ(o.entry)
+      case s: Statement => {
+        println("s: " + s)
+        val a = prevASTElems(s) ++ nextASTElems(s).drop(1)
+        println("a: " + a)
         val b = groupOptBlocksEquivalence(a)
         val c = groupOptListsImplication(b)
         val d = determineTypeOfOptLists(c)
-        val e = getSuccFromKnown(childAST(o), d.reverse)
+        val e = getSuccFromKnown(s, d.reverse)
         e
       }
-     case s: Statement => succ(s.parent)
     }
 
   val follow: Attributable ==> Set[AST] = attr {
