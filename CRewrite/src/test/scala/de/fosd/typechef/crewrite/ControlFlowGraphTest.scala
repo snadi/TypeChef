@@ -253,6 +253,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     succ(e6) should be(Set(e8, e9))
     succ(e7) should be(Set(e8, e9))
     succ(e8) should be(Set(e9))
+    DotGraph.map2file(getAllSucc(e0))
   }
 
   test("conditional declaration statement") {
@@ -272,5 +273,6 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     succ(e0) should be(Set(e1, e2))
     succ(e1) should be(Set(e3))
     succ(e2) should be(Set(e3))
+    DotGraph.map2file(getAllSucc(e0))
   }
 }

@@ -1,11 +1,12 @@
 package de.fosd.typechef.crewrite
 
-import org.kiama._
+import org.kiama.==>
 import org.kiama.attribution.Attributable
-import org.kiama.attribution.DynamicAttribution._
+import org.kiama.attribution.DynamicAttribution.attr
 import de.fosd.typechef.parser.c._
 import de.fosd.typechef.conditional._
 import de.fosd.typechef.featureexpr._
+import java.io.PrintWriter
 
 // http://code.google.com/p/kiama/source/browse/src/org/kiama/example/dataflow/Dataflow.scala
 trait ControlFlow {
@@ -85,10 +86,9 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     // with foldLeft and drop tuples in which o does not occur
     var rl = l.dropWhile(_._2.map(_.map(_.eq(o)).foldLeft(false)(_ || _)).foldLeft(false)(_ || _).unary_!)
     var el = rl.head
-    rl = rl.drop(1)
 
     // take all if blocks plus the next one
-    rl = takeWhileFollow[(Int, List[List[Opt[_]]])](_._1.==(1), rl)
+    rl = takeWhileFollow[(Int, List[List[Opt[_]]])](_._1.==(1), rl.drop(1))
 
     // take tuple with o and examine it
     var il = el._2.filter(_.contains(o)).head.span(_.ne(o))._2.drop(1)
@@ -110,6 +110,60 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     }
     r
   }
+
+  // get all succs
+  def getAllSucc(i: Attributable) = {
+    var r = Map[Attributable, Set[Attributable]]()
+    var s = Set(i)
+
+    while (! s.isEmpty) {
+      var c = s.head
+      r = r ++ Map((c, succ(c)))
+      s = s.drop(1)
+      s = s ++ r.getOrElse(c, Set()).diff(r.keys.toSet)
+    }
+    r
+  }
+}
+
+trait IOUtilities {
+  // http://stackoverflow.com/questions/4604237/how-to-write-to-a-file-in-scala
+  import java.io.FileWriter
+  def using[A <: {def close(): Unit}, B](param: A)(f: A => B): B =
+    try { f(param) } finally { param.close() }
+
+  def writeToFile(fileName:String, data:String) =
+    using (new FileWriter(fileName)) {
+      fileWriter => fileWriter.write(data)
+    }
+
+  def appendToFile(fileName:String, textData:String) =
+    using (new FileWriter(fileName, true)){
+      fileWriter => using (new PrintWriter(fileWriter)) {
+        printWriter => printWriter.println(textData)
+      }
+    }
+}
+
+object DotGraph extends IOUtilities with ASTNavigation {
+  import java.io.File
+
+  private def getTmpFileName() = File.createTempFile("/tmp", ".dot")
+  def map2file(m: Map[Attributable, Set[Attributable]]) = {
+    var dotstring = ""
+    val fname = getTmpFileName()
+    dotstring += "digraph \"" + fname.getName + "\" {" + "\n"
+    dotstring += "node [shape=record];\n"
+    for ((o, succs) <- m) {
+      val op = PrettyPrinter.print(childAST(o))
+      dotstring += "\"" + op + "\" [label=\"{{" + op + "}|" + o.asInstanceOf[Opt[_]].feature + "}\"];\n"
+      for (succ <- succs) dotstring += "\"" + op + "\" -> \"" + PrettyPrinter.print(childAST(succ)) + "\"\n"
+    }
+    dotstring = dotstring + "}\n"
+    println(dotstring)
+    writeToFile(fname.getAbsolutePath, dotstring)
+  }
+
 }
 
 trait Variables {
