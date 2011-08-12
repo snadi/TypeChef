@@ -10,11 +10,11 @@ import java.io.PrintWriter
 
 // http://code.google.com/p/kiama/source/browse/src/org/kiama/example/dataflow/Dataflow.scala
 trait ControlFlow {
-  val succ: AST ==> Set[AST]
-  val following: AST ==> Set[AST]
+  val succ: Attributable ==> Set[AST]
+  val follow: Attributable ==> Set[AST]
 }
 
-trait ControlFlowImpl extends ControlFlow with ASTNavigation with FeatureExprLookup {
+trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNavigation {
 
   val succ: Attributable ==> Set[AST] =
     attr {
@@ -26,17 +26,15 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with FeatureExprLoo
         val e = getSuccFromKnown(childAST(o), d.reverse)
         e
       }
-      case s: Statement => {
+     case s: Statement => {
         succ(s.parent)
       }
     }
 
-  val following: Attributable ==> Set[AST] =
-    attr {
-      case o@Opt(_, _) => {
-        Set[AST]()
-      }
-    }
+  val follow: Attributable ==> Set[AST] = attr {
+    case _ => Set[AST]()
+  }
+
 
   // pack similar elements into sublists
   private def pack[T](f: (T, T) => Boolean)(l: List[T]): List[List[T]] = {
@@ -48,13 +46,15 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with FeatureExprLoo
   // e.g.:
   // List(Opt(true, Id1), Opt(fa, Id2), Opt(fa, Id3)) => List(List(Opt(true, Id1)), List(Opt(fa, Id2), Opt(Id3)))
   private def groupOptBlocksEquivalence(l: List[AST]) = {
-    pack[AST](featureExpr(_) equivalentTo featureExpr(_))(l)
+    pack[AST](parentOpt(_).feature equivalentTo parentOpt(_).feature)(l)
   }
 
   // group List[Opt[_]] according to implication
   // later one should imply the not of previous ones; therefore using l.reverse
   private def groupOptListsImplication(l: List[List[AST]]) = {
-    pack[List[AST]]({ (x,y) => featureExpr(x.head).implies(featureExpr(y.head).not).isTautology()})(l.reverse)
+
+
+    pack[List[AST]]({ (x,y) => parentOpt(x.head).feature.implies(parentOpt(y.head).feature.not).isTautology()})(l.reverse)
   }
 
   // get type of List[List[AST]:
