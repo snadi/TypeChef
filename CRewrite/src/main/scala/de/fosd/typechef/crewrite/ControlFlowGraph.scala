@@ -26,9 +26,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
         val e = getSuccFromKnown(childAST(o), d.reverse)
         e
       }
-     case s: Statement => {
-        succ(s.parent)
-      }
+     case s: Statement => succ(s.parent)
     }
 
   val follow: Attributable ==> Set[AST] = attr {
