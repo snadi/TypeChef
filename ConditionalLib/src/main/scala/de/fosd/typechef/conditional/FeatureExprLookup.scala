@@ -18,9 +18,6 @@ trait FeatureExprLookup {
                 case null => FeatureExpr.base
                 case e => featureExpr(e)
             }
-
-
     }
-
 }
 

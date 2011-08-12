@@ -58,9 +58,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
   test("whileLoop") {
     parsePrintAST("""
     {
-      int k;
       while (k) {
-        int l;
       }
     }
     """)
@@ -204,20 +202,6 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
 ////    println(PrettyPrinter.print(c.value))
 //
 //  }
-//
-//  test("conditional labelstatements isPartOfIEEChain3") {
-//    val e1 = Opt(True, LabelStatement(Id("e1"), None))
-//    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-//    val e3 = Opt(fx.not, LabelStatement(Id("e3"), None))
-//    val e4 = Opt(True, LabelStatement(Id("e4"), None))
-//    val e5 = Opt(fx, LabelStatement(Id("e5"), None))
-//    val e6 = Opt(fy, LabelStatement(Id("e6"), None))
-//    val e7 = Opt(fy.not, LabelStatement(Id("e7"), None))
-//    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5, e6, e7)))
-////    println("AST: " + c)
-////    println(PrettyPrinter.print(c.value))
-//
-//  }
 
   test("conditional labelstatements with sequence of annotated elements") {
     val e1 = Opt(True, LabelStatement(Id("e1"), None))
@@ -273,6 +257,16 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     succ(e0) should be(Set(e1, e2))
     succ(e1) should be(Set(e3))
     succ(e2) should be(Set(e3))
+    DotGraph.map2file(getAllSucc(e0))
+  }
+
+  test("conditional while statement") {
+    val e0 = Opt(True, LabelStatement(Id("e0"), None))
+    val e1 = Opt(fx, WhileStatement(Id("k"), One(CompoundStatement(List()))))
+    val e2 = Opt(True, LabelStatement(Id("e2"), None))
+    val c = One(CompoundStatement(List(e0, e1, e2)))
+    succ(e0) should be(Set(e1, e2))
+    succ(e1) should be(Set(e2))
     DotGraph.map2file(getAllSucc(e0))
   }
 }

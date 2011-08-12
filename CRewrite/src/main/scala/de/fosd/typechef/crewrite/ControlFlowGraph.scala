@@ -29,6 +29,9 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
         val l = prevOpts(o) ++ List(o) ++ nextOpts(o)
         getSuccFromKnown(o, determineTypeOfOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l))).reverse)
       }
+      case CompoundStatement(inner) => {
+        getSuccFromUnknown(determineTypeOfOptLists(groupOptListsImplication(groupOptBlocksEquivalence(inner))).reverse)
+      }
     }
 
   val following: Attributable ==> Set[Attributable] =
@@ -155,13 +158,17 @@ object DotGraph extends IOUtilities with ASTNavigation {
     dotstring += "digraph \"" + fname.getName + "\" {" + "\n"
     dotstring += "node [shape=record];\n"
     for ((o, succs) <- m) {
-      val op = PrettyPrinter.print(childAST(o))
-      dotstring += "\"" + op + "\" [label=\"{{" + op + "}|" + o.asInstanceOf[Opt[_]].feature + "}\"];\n"
-      for (succ <- succs) dotstring += "\"" + op + "\" -> \"" + PrettyPrinter.print(childAST(succ)) + "\"\n"
+      val op = esc(PrettyPrinter.print(childAST(o)))
+      dotstring += "\"" + op + "\" [label=\"{{" + op + "}|" + esc(o.asInstanceOf[Opt[_]].feature.toString) + "}\"];\n"
+      for (succ <- succs) dotstring += "\"" + op + "\" -> \"" + esc(PrettyPrinter.print(childAST(succ))) + "\"\n"
     }
     dotstring = dotstring + "}\n"
     println(dotstring)
     writeToFile(fname.getAbsolutePath, dotstring)
+  }
+
+  private def esc(i: String) = {
+    i.replace("\n", "\\\n").replace("{", "\\{").replace("}", "\\}")
   }
 
 }
