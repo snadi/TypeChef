@@ -31,11 +31,11 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     succ(ast.get.asInstanceOf[One[AST]].value)
   }
 
-  private def parsePrintGetPred(code: String) = {
-    val ast = parse(code, cp(p.compoundStatement))
-    println("AST: " + ast.get)
-    pred(ast.get.asInstanceOf[One[AST]].value)
-  }
+//  private def parsePrintGetPred(code: String) = {
+//    val ast = parse(code, cp(p.compoundStatement))
+//    println("AST: " + ast.get)
+//    pred(ast.get.asInstanceOf[One[AST]].value)
+//  }
 
 //  test("twoDeclarations") {
 //    parsePrintGetDefines("""
@@ -203,18 +203,18 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
 //
 //  }
 
-  test("conditional labelstatements with sequence of annotated elements") {
-    val e1 = Opt(True, LabelStatement(Id("e1"), None))
-    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-    val e3 = Opt(fx, LabelStatement(Id("e3"), None))
-    val e4 = Opt(fx.not, LabelStatement(Id("e4"), None))
-    val e5 = Opt(True, LabelStatement(Id("e5"), None))
-    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5)))
-    succ(e1) should be(Set(e2, e4))
-    succ(e2) should be(Set(e3))
-    succ(e3) should be(Set(e5))
-    succ(e4) should be(Set(e5))
-  }
+//  test("conditional labelstatements with sequence of annotated elements") {
+//    val e1 = Opt(True, LabelStatement(Id("e1"), None))
+//    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
+//    val e3 = Opt(fx, LabelStatement(Id("e3"), None))
+//    val e4 = Opt(fx.not, LabelStatement(Id("e4"), None))
+//    val e5 = Opt(True, LabelStatement(Id("e5"), None))
+//    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5)))
+//    succ(e1) should be(Set(e2, e4))
+//    succ(e2) should be(Set(e3))
+//    succ(e3) should be(Set(e5))
+//    succ(e4) should be(Set(e5))
+//  }
 
   test("conditional labelstatements with if and if-else blocks") {
     val e0 = Opt(fx, LabelStatement(Id("e0"), None))
@@ -228,45 +228,45 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     val e8 = Opt(fb.not, LabelStatement(Id("e8"), None))
     val e9 = Opt(True, LabelStatement(Id("e9"), None))
     val c = One(CompoundStatement(List(e0, e1, e2, e3, e4, e5, e6, e7, e8, e9)))
-    succ(e0) should be(Set(e1))
-    succ(e1) should be(Set(e2))
-    succ(e2) should be(Set(e3, e4, e5))
-    succ(e3) should be(Set(e6, e7))
-    succ(e4) should be(Set(e6, e7))
-    succ(e5) should be(Set(e6, e7))
-    succ(e6) should be(Set(e8, e9))
-    succ(e7) should be(Set(e8, e9))
-    succ(e8) should be(Set(e9))
-    DotGraph.map2file(getAllSucc(e0))
+    succ(e0) should be(Set(e1.entry))
+    succ(e1) should be(Set(e2.entry))
+    succ(e2) should be(Set(e3.entry, e4.entry, e5.entry))
+    succ(e3) should be(Set(e6.entry, e7.entry))
+    succ(e4) should be(Set(e6.entry, e7.entry))
+    succ(e5) should be(Set(e6.entry, e7.entry))
+    succ(e6) should be(Set(e8.entry, e9.entry))
+    succ(e7) should be(Set(e8.entry, e9.entry))
+    succ(e8) should be(Set(e9.entry))
+    DotGraph.map2file(getAllSucc(e0.entry))
   }
 
-  test("conditional declaration statement") {
-    val e0 = Opt(True, LabelStatement(Id("e0"), None))
-    val e1 = Opt(fx,
-      DeclarationStatement(
-        Declaration(
-          List(Opt(True,IntSpecifier())),
-          List(Opt(True,InitDeclaratorI(AtomicNamedDeclarator(List(),Id("k"),List()),List(),None))))))
-    val e2 = Opt(fx.not,
-      DeclarationStatement(
-        Declaration(
-          List(Opt(True,DoubleSpecifier())),
-          List(Opt(True,InitDeclaratorI(AtomicNamedDeclarator(List(),Id("k"),List()),List(),None))))))
-    val e3 = Opt(True, LabelStatement(Id("e3"), None))
-    val c = One(CompoundStatement(List(e0, e1, e2, e3)))
-    succ(e0) should be(Set(e1, e2))
-    succ(e1) should be(Set(e3))
-    succ(e2) should be(Set(e3))
-    DotGraph.map2file(getAllSucc(e0))
-  }
-
-  test("conditional while statement") {
-    val e0 = Opt(True, LabelStatement(Id("e0"), None))
-    val e1 = Opt(fx, WhileStatement(Id("k"), One(CompoundStatement(List()))))
-    val e2 = Opt(True, LabelStatement(Id("e2"), None))
-    val c = One(CompoundStatement(List(e0, e1, e2)))
-    succ(e0) should be(Set(e1, e2))
-    succ(e1) should be(Set(e2))
-    DotGraph.map2file(getAllSucc(e0))
-  }
+//  test("conditional declaration statement") {
+//    val e0 = Opt(True, LabelStatement(Id("e0"), None))
+//    val e1 = Opt(fx,
+//      DeclarationStatement(
+//        Declaration(
+//          List(Opt(True,IntSpecifier())),
+//          List(Opt(True,InitDeclaratorI(AtomicNamedDeclarator(List(),Id("k"),List()),List(),None))))))
+//    val e2 = Opt(fx.not,
+//      DeclarationStatement(
+//        Declaration(
+//          List(Opt(True,DoubleSpecifier())),
+//          List(Opt(True,InitDeclaratorI(AtomicNamedDeclarator(List(),Id("k"),List()),List(),None))))))
+//    val e3 = Opt(True, LabelStatement(Id("e3"), None))
+//    val c = One(CompoundStatement(List(e0, e1, e2, e3)))
+//    succ(e0) should be(Set(e1, e2))
+//    succ(e1) should be(Set(e3))
+//    succ(e2) should be(Set(e3))
+//    DotGraph.map2file(getAllSucc(e0))
+//  }
+//
+//  test("conditional while statement") {
+//    val e0 = Opt(True, LabelStatement(Id("e0"), None))
+//    val e1 = Opt(fx, WhileStatement(Id("k"), One(CompoundStatement(List()))))
+//    val e2 = Opt(True, LabelStatement(Id("e2"), None))
+//    val c = One(CompoundStatement(List(e0, e1, e2)))
+//    succ(e0) should be(Set(e1, e2))
+//    succ(e1) should be(Set(e2))
+//    DotGraph.map2file(getAllSucc(e0))
+//  }
 }

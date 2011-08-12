@@ -34,13 +34,27 @@ trait ASTNavigation {
         case Opt(_, v: AST) => v
         case null => {
           a.parent match {
-            case o: Opt[_] => o -> prevAST
-            case c: Choice[AST] => c -> prevAST
-            case c: One[AST] => c -> prevAST
+            case o: Opt[_] => prevAST(o)
+            case c: Choice[AST] => prevAST(c)
+            case c: One[AST] => prevAST(c)
             case _ => null
           }
         }
       }
+  }
+
+  val prevASTElems: Attributable ==> List[AST] = {
+    attr {
+      case null => List()
+      case s => prevASTElems(s.prev) ++ List(childAST(s))
+    }
+  }
+
+  val nextASTElems: Attributable ==> List[AST] = {
+    attr {
+      case null => List()
+      case s => childAST(s)::nextASTElems(s.next)
+    }
   }
 
   val childAST: Attributable ==> AST = attr {
@@ -55,9 +69,9 @@ trait ASTNavigation {
 
 
   /**try first prev and if that does not exist, then parent*/
-  val prevOrParentAST: Attributable ==> AST = {case a: Attributable => val p = a -> prevAST; if (p != null) p else a -> parentAST}
+  val prevOrParentAST: Attributable ==> AST = {case a: Attributable => val p = prevAST(a); if (p != null) p else parentAST(a)}
 
-  private def prevOfChoice(c: Choice[AST]): AST = c -> prevAST match {
+  private def prevOfChoice(c: Choice[AST]): AST = prevAST(c) match {
     case x: Choice[AST] => lastChoice(x)
     case x: AST => x
     case null => c.parent match {
@@ -68,18 +82,17 @@ trait ASTNavigation {
 
   private def lastChoice[T <: AST](x: Choice[T]): T =
     x.elseBranch match {
-      case c: Choice[T] => lastChoice(c)
+      case c: Choice[T] => lastChoice[T](c)
       case One(c) => c
     }
 
   private def firstChoice[T <: AST](x: Choice[T]): T =
     x.thenBranch match {
-      case c: Choice[T] => firstChoice(c)
+      case c: Choice[T] => firstChoice[T](c)
       case One(c) => c
     }
 
   protected def outer[T](f: AST ==> T, init: () => T, e: AST): T =
-    if (e -> prevOrParentAST != null) f(e -> prevOrParentAST)
-    else
-      init()
+    if (prevOrParentAST(e) != null) f(prevOrParentAST(e))
+    else init()
 }

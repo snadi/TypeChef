@@ -10,34 +10,31 @@ import java.io.PrintWriter
 
 // http://code.google.com/p/kiama/source/browse/src/org/kiama/example/dataflow/Dataflow.scala
 trait ControlFlow {
-  val pred: Attributable ==> Set[Attributable]
-  val succ: Attributable ==> Set[Attributable]
-  val following: Attributable ==> Set[Attributable]
+  val succ: AST ==> Set[AST]
+  val following: AST ==> Set[AST]
 }
 
-trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNavigation with FeatureExprLookup {
-  val pred: Attributable ==> Set[Attributable] =
+trait ControlFlowImpl extends ControlFlow with ASTNavigation with FeatureExprLookup {
+
+  val succ: Attributable ==> Set[AST] =
     attr {
       case o@Opt(_, _) => {
-        Set[Attributable]()
+        val a = prevASTElems(o) ++ nextASTElems(o).drop(1)
+        val b = groupOptBlocksEquivalence(a)
+        val c = groupOptListsImplication(b)
+        val d = determineTypeOfOptLists(c)
+        val e = getSuccFromKnown(childAST(o), d.reverse)
+        e
+      }
+      case s: Statement => {
+        succ(s.parent)
       }
     }
 
-  val succ: Attributable ==> Set[Attributable] =
+  val following: Attributable ==> Set[AST] =
     attr {
       case o@Opt(_, _) => {
-        val l = prevOpts(o) ++ List(o) ++ nextOpts(o)
-        getSuccFromKnown(o, determineTypeOfOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l))).reverse)
-      }
-      case CompoundStatement(inner) => {
-        getSuccFromUnknown(determineTypeOfOptLists(groupOptListsImplication(groupOptBlocksEquivalence(inner))).reverse)
-      }
-    }
-
-  val following: Attributable ==> Set[Attributable] =
-    attr {
-      case o@Opt(_, _) => {
-        Set[Attributable]()
+        Set[AST]()
       }
     }
 
@@ -50,24 +47,24 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   // group consecutive Opts in a list and return a list of list containing consecutive (feature equivalent) opts
   // e.g.:
   // List(Opt(true, Id1), Opt(fa, Id2), Opt(fa, Id3)) => List(List(Opt(true, Id1)), List(Opt(fa, Id2), Opt(Id3)))
-  private def groupOptBlocksEquivalence(l: List[Opt[_]]) = {
-    pack[Opt[_]](_.feature equivalentTo _.feature)(l)
+  private def groupOptBlocksEquivalence(l: List[AST]) = {
+    pack[AST](featureExpr(_) equivalentTo featureExpr(_))(l)
   }
 
   // group List[Opt[_]] according to implication
   // later one should imply the not of previous ones; therefore using l.reverse
-  private def groupOptListsImplication(l: List[List[Opt[_]]]) = {
-    pack[List[Opt[_]]]({ (x,y) => x.head.feature.implies(y.head.feature.not).isTautology()})(l.reverse)
+  private def groupOptListsImplication(l: List[List[AST]]) = {
+    pack[List[AST]]({ (x,y) => featureExpr(x.head).implies(featureExpr(y.head).not).isTautology()})(l.reverse)
   }
 
-  // get type of List[List[Opt[_]]:
+  // get type of List[List[AST]:
   // 0 -> only true values
   // 1 -> #if-(#elif)* block
   // 2 -> #if-(#elif)*-#else block
-  private def determineTypeOfOptLists(l: List[List[List[Opt[_]]]]): List[(Int, List[List[Opt[_]]])] = {
+  private def determineTypeOfOptLists(l: List[List[List[AST]]]): List[(Int, List[List[AST]])] = {
     l match {
       case (h::t) => {
-        val f = h.map(_.head.feature)
+        val f = h.map({ x => featureExpr(x.head)})
         if (f.foldLeft(FeatureExpr.base)(_ and _).isTautology()) (0, h)::determineTypeOfOptLists(t)
         else if (f.map(_.not).foldLeft(FeatureExpr.base)(_ and _).isContradiction()) (2, h)::determineTypeOfOptLists(t)
              else (1, h)::determineTypeOfOptLists(t)
@@ -82,7 +79,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   }
 
   // get all succ nodes of o
-  private def getSuccFromKnown(o: Opt[_], l: List[(Int, List[List[Opt[_]]])]): Set[Attributable] = {
+  private def getSuccFromKnown(o: AST, l: List[(Int, List[List[AST]])]): Set[AST] = {
 
     // get the list with o and all following lists
     // iterate each sublist of the incoming tuples (Int, List[List[Opt[_]]] combine equality check
@@ -91,7 +88,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     var el = rl.head
 
     // take all if blocks plus the next one
-    rl = takeWhileFollow[(Int, List[List[Opt[_]]])](_._1.==(1), rl.drop(1))
+    rl = takeWhileFollow[(Int, List[List[AST]])](_._1.==(1), rl.drop(1))
 
     // take tuple with o and examine it
     var il = el._2.filter(_.contains(o)).head.span(_.ne(o))._2.drop(1)
@@ -103,20 +100,20 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
 
   // get all succ nodes of an unknown input node; useful for cases in which successor nodes occur
   // in a different block
-  private def getSuccFromUnknown(l: List[(Int, List[List[Opt[_]]])]) = {
-    var r = Set[Attributable]()
+  private def getSuccFromUnknown(l: List[(Int, List[List[AST]])]) = {
+    var r = Set[AST]()
     for (e <- l) {
       e match {
         case (0, opts) => r = r ++ Set(opts.head.head)
-        case (_, opts) => r = r ++ opts.map({ x=> Set(x.head)}).foldLeft(Set[Attributable]())(_ ++ _)
+        case (_, opts) => r = r ++ opts.map({ x=> Set(x.head)}).foldLeft(Set[AST]())(_ ++ _)
       }
     }
     r
   }
 
   // get all succs
-  def getAllSucc(i: Attributable) = {
-    var r = Map[Attributable, Set[Attributable]]()
+  def getAllSucc(i: AST) = {
+    var r = Map[AST, Set[AST]]()
     var s = Set(i)
 
     while (! s.isEmpty) {
@@ -148,19 +145,19 @@ trait IOUtilities {
     }
 }
 
-object DotGraph extends IOUtilities with ASTNavigation {
+object DotGraph extends IOUtilities with ASTNavigation with FeatureExprLookup {
   import java.io.File
 
   private def getTmpFileName() = File.createTempFile("/tmp", ".dot")
-  def map2file(m: Map[Attributable, Set[Attributable]]) = {
+  def map2file(m: Map[AST, Set[AST]]) = {
     var dotstring = ""
     val fname = getTmpFileName()
     dotstring += "digraph \"" + fname.getName + "\" {" + "\n"
     dotstring += "node [shape=record];\n"
     for ((o, succs) <- m) {
-      val op = esc(PrettyPrinter.print(childAST(o)))
-      dotstring += "\"" + op + "\" [label=\"{{" + op + "}|" + esc(o.asInstanceOf[Opt[_]].feature.toString) + "}\"];\n"
-      for (succ <- succs) dotstring += "\"" + op + "\" -> \"" + esc(PrettyPrinter.print(childAST(succ))) + "\"\n"
+      val op = esc(PrettyPrinter.print(o))
+      dotstring += "\"" + op + "\" [label=\"{{" + op + "}|" + esc(featureExpr(o).toString()) + "}\"];\n"
+      for (succ <- succs) dotstring += "\"" + op + "\" -> \"" + esc(PrettyPrinter.print(succ)) + "\"\n"
     }
     dotstring = dotstring + "}\n"
     println(dotstring)
