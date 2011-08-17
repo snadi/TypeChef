@@ -19,6 +19,13 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     println(PrettyPrinter.print(ast.get.asInstanceOf[One[AST]].value))
   }
 
+  private def parsePrintASTGetAST(code: String) = {
+    val ast = parse(code, cp(p.compoundStatement)).get.asInstanceOf[One[AST]].value
+    println("AST: " + ast)
+    println(PrettyPrinter.print(ast))
+    ast
+  }
+
   private def parsePrintGetDefines(code: String) = {
     val ast = parse(code, cp(p.compoundStatement))
     println("AST: " + ast.get)
@@ -54,6 +61,50 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
 //    }
 //    """) should be(Set(Id("k"), Id("l")))
 //  }
+
+  test("forLoop") {
+    parsePrintAST("""
+    {
+      for(;;) {
+      }
+    }
+    """)
+  }
+
+  test("nestedForLoop") {
+    parsePrintAST("""
+    {
+      for(;;) {
+        for(;;) {
+          for(;;) {
+          }
+        }
+      }
+    }
+    """)
+  }
+
+  test("switchCase") {
+    parsePrintAST("""
+    {
+      switch(x) {
+      case 1: break;
+      case 2: break;
+      case 3: break;
+      default: break;
+      }
+    }
+    """)
+  }
+
+  test("doWhileLoop") {
+    parsePrintAST("""
+    {
+      do {
+      } while (k);
+    }
+    """)
+  }
 
   test("whileLoop") {
     parsePrintAST("""
@@ -265,11 +316,97 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
 
   test("conditional while statement") {
     val e0 = Opt(True, LabelStatement(Id("e0"), None))
-    val e1 = Opt(fx, WhileStatement(Id("k"), One(CompoundStatement(List()))))
+    val e11 = Opt(True, LabelStatement(Id("e11"), None))
+    val e12 = Opt(fy, LabelStatement(Id("e12"), None))
+    val e1 = Opt(fx, WhileStatement(Id("k"), One(
+      CompoundStatement(List(e11, e12)))))
     val e2 = Opt(True, LabelStatement(Id("e2"), None))
     val c = One(CompoundStatement(List(e0, e1, e2)))
     succ(e0) should be(Set(e1.entry, e2.entry))
-    succ(e1) should be(Set(e2.entry))
+    succ(e1) should be(Set(e2.entry, e11.entry, e12.entry))
     DotGraph.map2file(getAllSucc(e0.entry))
   }
+
+  test("conditional statements") {
+    val a = parsePrintASTGetAST("""
+    {
+      int a = 2;
+      int b = 200;
+      #ifdef A
+      while (a < b)
+      #endif
+      {
+        a++;
+        #ifdef B
+        b--;
+        #endif
+      }
+      #ifdef C
+      b = 20;
+      a = 30;
+      #endif
+      while (a > b) {
+        a++;
+      }
+      int c;
+    }
+    """)
+    DotGraph.map2file(getAllSucc(childAST(a.children.next)))
+  }
+
+//  test("boa hash.c") {
+//    val a = parsePrintASTGetAST("""
+//    {
+//          int i;
+//          hash_struct *temp;
+//          int total = 0;
+//          int count;
+//
+//          for (i = 0; i < MIME_HASHTABLE_SIZE; ++i) { /* these limits OK? */
+//              if (mime_hashtable[i]) {
+//                  count = 0;
+//                  temp = mime_hashtable[i];
+//                  while (temp) {
+//                      temp = temp->next;
+//                      ++count;
+//                  }
+//      #ifdef NOISY_SIGALRM
+//                  log_error_time();
+//                  fprintf(stderr, "mime_hashtable[%d] has %d entries\n",
+//                          i, count);
+//      #endif
+//                  total += count;
+//              }
+//          }
+//          log_error_time();
+//          fprintf(stderr, "mime_hashtable has %d total entries\n",
+//                  total);
+//
+//          total = 0;
+//          for (i = 0; i < PASSWD_HASHTABLE_SIZE; ++i) { /* these limits OK? */
+//              if (passwd_hashtable[i]) {
+//                  temp = passwd_hashtable[i];
+//                  count = 0;
+//                  while (temp) {
+//                      temp = temp->next;
+//                      ++count;
+//                  }
+//      #ifdef NOISY_SIGALRM
+//                  log_error_time();
+//                  fprintf(stderr, "passwd_hashtable[%d] has %d entries\n",
+//                          i, count);
+//      #endif
+//                  total += count;
+//              }
+//          }
+//
+//          log_error_time();
+//          fprintf(stderr, "passwd_hashtable has %d total entries\n",
+//                  total);
+//
+//      }
+//
+//    """)
+//    DotGraph.map2file(getAllSucc(childAST(a.children.next)))
+//  }
 }

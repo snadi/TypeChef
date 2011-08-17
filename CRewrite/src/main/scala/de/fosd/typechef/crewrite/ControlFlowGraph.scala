@@ -2,7 +2,7 @@ package de.fosd.typechef.crewrite
 
 import org.kiama.==>
 import org.kiama.attribution.Attributable
-import org.kiama.attribution.DynamicAttribution.attr
+import org.kiama.attribution.DynamicAttribution.{attr, childAttr}
 import de.fosd.typechef.parser.c._
 import de.fosd.typechef.conditional._
 import de.fosd.typechef.featureexpr._
@@ -20,27 +20,59 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     attr {
       case o: Opt[AST] => succ(o.entry)
       case w@WhileStatement(_, One(CompoundStatement(l))) => {
-        val b = groupOptBlocksEquivalence(l.map(_.entry))
-        val c = groupOptListsImplication(b)
-        val d = determineTypeOfOptLists(c)
-        val e = getSuccFromUnknown(d.reverse)
-        follow(w) ++ e
+        getSuccSameLevel(w) ++ getSuccNestedLevel(l.map(_.entry))
+      }
+      case w@ForStatement(_, _, _, One(CompoundStatement(l))) => {
+        getSuccSameLevel(w) ++ getSuccNestedLevel(l.map(_.entry))
+      }
+      case w@DoStatement(_, One(CompoundStatement(l))) => {
+        getSuccSameLevel(w) ++ getSuccNestedLevel(l.map(_.entry))
       }
       case s: Statement => {
-        val a = prevASTElems(s) ++ nextASTElems(s).drop(1)
-        val b = groupOptBlocksEquivalence(a)
-        val c = groupOptListsImplication(b)
-        val d = determineTypeOfOptLists(c)
-        val e = getSuccFromKnown(s, d.reverse)
-        e
+        getSuccSameLevel(s)
       }
+      case _ => Set()
     }
 
-  val follow: Attributable ==> Set[AST] = attr {
-    case w : WhileStatement
-    case _ => Set[AST]()
+  // we have to check possible successor nodes in at max three steps:
+  // 1. get direct successors with same annotation; if yes stop; if not goto 2.
+  // 2. get all annotated elements at the same level and check whether we find a definite set of successor nodes
+  //    if yes stop; if not goto 3.
+  // 3. get the parent of our node and determine successor nodes of it
+  private def getSuccSameLevel(s: AST) = {
+    val sandf = getFeatureGroupedASTElems(s)
+    val sos = getNextEqualAnnotatedSucc(s, sandf)
+    sos match {
+      // 1.
+      case Some(x) => Set(x)
+      case None => {
+        val foll = sandf.drop(1)
+        val folls = foll.map(_._1 != 1).foldLeft(false)(_ || _)
+        val succel = getSuccFromList(foll)
+        // 2.
+        if (folls) succel
+        // 3.
+        else succ(s.parent.next) ++ succel
+      }
+    }
   }
 
+  private def getSuccNestedLevel(l: List[AST]) = {
+    val wsandf = determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l)))
+    val wsandfs = wsandf.map(_._1 != 1).foldLeft(false)(_ || _)
+    val succel = getSuccFromList(wsandf)
+
+    if (wsandfs) succel
+    else succ(l.head.parent) ++ succel
+  }
+
+  val follow: Attributable ==> Set[AST] = attr { case _ => Set[AST]() }
+//  val follow: Attributable ==> Set[AST] =
+//    childAttr {
+//      case s => {
+//        case c@CompoundStatement()
+//      }
+//    }
 
   // pack similar elements into sublists
   private def pack[T](f: (T, T) => Boolean)(l: List[T]): List[List[T]] = {
@@ -58,8 +90,6 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   // group List[Opt[_]] according to implication
   // later one should imply the not of previous ones; therefore using l.reverse
   private def groupOptListsImplication(l: List[List[AST]]) = {
-
-
     pack[List[AST]]({ (x,y) => parentOpt(x.head).feature.implies(parentOpt(y.head).feature.not).isTautology()})(l.reverse)
   }
 
@@ -67,57 +97,59 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   // 0 -> only true values
   // 1 -> #if-(#elif)* block
   // 2 -> #if-(#elif)*-#else block
-  private def determineTypeOfOptLists(l: List[List[List[AST]]]): List[(Int, List[List[AST]])] = {
+  private def determineTypeOfGroupedOptLists(l: List[List[List[AST]]]): List[(Int, List[List[AST]])] = {
     l match {
       case (h::t) => {
         val f = h.map({ x => featureExpr(x.head)})
-        if (f.foldLeft(FeatureExpr.base)(_ and _).isTautology()) (0, h)::determineTypeOfOptLists(t)
-        else if (f.map(_.not).foldLeft(FeatureExpr.base)(_ and _).isContradiction()) (2, h)::determineTypeOfOptLists(t)
-             else (1, h)::determineTypeOfOptLists(t)
+        if (f.foldLeft(FeatureExpr.base)(_ and _).isTautology()) (0, h)::determineTypeOfGroupedOptLists(t)
+        else if (f.map(_.not).foldLeft(FeatureExpr.base)(_ and _).isContradiction()) (2, h)::determineTypeOfGroupedOptLists(t)
+             else (1, h)::determineTypeOfGroupedOptLists(t)
       }
       case Nil => List()
     }
   }
 
-  // similar to takeWhile except it takes one element more
-  private def takeWhileFollow[T](p: (T) => Boolean, l: List[T]): List[T] = {
-    l.takeWhile(p) ++ l.dropWhile(p).take(1)
+  // returns a list of previous and next AST elems grouped according to feature expressions
+  private def getFeatureGroupedASTElems(s: AST) = {
+    val l = prevASTElems(s) ++ nextASTElems(s).drop(1)
+    getSuccTailList(s, determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l))).reverse)
   }
 
   // get all succ nodes of o
-  private def getSuccFromKnown(o: AST, l: List[(Int, List[List[AST]])]): Set[AST] = {
-
-    // get the list with o and all following lists
-    // iterate each sublist of the incoming tuples (Int, List[List[Opt[_]]] combine equality check
-    // with foldLeft and drop tuples in which o does not occur
-    var rl = l.dropWhile(_._2.map(_.map(_.eq(o)).foldLeft(false)(_ || _)).foldLeft(false)(_ || _).unary_!)
-    var el = rl.head
-
-    // take all if blocks plus the next one
-    rl = takeWhileFollow[(Int, List[List[AST]])](_._1.==(1), rl.drop(1))
+  private def getNextEqualAnnotatedSucc(o: AST, l: List[(Int, List[List[AST]])]): Option[AST] = {
+    if (l.isEmpty) return None
+    var el = l.head
 
     // take tuple with o and examine it
     var il = el._2.filter(_.contains(o)).head.span(_.ne(o))._2.drop(1)
+    if (! il.isEmpty) Some(il.head)
+    else None
+  }
 
-    if (! il.isEmpty) Set(il.head)
-    //else if (rl.isEmpty) r = r ++ succ(o.parent)
-    else getSuccFromUnknown(rl)
+  // get list with o and all following lists
+  private def getSuccTailList(o: AST, l: List[(Int, List[List[AST]])]): List[(Int, List[List[AST]])] = {
+    // get the list with o and all following lists
+    // iterate each sublist of the incoming tuples (Int, List[List[Opt[_]]] combine equality check
+    // with foldLeft and drop tuples in which o does not occur
+    l.dropWhile(_._2.map(_.map(_.eq(o)).foldLeft(false)(_ || _)).foldLeft(false)(_ || _).unary_!)
   }
 
   // get all succ nodes of an unknown input node; useful for cases in which successor nodes occur
   // in a different block
-  private def getSuccFromUnknown(l: List[(Int, List[List[AST]])]) = {
+  private def getSuccFromList(l: List[(Int, List[List[AST]])]): Set[AST] = {
     var r = Set[AST]()
     for (e <- l) {
       e match {
         case (0, opts) => r = r ++ Set(opts.head.head)
         case (_, opts) => r = r ++ opts.map({ x=> Set(x.head)}).foldLeft(Set[AST]())(_ ++ _)
       }
+
+      if (e._1 == 2 || e._1 == 0) return r
     }
     r
   }
 
-  // get all succs
+  // determine recursively all succs
   def getAllSucc(i: AST) = {
     var r = Map[AST, Set[AST]]()
     var s = Set(i)

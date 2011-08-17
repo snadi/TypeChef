@@ -19,5 +19,16 @@ trait FeatureExprLookup {
         case e => featureExpr(e)
       }
   }
+
+  // all featureExpr from to root to the node
+  val featureExprList: Attributable ==> List[FeatureExpr] = attr {
+    case node =>
+      node.parent match {
+        case o@Opt(f, _) => featureExprList(o) ++ List(f)
+        case c: Choice[_] => featureExprList(c) ++ (if (c.thenBranch == node) List(c.feature) else List(c.feature.not))
+        case null => List()
+        case e => featureExprList(e)
+      }
+  }
 }
 
