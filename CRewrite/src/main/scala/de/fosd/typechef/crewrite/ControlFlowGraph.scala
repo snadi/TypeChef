@@ -9,17 +9,17 @@ import de.fosd.typechef.featureexpr._
 import java.io.PrintWriter
 
 abstract sealed class CFCompleteness
-case class CFComplete(s: Set[AST]) extends CFCompleteness
-case class CFIncomplete(s: Set[AST]) extends CFCompleteness
+case class CFComplete(s: List[AST]) extends CFCompleteness
+case class CFIncomplete(s: List[AST]) extends CFCompleteness
 
 // http://code.google.com/p/kiama/source/browse/src/org/kiama/example/dataflow/Dataflow.scala
 trait ControlFlow {
-  val succ: Attributable ==> Set[AST]
+  val succ: Attributable ==> List[AST]
 }
 
 trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNavigation {
 
-  val succ: Attributable ==> Set[AST] =
+  val succ: Attributable ==> List[AST] =
     attr {
       case o: Opt[AST] => succ(o.entry)
       case w@WhileStatement(_, One(CompoundStatement(l))) => {
@@ -37,16 +37,16 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       case s: Statement => {
         getSuccSameLevel(s)
       }
-      case _ => Set()
+      case _ => List()
     }
 
   // method to catch surrounding while, for, ... statement, which is the follow item of a last element in it's list
-  private def followUp(n: Attributable, fenv: Boolean = false): Option[Set[AST]] = {
+  private def followUp(n: Attributable, fenv: Boolean = false): Option[List[AST]] = {
     n.parent[Attributable] match {
       case c: CompoundStatement => followUp(c, true)
-      case w: WhileStatement => Some(Set(w))
-      case w: ForStatement => Some(Set(w))
-      case w: DoStatement => Some(Set(w))
+      case w: WhileStatement => Some(List(w))
+      case w: ForStatement => Some(List(w))
+      case w: DoStatement => Some(List(w))
       case s: Statement => if (fenv) None else followUp(s, fenv)
       case o: Opt[_] => followUp(o, fenv)
       case c: Conditional[_] => followUp(c, fenv)
@@ -64,13 +64,13 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     val sos = getNextEqualAnnotatedSucc(s, sandf)
     sos match {
       // 1.
-      case Some(x) => Set(x)
+      case Some(x) => List(x)
       case None => {
         val foll = sandf.drop(1)
         val succel = getSuccFromList(featureExpr(s), foll)
         succel match {
           case CFComplete(r) => r // 2.
-          case CFIncomplete(r) => r ++ followUp(s).getOrElse(Set()) // 3.
+          case CFIncomplete(r) => r ++ followUp(s).getOrElse(List()) // 3.
         }
       }
     }
@@ -82,7 +82,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
 
     succel match {
       case CFComplete(r) => r
-      case CFIncomplete(r) => r ++ followUp(l.head).getOrElse(Set())
+      case CFIncomplete(r) => r ++ followUp(l.head).getOrElse(List())
     }
   }
 
@@ -150,11 +150,11 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   // get all succ nodes of an unknown input node; useful for cases in which successor nodes occur
   // in a different block
   private def getSuccFromList(c: FeatureExpr, l: List[(Int, List[List[AST]])]): CFCompleteness = {
-    var r = Set[AST]()
+    var r = List[AST]()
     for (e <- l) {
       e match {
-        case (0, opts) => r = r ++ Set(opts.head.head)
-        case (_, opts) => r = r ++ opts.map({ x=> Set(x.head)}).foldLeft(Set[AST]())(_ ++ _)
+        case (0, opts) => r = r ++ List(opts.head.head)
+        case (_, opts) => r = r ++ opts.map({ x=> List(x.head)}).foldLeft(List[AST]())(_ ++ _)
       }
 
       if (e._1 == 2 || e._1 == 0) return CFComplete(r)
@@ -165,14 +165,20 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
 
   // determine recursively all succs
   def getAllSucc(i: AST) = {
-    var r = Map[AST, Set[AST]]()
-    var s = Set(i)
+    var r = List[(AST, List[AST])]()
+    var s = List(i)
+    var d = List[AST]()
+    var c: AST = null
 
     while (! s.isEmpty) {
-      var c = s.head
-      r = r ++ Map((c, succ(c)))
+      c = s.head
       s = s.drop(1)
-      s = s ++ r.getOrElse(c, Set()).diff(r.keys.toSet)
+
+      if (d.filter(_.eq(c)).isEmpty) {
+        r = (c, succ(c)) :: r
+        s = s ++ r.head._2
+        d = d ++ List(c)
+      }
     }
     r
   }
@@ -201,7 +207,7 @@ object DotGraph extends IOUtilities with ASTNavigation with FeatureExprLookup {
   import java.io.File
 
   private def getTmpFileName() = File.createTempFile("/tmp", ".dot")
-  def map2file(m: Map[AST, Set[AST]]) = {
+  def map2file(m: List[(AST, List[AST])]) = {
     var dotstring = ""
     val fname = getTmpFileName()
     dotstring += "digraph \"" + fname.getName + "\" {" + "\n"

@@ -327,8 +327,8 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       CompoundStatement(List(e11, e12)))))
     val e2 = Opt(True, LabelStatement(Id("e2"), None))
     val c = One(CompoundStatement(List(e0, e1, e2)))
-    succ(e0) should be(Set(e1.entry, e2.entry))
-    succ(e1) should be(Set(e2.entry, e11.entry))
+    succ(e0) should be(List(e1.entry, e2.entry))
+    succ(e1) should be(List(e2.entry, e11.entry))
     DotGraph.map2file(getAllSucc(e0.entry))
   }
 
