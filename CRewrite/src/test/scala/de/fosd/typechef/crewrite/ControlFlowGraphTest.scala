@@ -9,8 +9,7 @@ import org.scalatest.FunSuite
 import org.scalatest.Tag
 import org.scalatest.matchers.ShouldMatchers
 
-object forLoop extends Tag("forLoop")
-object whileLoop extends Tag("whileLoop")
+object totest extends Tag("totest")
 
 @RunWith(classOf[JUnitRunner])
 class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers with VariablesImpl with ControlFlowImpl {
@@ -67,7 +66,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
 //  }
 
 
-  test("forLoop", forLoop) {
+  test("forLoop") {
     parsePrintAST("""
     {
       for(;;) {
@@ -319,7 +318,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     DotGraph.map2file(getAllSucc(e0.entry))
   }
 
-  test("conditional while statement", whileLoop) {
+  test("conditional while statement") {
     val e0 = Opt(True, LabelStatement(Id("e0"), None))
     val e11 = Opt(True, LabelStatement(Id("e11"), None))
     val e12 = Opt(fy, LabelStatement(Id("e12"), None))
@@ -332,14 +331,32 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     DotGraph.map2file(getAllSucc(e0.entry))
   }
 
-  test("conditional statements", whileLoop) {
+  test("conditional for loop", totest) {
+    val a = parsePrintASTGetAST("""
+    {
+      int k = 2;
+      int i;
+      for(i=0;
+      #ifdef A
+      i<10
+      #endif
+      ;i++) {}
+    }
+    """)
+  }
+
+  test("conditional statements", totest) {
     val a = parsePrintASTGetAST("""
     {
       int a = 2;
       int b = 200;
+      while (
       #ifdef A
-      while (a < b)
+      a < b
+      #else
+      true
       #endif
+      )
       {
         a++;
         #ifdef B

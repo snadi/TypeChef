@@ -208,14 +208,15 @@ object DotGraph extends IOUtilities with ASTNavigation with FeatureExprLookup {
 
   private def getTmpFileName() = File.createTempFile("/tmp", ".dot")
   def map2file(m: List[(AST, List[AST])]) = {
+    println(m)
     var dotstring = ""
     val fname = getTmpFileName()
     dotstring += "digraph \"" + fname.getName + "\" {" + "\n"
     dotstring += "node [shape=record];\n"
     for ((o, succs) <- m) {
       val op = esc(PrettyPrinter.print(o))
-      dotstring += "\"" + op + "\" [label=\"{{" + op + "}|" + esc(featureExpr(o).toString()) + "}\"];\n"
-      for (succ <- succs) dotstring += "\"" + op + "\" -> \"" + esc(PrettyPrinter.print(succ)) + "\"\n"
+      dotstring += "\"" + System.identityHashCode(o) + "\" [label=\"{{" + op + "}|" + esc(featureExpr(o).toString()) + "}\"];\n"
+      for (succ <- succs) dotstring += "\"" + System.identityHashCode(o) + "\" -> \"" + System.identityHashCode(succ) + "\"\n"
     }
     dotstring = dotstring + "}\n"
     println(dotstring)
