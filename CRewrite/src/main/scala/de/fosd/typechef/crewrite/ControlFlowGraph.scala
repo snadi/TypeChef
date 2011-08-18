@@ -8,10 +8,13 @@ import de.fosd.typechef.conditional._
 import de.fosd.typechef.featureexpr._
 import java.io.PrintWriter
 
+abstract sealed class CFCompleteness
+case class CFComplete(s: Set[AST]) extends CFCompleteness
+case class CFIncomplete(s: Set[AST]) extends CFCompleteness
+
 // http://code.google.com/p/kiama/source/browse/src/org/kiama/example/dataflow/Dataflow.scala
 trait ControlFlow {
   val succ: Attributable ==> Set[AST]
-  val follow: Attributable ==> Set[AST]
 }
 
 trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNavigation {
@@ -28,11 +31,28 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       case w@DoStatement(_, One(CompoundStatement(l))) => {
         getSuccSameLevel(w) ++ getSuccNestedLevel(l.map(_.entry))
       }
+      case w@CompoundStatement(l) => {
+        getSuccSameLevel(w) ++ getSuccNestedLevel(l.map(_.entry))
+      }
       case s: Statement => {
         getSuccSameLevel(s)
       }
       case _ => Set()
     }
+
+  // method to catch surrounding while, for, ... statement, which is the follow item of a last element in it's list
+  private def followUp(n: Attributable, fenv: Boolean = false): Option[Set[AST]] = {
+    n.parent[Attributable] match {
+      case c: CompoundStatement => followUp(c, true)
+      case w: WhileStatement => Some(Set(w))
+      case w: ForStatement => Some(Set(w))
+      case w: DoStatement => Some(Set(w))
+      case s: Statement => if (fenv) None else followUp(s, fenv)
+      case o: Opt[_] => followUp(o, fenv)
+      case c: Conditional[_] => followUp(c, fenv)
+      case _ => None
+    }
+  }
 
   // we have to check possible successor nodes in at max three steps:
   // 1. get direct successors with same annotation; if yes stop; if not goto 2.
@@ -47,32 +67,24 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       case Some(x) => Set(x)
       case None => {
         val foll = sandf.drop(1)
-        val folls = foll.map(_._1 != 1).foldLeft(false)(_ || _)
-        val succel = getSuccFromList(foll)
-        // 2.
-        if (folls) succel
-        // 3.
-        else succ(s.parent.next) ++ succel
+        val succel = getSuccFromList(featureExpr(s), foll)
+        succel match {
+          case CFComplete(r) => r // 2.
+          case CFIncomplete(r) => r ++ followUp(s).getOrElse(Set()) // 3.
+        }
       }
     }
   }
 
   private def getSuccNestedLevel(l: List[AST]) = {
-    val wsandf = determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l)))
-    val wsandfs = wsandf.map(_._1 != 1).foldLeft(false)(_ || _)
-    val succel = getSuccFromList(wsandf)
+    val wsandf = determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l)).reverse)
+    val succel = getSuccFromList(featureExpr(parentOpt(l.head)), wsandf)
 
-    if (wsandfs) succel
-    else succ(l.head.parent) ++ succel
+    succel match {
+      case CFComplete(r) => r
+      case CFIncomplete(r) => r ++ followUp(l.head).getOrElse(Set())
+    }
   }
-
-  val follow: Attributable ==> Set[AST] = attr { case _ => Set[AST]() }
-//  val follow: Attributable ==> Set[AST] =
-//    childAttr {
-//      case s => {
-//        case c@CompoundStatement()
-//      }
-//    }
 
   // pack similar elements into sublists
   private def pack[T](f: (T, T) => Boolean)(l: List[T]): List[List[T]] = {
@@ -112,7 +124,8 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   // returns a list of previous and next AST elems grouped according to feature expressions
   private def getFeatureGroupedASTElems(s: AST) = {
     val l = prevASTElems(s) ++ nextASTElems(s).drop(1)
-    getSuccTailList(s, determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l))).reverse)
+    val d = determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l))).reverse
+    getSuccTailList(s, d)
   }
 
   // get all succ nodes of o
@@ -136,7 +149,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
 
   // get all succ nodes of an unknown input node; useful for cases in which successor nodes occur
   // in a different block
-  private def getSuccFromList(l: List[(Int, List[List[AST]])]): Set[AST] = {
+  private def getSuccFromList(c: FeatureExpr, l: List[(Int, List[List[AST]])]): CFCompleteness = {
     var r = Set[AST]()
     for (e <- l) {
       e match {
@@ -144,9 +157,10 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
         case (_, opts) => r = r ++ opts.map({ x=> Set(x.head)}).foldLeft(Set[AST]())(_ ++ _)
       }
 
-      if (e._1 == 2 || e._1 == 0) return r
+      if (e._1 == 2 || e._1 == 0) return CFComplete(r)
+      if (featureExpr(e._2.head.head).equivalentTo(c) && e._1 == 1) return CFComplete(r)
     }
-    r
+    CFIncomplete(r)
   }
 
   // determine recursively all succs
@@ -203,7 +217,7 @@ object DotGraph extends IOUtilities with ASTNavigation with FeatureExprLookup {
   }
 
   private def esc(i: String) = {
-    i.replace("\n", "\\\n").replace("{", "\\{").replace("}", "\\}")
+    i.replace("\n", "\\\n").replace("{", "\\{").replace("}", "\\}").replace("<", "\\<").replace(">", "\\>")
   }
 
 }

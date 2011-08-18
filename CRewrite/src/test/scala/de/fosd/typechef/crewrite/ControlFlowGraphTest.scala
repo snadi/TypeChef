@@ -6,7 +6,11 @@ import de.fosd.typechef.featureexpr._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
+import org.scalatest.Tag
 import org.scalatest.matchers.ShouldMatchers
+
+object forLoop extends Tag("forLoop")
+object whileLoop extends Tag("whileLoop")
 
 @RunWith(classOf[JUnitRunner])
 class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers with VariablesImpl with ControlFlowImpl {
@@ -62,7 +66,8 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
 //    """) should be(Set(Id("k"), Id("l")))
 //  }
 
-  test("forLoop") {
+
+  test("forLoop", forLoop) {
     parsePrintAST("""
     {
       for(;;) {
@@ -106,7 +111,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     """)
   }
 
-  test("whileLoop") {
+  test("simpleWhileLoop") {
     parsePrintAST("""
     {
       while (k) {
@@ -314,7 +319,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     DotGraph.map2file(getAllSucc(e0.entry))
   }
 
-  test("conditional while statement") {
+  test("conditional while statement", whileLoop) {
     val e0 = Opt(True, LabelStatement(Id("e0"), None))
     val e11 = Opt(True, LabelStatement(Id("e11"), None))
     val e12 = Opt(fy, LabelStatement(Id("e12"), None))
@@ -323,11 +328,11 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     val e2 = Opt(True, LabelStatement(Id("e2"), None))
     val c = One(CompoundStatement(List(e0, e1, e2)))
     succ(e0) should be(Set(e1.entry, e2.entry))
-    succ(e1) should be(Set(e2.entry, e11.entry, e12.entry))
+    succ(e1) should be(Set(e2.entry, e11.entry))
     DotGraph.map2file(getAllSucc(e0.entry))
   }
 
-  test("conditional statements") {
+  test("conditional statements", whileLoop) {
     val a = parsePrintASTGetAST("""
     {
       int a = 2;
