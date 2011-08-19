@@ -25,8 +25,8 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       case w@WhileStatement(_, One(CompoundStatement(l))) => {
         getSuccSameLevel(w) ++ getSuccNestedLevel(l.map(_.entry))
       }
-      case w@ForStatement(_, _, _, One(CompoundStatement(l))) => {
-        getSuccSameLevel(w) ++ getSuccNestedLevel(l.map(_.entry))
+      case w@ForStatement(init, _, _, _) => {
+        getSuccSameLevel(w) ++ List(init.get)
       }
       case w@DoStatement(_, One(CompoundStatement(l))) => {
         getSuccSameLevel(w) ++ getSuccNestedLevel(l.map(_.entry))
@@ -37,8 +37,19 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       case s: Statement => {
         getSuccSameLevel(s)
       }
-      case _ => List()
+      case t => following(t)
     }
+
+  val following: Attributable ==> List[AST] =
+    childAttr {
+      S => {
+        case t@ForStatement(S, c, _, _) => List(c.get)
+        case t@ForStatement(_, S, _, One(CompoundStatement(l))) => following(t) ++ getSuccNestedLevel(l.map(_.entry))
+        case t@ForStatement(_, c, S, _) => List(c.get)
+        case t@ForStatement(_, _, i, S) => List(i.get)
+        case _ => List()
+      }
+  }
 
   // method to catch surrounding while, for, ... statement, which is the follow item of a last element in it's list
   private def followUp(n: Attributable, fenv: Boolean = false): Option[List[AST]] = {

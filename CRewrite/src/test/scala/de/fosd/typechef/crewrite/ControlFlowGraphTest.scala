@@ -343,6 +343,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       ;i++) {}
     }
     """)
+    DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
   test("conditional statements", totest) {
