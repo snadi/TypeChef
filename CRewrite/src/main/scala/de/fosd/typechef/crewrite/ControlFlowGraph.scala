@@ -27,9 +27,10 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     a match {
       case o: Opt[AST] => succ(o.entry)
       case WhileStatement(e, _) => List(e)
-      case ForStatement(init, break, inc, One(CompoundStatement(l))) => {
+      case t@ForStatement(init, break, inc, One(CompoundStatement(l))) => {
         if (init.isDefined) List(init.get)
         else if (break.isDefined) List(break.get)
+        else if (l.isEmpty) List(t)
         else getSuccNestedLevel(l)
       }
       case DoStatement(_, One(CompoundStatement(l))) => getSuccNestedLevel(l)
@@ -60,11 +61,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     n.parent[Attributable] match {
       case c: CompoundStatement => followUp(c, true)
       case w @ WhileStatement(e, _) => Some(List(e))
-      case w @ ForStatement(_, c, i, One(CompoundStatement(l))) => {
-        if (i.isDefined) Some(List(i.get))
-        else if (c.isDefined) Some(List(c.get) ++ getSuccSameLevel(w))
-        else Some(getSuccNestedLevel(l))
-      }
+      case w : ForStatement => Some(List(w))
       case w @ DoStatement(e, One(CompoundStatement(l))) => Some(List(e))
       case s: Statement => if (fenv) None else followUp(s, fenv)
       case o: Opt[_] => followUp(o, fenv)
