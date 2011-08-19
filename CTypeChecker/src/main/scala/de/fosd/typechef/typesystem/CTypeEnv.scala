@@ -89,21 +89,34 @@ trait CTypeEnv extends CTypes with ASTNavigation with CDeclTyping with CBuiltIn 
         override def toString = env.toString
     }
 
-    val structEnv: AST ==> StructEnv = attr {
-        case e@Declaration(decls, _) =>
-            decls.foldRight(outerStructEnv(e))({
-                case (Opt(_, a), b: StructEnv) =>
-                    val s = a -> struct
-                    if (s.isDefined) b.add(s.get._1, s.get._2, s.get._3, s.get._4) else b
-            })
-        case e: AST => outerStructEnv(e)
+    val structEnv: AST ==> StructEnv = {
+        def addDeclaration(e: Declaration, outer: AST) = e.declSpecs.foldRight(outerStructEnv(outer))({
+            case (Opt(_, a), b: StructEnv) =>
+                var r = b
+                for (s <- (a -> struct))
+                    r = r.add(s._1, s._2, s._3, s._4)
+                r
+        })
+        attr {
+            case e@DeclarationStatement(d) => addDeclaration(d, e)
+            case e: Declaration => addDeclaration(e, e)
+            case e: AST => outerStructEnv(e)
+        }
     }
 
-    val struct: AST ==> Option[(String, Boolean, FeatureExpr, ConditionalTypeMap)] = attr {
+    type StructData = (String, Boolean, FeatureExpr, ConditionalTypeMap)
+
+    val struct: AST ==> List[StructData] = attr {
         case e@StructOrUnionSpecifier(isUnion, Some(Id(name)), attributes) =>
-            Some((name, isUnion, e -> featureExpr, parseStructMembers(attributes)))
-        case _ => None
+            List((name, isUnion, e -> featureExpr, parseStructMembers(attributes))) ++ innerStructs(attributes)
+        case e@StructOrUnionSpecifier(_, None, attributes) =>
+            innerStructs(attributes)
+        case _ => Nil
     }
+    private def innerStructs(fields: List[Opt[StructDeclaration]]): List[StructData] =
+        fields.flatMap(e =>
+            (for (Opt(_, spec) <- e.entry.qualifierList) yield spec -> struct).flatten
+        )
 
 
     protected def outerStructEnv(e: AST): StructEnv =
