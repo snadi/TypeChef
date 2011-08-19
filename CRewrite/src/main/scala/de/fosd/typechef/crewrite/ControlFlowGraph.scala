@@ -14,41 +14,43 @@ case class CFIncomplete(s: List[AST]) extends CFCompleteness
 
 // http://code.google.com/p/kiama/source/browse/src/org/kiama/example/dataflow/Dataflow.scala
 trait ControlFlow {
-  val succ: Attributable ==> List[AST]
+  def succ(a: Attributable): List[AST]
+  def following(a: Attributable): List[AST]
 }
 
 trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNavigation {
 
-  val succ: Attributable ==> List[AST] =
-    attr {
+  private implicit def optList2ASTList(l: List[Opt[AST]]) = l.map(_.entry)
+  private implicit def opt2AST(s: Opt[AST]) = s.entry
+
+  def succ(a: Attributable): List[AST] = {
+    a match {
       case o: Opt[AST] => succ(o.entry)
-      case w@WhileStatement(_, One(CompoundStatement(l))) => {
-        getSuccSameLevel(w) ++ getSuccNestedLevel(l.map(_.entry))
+      case w@WhileStatement(_, One(CompoundStatement(l))) => getSuccSameLevel(w) ++ getSuccNestedLevel(l)
+      case w@ForStatement(init, break, inc, One(CompoundStatement(l))) => {
+        if (init.isDefined) List(init.get)
+        else if (break.isDefined) List(break.get)
+        else getSuccNestedLevel(l)
       }
-      case w@ForStatement(init, _, _, _) => {
-        getSuccSameLevel(w) ++ List(init.get)
-      }
-      case w@DoStatement(_, One(CompoundStatement(l))) => {
-        getSuccSameLevel(w) ++ getSuccNestedLevel(l.map(_.entry))
-      }
-      case w@CompoundStatement(l) => {
-        getSuccSameLevel(w) ++ getSuccNestedLevel(l.map(_.entry))
-      }
-      case s: Statement => {
-        getSuccSameLevel(s)
-      }
+      case w@DoStatement(_, One(CompoundStatement(l))) => getSuccNestedLevel(l)
+      case w@CompoundStatement(l) => getSuccSameLevel(w) ++ getSuccNestedLevel(l)
+      case s: Statement => getSuccSameLevel(s)
       case t => following(t)
     }
+  }
 
-  val following: Attributable ==> List[AST] =
-    childAttr {
-      S => {
-        case t@ForStatement(S, c, _, _) => List(c.get)
-        case t@ForStatement(_, S, _, One(CompoundStatement(l))) => following(t) ++ getSuccNestedLevel(l.map(_.entry))
-        case t@ForStatement(_, c, S, _) => List(c.get)
-        case t@ForStatement(_, _, i, S) => List(i.get)
-        case _ => List()
+  def following(a: Attributable): List[AST] = {
+    parentAST(a.asInstanceOf[AST]) match {
+      case t@ForStatement(Some(e), c, _, One(CompoundStatement(l))) if e.eq(a) => if (c.isDefined) List(c.get) else getSuccNestedLevel(l)
+      case t@ForStatement(_, Some(e), _, One(CompoundStatement(l))) if e.eq(a) => getSuccSameLevel(t) ++ getSuccNestedLevel(l)
+      case t@ForStatement(_, c, Some(e), One(CompoundStatement(l))) if e.eq(a) => if (c.isDefined) List(c.get) else getSuccNestedLevel(l)
+      case t@ForStatement(_, c, i, e) if e.eq(a)=> {
+        if (i.isDefined) List(i.get)
+        else if (c.isDefined) List(c.get)
+        else getSuccNestedLevel(a.asInstanceOf[One[AST]].value.asInstanceOf[CompoundStatement].innerStatements)
       }
+      case _ => List()
+    }
   }
 
   // method to catch surrounding while, for, ... statement, which is the follow item of a last element in it's list
@@ -56,7 +58,11 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     n.parent[Attributable] match {
       case c: CompoundStatement => followUp(c, true)
       case w: WhileStatement => Some(List(w))
-      case w: ForStatement => Some(List(w))
+      case w @ ForStatement(_, c, i, One(CompoundStatement(l))) => {
+        if (i.isDefined) Some(List(i.get))
+        else if (c.isDefined) Some(List(c.get) ++ getSuccSameLevel(w))
+        else Some(getSuccNestedLevel(l))
+      }
       case w: DoStatement => Some(List(w))
       case s: Statement => if (fenv) None else followUp(s, fenv)
       case o: Opt[_] => followUp(o, fenv)
@@ -88,12 +94,15 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   }
 
   private def getSuccNestedLevel(l: List[AST]) = {
-    val wsandf = determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l)).reverse)
-    val succel = getSuccFromList(featureExpr(parentOpt(l.head)), wsandf)
+    if (l.isEmpty) List()
+    else {
+      val wsandf = determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l)).reverse)
+      val succel = getSuccFromList(featureExpr(parentOpt(l.head)), wsandf)
 
-    succel match {
-      case CFComplete(r) => r
-      case CFIncomplete(r) => r ++ followUp(l.head).getOrElse(List())
+      succel match {
+        case CFComplete(r) => r
+        case CFIncomplete(r) => r ++ followUp(l.head).getOrElse(List())
+      }
     }
   }
 
@@ -113,7 +122,13 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   // group List[Opt[_]] according to implication
   // later one should imply the not of previous ones; therefore using l.reverse
   private def groupOptListsImplication(l: List[List[AST]]) = {
-    pack[List[AST]]({ (x,y) => parentOpt(x.head).feature.implies(parentOpt(y.head).feature.not).isTautology()})(l.reverse)
+    def checkImplication(a: AST, b: AST) = {
+      val as = featureExprSet(a)
+      val bs = featureExprSet(b)
+      val cs = as.intersect(bs)
+      as.--(cs).foldLeft(FeatureExpr.base)(_ and _).implies(bs.--(cs).foldLeft(FeatureExpr.base)(_ and _).not).isTautology()
+    }
+    pack[List[AST]]({ (x,y) => checkImplication(x.head, y.head)})(l.reverse)
   }
 
   // get type of List[List[AST]:

@@ -21,13 +21,13 @@ trait FeatureExprLookup {
   }
 
   // all featureExpr from to root to the node
-  val featureExprList: Attributable ==> List[FeatureExpr] = attr {
+  val featureExprSet: Attributable ==> Set[FeatureExpr] = attr {
     case node =>
       node.parent match {
-        case o@Opt(f, _) => featureExprList(o) ++ List(f)
-        case c: Choice[_] => featureExprList(c) ++ (if (c.thenBranch == node) List(c.feature) else List(c.feature.not))
-        case null => List()
-        case e => featureExprList(e)
+        case o@Opt(f, _) => featureExprSet(o) ++ Set(f)
+        case c: Choice[_] => featureExprSet(c) ++ (if (c.thenBranch == node) Set(c.feature) else Set(c.feature.not))
+        case null => Set()
+        case e => featureExprSet(e)
       }
   }
 }

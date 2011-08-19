@@ -331,7 +331,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     DotGraph.map2file(getAllSucc(e0.entry))
   }
 
-  test("conditional for loop", totest) {
+  test("conditional for loop") {
     val a = parsePrintASTGetAST("""
     {
       int k = 2;
@@ -340,13 +340,38 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       #ifdef A
       i<10
       #endif
-      ;i++) {}
+      ;i++) { j++; }
+      int j;
     }
     """)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
-  test("conditional statements", totest) {
+  test("conditional for loop elems", totest) {
+    val e0 = Opt(True, LabelStatement(Id("e0"), None))
+    val e1 = Opt(fx, ForStatement(
+      Some(AssignExpr(Id("i"),"=",Constant("0"))),
+      Some(AssignExpr(Id("i"),"=",Constant("2"))),
+      Some(PostfixExpr(Id("i"),SimplePostfixSuffix("++"))),
+      One(CompoundStatement(List(Opt(fx,ExprStatement(PostfixExpr(Id("j"),SimplePostfixSuffix("++")))))))))
+    val e2 = Opt(True, LabelStatement(Id("e2"), None))
+    val c = One(CompoundStatement(List(e0, e1, e2)))
+    DotGraph.map2file(getAllSucc(e0.entry))
+  }
+
+  test("conditional statements increment") {
+    val a = parsePrintASTGetAST("""
+    {
+      int k = 0;
+      k++;
+      k++;
+      k++;
+    }
+    """)
+    DotGraph.map2file(getAllSucc(childAST(a.children.next)))
+  }
+
+  test("conditional statements") {
     val a = parsePrintASTGetAST("""
     {
       int a = 2;
