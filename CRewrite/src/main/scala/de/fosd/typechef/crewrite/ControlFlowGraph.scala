@@ -26,13 +26,13 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   def succ(a: Attributable): List[AST] = {
     a match {
       case o: Opt[AST] => succ(o.entry)
-      case w@WhileStatement(_, One(CompoundStatement(l))) => getSuccSameLevel(w) ++ getSuccNestedLevel(l)
-      case w@ForStatement(init, break, inc, One(CompoundStatement(l))) => {
+      case WhileStatement(e, _) => List(e)
+      case ForStatement(init, break, inc, One(CompoundStatement(l))) => {
         if (init.isDefined) List(init.get)
         else if (break.isDefined) List(break.get)
         else getSuccNestedLevel(l)
       }
-      case w@DoStatement(_, One(CompoundStatement(l))) => getSuccNestedLevel(l)
+      case DoStatement(_, One(CompoundStatement(l))) => getSuccNestedLevel(l)
       case w@CompoundStatement(l) => getSuccSameLevel(w) ++ getSuccNestedLevel(l)
       case s: Statement => getSuccSameLevel(s)
       case t => following(t)
@@ -49,6 +49,8 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
         else if (c.isDefined) List(c.get)
         else getSuccNestedLevel(a.asInstanceOf[One[AST]].value.asInstanceOf[CompoundStatement].innerStatements)
       }
+      case t@WhileStatement(e, One(CompoundStatement(l))) if e.eq(a) => getSuccNestedLevel(l) ++ getSuccSameLevel(t)
+      case t@DoStatement(e, One(CompoundStatement(l))) if e.eq(a) => getSuccNestedLevel(l) ++ getSuccSameLevel(t)
       case _ => List()
     }
   }
@@ -57,13 +59,13 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   private def followUp(n: Attributable, fenv: Boolean = false): Option[List[AST]] = {
     n.parent[Attributable] match {
       case c: CompoundStatement => followUp(c, true)
-      case w: WhileStatement => Some(List(w))
+      case w @ WhileStatement(e, _) => Some(List(e))
       case w @ ForStatement(_, c, i, One(CompoundStatement(l))) => {
         if (i.isDefined) Some(List(i.get))
         else if (c.isDefined) Some(List(c.get) ++ getSuccSameLevel(w))
         else Some(getSuccNestedLevel(l))
       }
-      case w: DoStatement => Some(List(w))
+      case w @ DoStatement(e, One(CompoundStatement(l))) => Some(List(e))
       case s: Statement => if (fenv) None else followUp(s, fenv)
       case o: Opt[_] => followUp(o, fenv)
       case c: Conditional[_] => followUp(c, fenv)

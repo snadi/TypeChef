@@ -359,6 +359,48 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     DotGraph.map2file(getAllSucc(e0.entry))
   }
 
+  test("conditional for loop alternative", totest) {
+    val a = parsePrintASTGetAST("""
+    {
+      int i;
+      for(;;) {
+      #ifdef A
+      int a;
+      #else
+      double a;
+      #endif
+      }
+      int j;
+    }
+    """)
+    DotGraph.map2file(getAllSucc(childAST(a.children.next)))
+  }
+
+  test("conditional for loop infinite", totest) {
+    val a = parsePrintASTGetAST("""
+    {
+      int i;
+      for(;;) {
+      }
+      int j;
+    }
+    """)
+    DotGraph.map2file(getAllSucc(childAST(a.children.next)))
+  }
+
+  test("conditional for loop infinite", totest) {
+    val a = parsePrintASTGetAST("""
+    {
+      int i = 0;
+      for(;;) {
+        i++;
+      }
+      int j;
+    }
+    """)
+    DotGraph.map2file(getAllSucc(childAST(a.children.next)))
+  }
+
   test("conditional statements increment") {
     val a = parsePrintASTGetAST("""
     {
