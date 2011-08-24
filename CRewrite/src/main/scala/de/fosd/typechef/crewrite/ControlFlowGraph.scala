@@ -26,14 +26,17 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   def succ(a: Attributable): List[AST] = {
     a match {
       case o: Opt[AST] => succ(o.entry)
-      case WhileStatement(e, _) => List(e)
       case t@ForStatement(init, break, inc, One(CompoundStatement(l))) => {
         if (init.isDefined) List(init.get)
         else if (break.isDefined) List(break.get)
         else if (l.isEmpty) List(t)
         else getSuccNestedLevel(l)
       }
+      case WhileStatement(e, _) => List(e)
       case DoStatement(_, One(CompoundStatement(l))) => getSuccNestedLevel(l)
+      case t@IfStatement(c, _, _, _) => List(c)
+      case t@ElifStatement(c, _) => List(c)
+      case ReturnStatement(_) => List()
       case w@CompoundStatement(l) => getSuccSameLevel(w) ++ getSuccNestedLevel(l)
       case s: Statement => getSuccSameLevel(s)
       case t => following(t)
@@ -52,20 +55,29 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       }
       case t@WhileStatement(e, One(CompoundStatement(l))) if e.eq(a) => getSuccNestedLevel(l) ++ getSuccSameLevel(t)
       case t@DoStatement(e, One(CompoundStatement(l))) if e.eq(a) => getSuccNestedLevel(l) ++ getSuccSameLevel(t)
+      case t@IfStatement(e, One(CompoundStatement(l)), elif, el) if e.eq(a) => {
+        var res = getSuccNestedLevel(l)
+        if (! elif.isEmpty) res = res ++ getSuccNestedLevel(elif)
+        if (el.isDefined) res = res ++ getSuccNestedLevel(el.get.asInstanceOf[One[AST]].value.asInstanceOf[CompoundStatement].innerStatements)
+        res
+      }
+      case t@ElifStatement(e, One(CompoundStatement(l))) if e.eq(a) => getSuccNestedLevel(l) ++ getSuccSameLevel(t)
       case _ => List()
     }
   }
 
   // method to catch surrounding while, for, ... statement, which is the follow item of a last element in it's list
-  private def followUp(n: Attributable, fenv: Boolean = false): Option[List[AST]] = {
+  private def followUp(n: Attributable): Option[List[AST]] = {
     n.parent[Attributable] match {
-      case c: CompoundStatement => followUp(c, true)
+      case c: CompoundStatement => followUp(c)
       case w @ WhileStatement(e, _) => Some(List(e))
       case w : ForStatement => Some(List(w))
       case w @ DoStatement(e, One(CompoundStatement(l))) => Some(List(e))
-      case s: Statement => if (fenv) None else followUp(s, fenv)
-      case o: Opt[_] => followUp(o, fenv)
-      case c: Conditional[_] => followUp(c, fenv)
+      case w @ IfStatement(_, _, _, _) => Some(getSuccSameLevel(w))
+      case w @ ElifStatement(_, _) => followUp(w)
+      case o: Opt[_] => followUp(o)
+      case c: Conditional[_] => followUp(c)
+      case s: Statement => followUp(s)
       case _ => None
     }
   }
@@ -249,7 +261,7 @@ object DotGraph extends IOUtilities with ASTNavigation with FeatureExprLookup {
   }
 
   private def esc(i: String) = {
-    i.replace("\n", "\\\n").replace("{", "\\{").replace("}", "\\}").replace("<", "\\<").replace(">", "\\>")
+    i.replace("\n", "\\n").replace("{", "\\{").replace("}", "\\}").replace("<", "\\<").replace(">", "\\>")
   }
 
 }

@@ -128,9 +128,11 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       if (k < 3) {
         k = -1;
       }
+      #ifdef A
       else if (k = 3) {
         k = 0;
       }
+      #endif
       else {
         k = 1;
       }
@@ -342,6 +344,24 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       #endif
       ;i++) { j++; }
       int j;
+    }
+    """)
+    DotGraph.map2file(getAllSucc(childAST(a.children.next)))
+  }
+
+  test("conditional ifstatement", totest) {
+    val a = parsePrintASTGetAST("""
+    {
+      int k = 3;
+      if (k < 2) { k = 2; }
+      #ifdef A
+      else if (k < 5) { k = 5; }
+      #endif
+      #ifdef B
+      else if (k < 7) { k = 7; }
+      #endif
+      else { k = 10; }
+      int l = 3;
     }
     """)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
