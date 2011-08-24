@@ -15,7 +15,6 @@ case class CFIncomplete(s: List[AST]) extends CFCompleteness
 // http://code.google.com/p/kiama/source/browse/src/org/kiama/example/dataflow/Dataflow.scala
 trait ControlFlow {
   def succ(a: Attributable): List[AST]
-  def following(a: Attributable): List[AST]
 }
 
 trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNavigation {
@@ -23,42 +22,69 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   private implicit def optList2ASTList(l: List[Opt[AST]]) = l.map(_.entry)
   private implicit def opt2AST(s: Opt[AST]) = s.entry
 
+  // handling of successor determination of a single statement
   def succ(a: Attributable): List[AST] = {
     a match {
       case o: Opt[AST] => succ(o.entry)
-      case t@ForStatement(init, break, inc, One(CompoundStatement(l))) => {
+      case t@ForStatement(init, break, inc, b) => {
         if (init.isDefined) List(init.get)
         else if (break.isDefined) List(break.get)
-        else if (l.isEmpty) List(t)
-        else getSuccNestedLevel(l)
+        else simpleOrCompoundStatement(t, b)
       }
       case WhileStatement(e, _) => List(e)
-      case DoStatement(_, One(CompoundStatement(l))) => getSuccNestedLevel(l)
+      case t@DoStatement(_, b) => simpleOrCompoundStatement(t, b)
       case t@IfStatement(c, _, _, _) => List(c)
       case t@ElifStatement(c, _) => List(c)
+      case SwitchStatement(c, _) => List(c)
       case ReturnStatement(_) => List()
       case w@CompoundStatement(l) => getSuccSameLevel(w) ++ getSuccNestedLevel(l)
+      case w@BreakStatement() => {
+        val f = followUp(w)
+        if (f.isDefined) getSuccSameLevel(f.get.head) else List()
+      }
+      case w@ContinueStatement() => {
+        val f = followUp(w)
+        if (f.isDefined) f.get.head match {
+          case t@ForStatement(_, break, inc, b) => {
+            if (inc.isDefined) List(inc.get)
+            else if (break.isDefined) List(break.get)
+            else simpleOrCompoundStatement(t, b)
+          }
+          case WhileStatement(c, _) => List(c)
+          case DoStatement(c, _) => List(c)
+          case _ => List()
+        } else List()
+      }
       case s: Statement => getSuccSameLevel(s)
       case t => following(t)
     }
   }
 
-  def following(a: Attributable): List[AST] = {
+  private def simpleOrCompoundStatement(p: Statement, c: Conditional[_]) = {
+    c.asInstanceOf[One[_]].value match {
+      case CompoundStatement(l) => if (l.isEmpty) List(p) else getSuccNestedLevel(l)
+      case s: Statement => List(s)
+    }
+  }
+
+  // handling of successor determination of nested structures, such as for, while, ... and next element in a list
+  // of statements
+  private def following(a: Attributable): List[AST] = {
     parentAST(a.asInstanceOf[AST]) match {
-      case t@ForStatement(Some(e), c, _, One(CompoundStatement(l))) if e.eq(a) => if (c.isDefined) List(c.get) else getSuccNestedLevel(l)
-      case t@ForStatement(_, Some(e), _, One(CompoundStatement(l))) if e.eq(a) => getSuccSameLevel(t) ++ getSuccNestedLevel(l)
-      case t@ForStatement(_, c, Some(e), One(CompoundStatement(l))) if e.eq(a) => if (c.isDefined) List(c.get) else getSuccNestedLevel(l)
+      case t@ForStatement(Some(e), c, _, b) if e.eq(a) => if (c.isDefined) List(c.get) else simpleOrCompoundStatement(t, b)
+      case t@ForStatement(_, Some(e), _, b) if e.eq(a) => getSuccSameLevel(t) ++ simpleOrCompoundStatement (t, b)
+      case t@ForStatement(_, c, Some(e), b) if e.eq(a) => if (c.isDefined) List(c.get) else simpleOrCompoundStatement(t, b)
       case t@ForStatement(_, c, i, e) if e.eq(a)=> {
         if (i.isDefined) List(i.get)
         else if (c.isDefined) List(c.get)
-        else getSuccNestedLevel(a.asInstanceOf[One[AST]].value.asInstanceOf[CompoundStatement].innerStatements)
+        else simpleOrCompoundStatement(t, e)
       }
-      case t@WhileStatement(e, One(CompoundStatement(l))) if e.eq(a) => getSuccNestedLevel(l) ++ getSuccSameLevel(t)
-      case t@DoStatement(e, One(CompoundStatement(l))) if e.eq(a) => getSuccNestedLevel(l) ++ getSuccSameLevel(t)
-      case t@IfStatement(e, One(CompoundStatement(l)), elif, el) if e.eq(a) => {
-        var res = getSuccNestedLevel(l)
+      case t@WhileStatement(e, b) if e.eq(a) => simpleOrCompoundStatement(t, b) ++ getSuccSameLevel(t)
+      case t@DoStatement(e, b) if e.eq(a) => simpleOrCompoundStatement(t, b) ++ getSuccSameLevel(t)
+      case t@IfStatement(e, tb, elif, el) if e.eq(a) => {
+        var res = simpleOrCompoundStatement(t, tb)
         if (! elif.isEmpty) res = res ++ getSuccNestedLevel(elif)
-        if (el.isDefined) res = res ++ getSuccNestedLevel(el.get.asInstanceOf[One[AST]].value.asInstanceOf[CompoundStatement].innerStatements)
+        if (el.isDefined) res = res ++ simpleOrCompoundStatement(t, el.get)
         res
       }
       case t@ElifStatement(e, One(CompoundStatement(l))) if e.eq(a) => getSuccNestedLevel(l) ++ getSuccSameLevel(t)
