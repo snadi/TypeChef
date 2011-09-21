@@ -126,8 +126,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       // 1.
       case Some(x) => List(x)
       case None => {
-        val foll = sandf.drop(1)
-        val succel = getSuccFromList(featureExpr(s), foll)
+        val succel = getSuccFromList(featureExpr(s), sandf.drop(1))
         succel match {
           case CFComplete(r) => r // 2.
           case CFIncomplete(r) => r ++ followUp(s).getOrElse(List()) // 3.
@@ -171,7 +170,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       val cs = as.intersect(bs)
       as.--(cs).foldLeft(FeatureExpr.base)(_ and _).implies(bs.--(cs).foldLeft(FeatureExpr.base)(_ and _).not).isTautology()
     }
-    pack[List[AST]]({ (x,y) => checkImplication(x.head, y.head)})(l.reverse)
+    pack[List[AST]]({ (x,y) => checkImplication(x.head, y.head)})(l.reverse).reverse
   }
 
   // get type of List[List[AST]:
@@ -183,7 +182,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       case (h::t) => {
         val f = h.map({ x => featureExpr(x.head)})
         if (f.foldLeft(FeatureExpr.base)(_ and _).isTautology()) (0, h)::determineTypeOfGroupedOptLists(t)
-        else if (f.map(_.not).foldLeft(FeatureExpr.base)(_ and _).isContradiction()) (2, h)::determineTypeOfGroupedOptLists(t)
+        else if (f.map(_.not).foldLeft(FeatureExpr.base)(_ and _).isContradiction()) (2, h.reverse)::determineTypeOfGroupedOptLists(t)
              else (1, h)::determineTypeOfGroupedOptLists(t)
       }
       case Nil => List()
@@ -193,7 +192,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   // returns a list of previous and next AST elems grouped according to feature expressions
   private def getFeatureGroupedASTElems(s: AST) = {
     val l = prevASTElems(s) ++ nextASTElems(s).drop(1)
-    val d = determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l))).reverse
+    val d = determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l)))
     getSuccTailList(s, d)
   }
 

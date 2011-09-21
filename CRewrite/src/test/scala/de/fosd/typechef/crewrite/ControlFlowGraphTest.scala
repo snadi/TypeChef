@@ -9,6 +9,7 @@ import org.scalatest.FunSuite
 import org.scalatest.Tag
 import org.scalatest.matchers.ShouldMatchers
 
+object simpletest extends Tag("simpletest")
 object totest extends Tag("totest")
 
 @RunWith(classOf[JUnitRunner])
@@ -262,7 +263,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
 //
 //  }
 
-  ignore("conditional labelstatements with sequence of annotated elements") {
+  test("conditional labelstatements with sequence of annotated elements") {
     val e1 = Opt(True, LabelStatement(Id("e1"), None))
     val e2 = Opt(fx, LabelStatement(Id("e2"), None))
     val e3 = Opt(fx, LabelStatement(Id("e3"), None))
@@ -276,7 +277,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     DotGraph.map2file(getAllSucc(e1.entry))
   }
 
-  ignore("conditional labelstatements with if and if-else blocks") {
+  test("conditional labelstatements with if and if-else blocks") {
     val e0 = Opt(fx, LabelStatement(Id("e0"), None))
     val e1 = Opt(True, LabelStatement(Id("e1"), None))
     val e2 = Opt(True, LabelStatement(Id("e2"), None))
@@ -300,7 +301,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     DotGraph.map2file(getAllSucc(e0.entry))
   }
 
-  ignore("conditional declaration statement") {
+  test("conditional declaration statement") {
     val e0 = Opt(True, LabelStatement(Id("e0"), None))
     val e1 = Opt(fx,
       DeclarationStatement(
@@ -320,16 +321,17 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     DotGraph.map2file(getAllSucc(e0.entry))
   }
 
-  ignore("conditional while statement") {
+  test("conditional while statement", simpletest) {
     val e0 = Opt(True, LabelStatement(Id("e0"), None))
     val e11 = Opt(True, LabelStatement(Id("e11"), None))
     val e12 = Opt(fy, LabelStatement(Id("e12"), None))
-    val e1 = Opt(fx, WhileStatement(Id("k"), One(
-      CompoundStatement(List(e11, e12)))))
+    val e1c = Id("k")
+    val e1 = Opt(fx, WhileStatement(e1c, One(CompoundStatement(List(e11, e12)))))
     val e2 = Opt(True, LabelStatement(Id("e2"), None))
     val c = One(CompoundStatement(List(e0, e1, e2)))
     succ(e0) should be(List(e1.entry, e2.entry))
-    succ(e1) should be(List(e2.entry, e11.entry))
+    succ(e1) should be(List(e1c))
+    succ(e1c) should be(List(e11.entry, e2.entry))
     DotGraph.map2file(getAllSucc(e0.entry))
   }
 
