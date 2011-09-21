@@ -22,6 +22,14 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   private implicit def optList2ASTList(l: List[Opt[AST]]) = l.map(_.entry)
   private implicit def opt2AST(s: Opt[AST]) = s.entry
 
+  implicit def list2Conditional(s: List[AST]): TConditional[AST] = convertList2Conditional(s)
+
+  def convertList2Conditional(s: List[AST]): TConditional[AST] = {
+    if (s.size == 1) return TOne(s.head)
+    if (s.size == 2) return TChoice(parentOpt(s.head).feature, TOne(s.head), TOne(s.tail.head))
+    return TChoice(parentOpt(s.head).feature, TOne(s.head), convertList2Conditional(s.tail))
+  }
+
   // handling of successor determination of a single statement
   def succ(a: Attributable): List[AST] = {
     a match {
@@ -59,7 +67,6 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       case t => following(t)
     }
   }
-
   private def simpleOrCompoundStatement(p: Statement, c: Conditional[_]) = {
     c.asInstanceOf[One[_]].value match {
       case CompoundStatement(l) => if (l.isEmpty) List(p) else getSuccNestedLevel(l)
