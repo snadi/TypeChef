@@ -22,6 +22,12 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   private implicit def optList2ASTList(l: List[Opt[AST]]) = l.map(_.entry)
   private implicit def opt2AST(s: Opt[AST]) = s.entry
 
+  implicit def list2TChoice(l: List[AST]): TConditional[AST] = {
+    if (l.size == 1) TOne(l.head)
+    else if (l.size == 2) TChoice(featureExpr(l.head), TOne(l.head), TOne(l.tail.head))
+    else TChoice(featureExpr(l.head), TOne(l.head), list2TChoice(l.tail))
+  }
+
   // handling of successor determination of a single statement
   def succ(a: Attributable): List[AST] = {
     a match {
