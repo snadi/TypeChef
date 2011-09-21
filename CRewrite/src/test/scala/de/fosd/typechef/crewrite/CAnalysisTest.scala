@@ -18,6 +18,7 @@ class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CA
   private def parsePrintCC(code: String) = {
     val ast = parse(code, cp(p.compoundStatement)).get.asInstanceOf[One[AST]].value
     println(ast)
+    println(PrettyPrinter.print(ast))
     println("cyclomatic complexity: " + cc(ast))
   }
 
@@ -26,10 +27,8 @@ class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CA
     {
       #ifdef A
       int a;
-      #elif defined(B)
-      int b;
       #else
-      int c;
+      int b;
       #endif
     }
     """)
