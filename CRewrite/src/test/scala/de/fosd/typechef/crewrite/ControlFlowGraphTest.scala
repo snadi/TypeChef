@@ -42,31 +42,6 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     succ(ast.get.asInstanceOf[One[AST]].value)
   }
 
-//  private def parsePrintGetPred(code: String) = {
-//    val ast = parse(code, cp(p.compoundStatement))
-//    println("AST: " + ast.get)
-//    pred(ast.get.asInstanceOf[One[AST]].value)
-//  }
-
-//  test("twoDeclarations") {
-//    parsePrintGetDefines("""
-//    {
-//      int k = 2;
-//      int l = 3;
-//    }
-//    """) should be(Set(Id("k"), Id("l")))
-//  }
-//
-//  test("multipleDeclarations") {
-//    parsePrintGetDefines("""
-//    {
-//      int k,l = 3;
-//      k = 4;
-//    }
-//    """) should be(Set(Id("k"), Id("l")))
-//  }
-
-
   test("forLoop") {
     parsePrintAST("""
     {
@@ -207,61 +182,20 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
 //    e1->pred should be (Set(c.value))
 //  }
 //
-//  test("conditional labelstatements succ elifelse") {
-//    val e1 = Opt(True, LabelStatement(Id("e1"), None))
-//    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-//    val e3 = Opt(fy.and(fx.not), LabelStatement(Id("e3"), None))
-//    val e4 = Opt(fy.not.and(fx.not), LabelStatement(Id("e4"), None))
-//    val e5 = Opt(True, LabelStatement(Id("e5"), None))
-//    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5)))
-//    println("AST: " + c)
-//    println(PrettyPrinter.print(c.value))
-//    e1->succ should be (Set(e2, e3, e4))
-//    e2->succ should be (Set(e5))
-//    e3->succ should be (Set(e5))
-//    e4->succ should be (Set(e5))
-//    e5->succ should be (Set(null))
-//  }
-//
-//  test("conditional labelstatements pred if") {
-//    val e1 = Opt(True, LabelStatement(Id("e1"), None))
-//    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-//    val e3 = Opt(True, LabelStatement(Id("e3"), None))
-//    val c = One(CompoundStatement(List(e1, e2, e3)))
-//    println("AST: " + c)
-//    println(PrettyPrinter.print(c.value))
-//    e1->pred should be (Set(c.value))
-//    e2->pred should be (Set(e1))
-//    e3->pred should be (Set(e1))
-//  }
-//
-//  test("conditional labelstatements isPartOfIEEChain") {
-//    val e1 = Opt(True, LabelStatement(Id("e1"), None))
-//    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-//    val e3 = Opt(fx.not, LabelStatement(Id("e3"), None))
-//    val e4 = Opt(True, LabelStatement(Id("e4"), None))
-//    val e5 = Opt(True, LabelStatement(Id("e5"), None))
-//    val e6 = Opt(fx, LabelStatement(Id("e6"), None))
-//    val e7 = Opt(True, LabelStatement(Id("e7"), None))
-//    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5, e6, e7)))
-////    println("AST: " + c)
-////    println(PrettyPrinter.print(c.value))
-//
-//  }
-//
-//  test("conditional labelstatements isPartOfIEEChain2") {
-//    val e1 = Opt(True, LabelStatement(Id("e1"), None))
-//    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-//    val e3 = Opt(fx.not, LabelStatement(Id("e3"), None))
-//    val e4 = Opt(True, LabelStatement(Id("e4"), None))
-//    val e5 = Opt(fx, LabelStatement(Id("e5"), None))
-//    val e6 = Opt(fy, LabelStatement(Id("e6"), None))
-//    val e7 = Opt(fy.not, LabelStatement(Id("e7"), None))
-//    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5, e6, e7)))
-////    println("AST: " + c)
-////    println(PrettyPrinter.print(c.value))
-//
-//  }
+  test("conditional labelstatements succ elifelse") {
+    val e1 = Opt(True, LabelStatement(Id("e1"), None))
+    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
+    val e3 = Opt(fy.and(fx.not), LabelStatement(Id("e3"), None))
+    val e4 = Opt(fy.not.and(fx.not), LabelStatement(Id("e4"), None))
+    val e5 = Opt(True, LabelStatement(Id("e5"), None))
+    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5)))
+    println("AST: " + c)
+    println(PrettyPrinter.print(c.value))
+    succ(e1) should be (List(e2.entry, e3.entry, e4.entry))
+    succ(e2) should be (List(e5.entry))
+    succ(e3) should be (List(e5.entry))
+    succ(e4) should be (List(e5.entry))
+  }
 
   test("conditional labelstatements with sequence of annotated elements") {
     val e1 = Opt(True, LabelStatement(Id("e1"), None))

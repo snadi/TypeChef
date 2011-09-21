@@ -138,7 +138,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   private def getSuccNestedLevel(l: List[AST]) = {
     if (l.isEmpty) List()
     else {
-      val wsandf = determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l)).reverse)
+      val wsandf = determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l)).reverse).reverse
       val succel = getSuccFromList(featureExpr(parentOpt(l.head)), wsandf)
 
       succel match {
