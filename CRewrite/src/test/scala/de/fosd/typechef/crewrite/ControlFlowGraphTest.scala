@@ -17,27 +17,27 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
 
   private def cp(pro: p.MultiParser[AST]) = pro ^^ { One(_) }
 
-  private def parsePrintAST(code: String) = {
-    val ast = parse(code, cp(p.compoundStatement))
+  private def parsePrintAST(code: String, pro: p.MultiParser[AST]) = {
+    val ast = parse(code, cp(pro))
     println("AST: " + ast.get.asInstanceOf[One[AST]].value)
     println(PrettyPrinter.print(ast.get.asInstanceOf[One[AST]].value))
   }
 
-  private def parsePrintASTGetAST(code: String) = {
-    val ast = parse(code, cp(p.compoundStatement)).get.asInstanceOf[One[AST]].value
+  private def parsePrintASTGetAST(code: String, pro: p.MultiParser[AST]) = {
+    val ast = parse(code, cp(pro)).get.asInstanceOf[One[AST]].value
     println("AST: " + ast)
     println(PrettyPrinter.print(ast))
     ast
   }
 
-  private def parsePrintGetDefines(code: String) = {
-    val ast = parse(code, cp(p.compoundStatement))
+  private def parsePrintGetDefines(code: String, pro: p.MultiParser[AST]) = {
+    val ast = parse(code, cp(pro))
     println("AST: " + ast.get)
     defines(ast.get.asInstanceOf[One[AST]].value)
   }
 
-  private def parsePrintGetSucc(code: String) = {
-    val ast = parse(code, cp(p.compoundStatement))
+  private def parsePrintGetSucc(code: String, pro: p.MultiParser[AST]) = {
+    val ast = parse(code, cp(pro))
     println("AST: " + ast.get)
     succ(ast.get.asInstanceOf[One[AST]].value)
   }
@@ -48,7 +48,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       for(;;) {
       }
     }
-    """)
+    """, p.compoundStatement)
   }
 
   test("nestedForLoop") {
@@ -61,7 +61,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
         }
       }
     }
-    """)
+    """, p.compoundStatement)
   }
 
   test("switchCase") {
@@ -74,7 +74,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       default: break;
       }
     }
-    """)
+    """, p.compoundStatement)
   }
 
   test("doWhileLoop") {
@@ -83,7 +83,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       do {
       } while (k);
     }
-    """)
+    """, p.compoundStatement)
   }
 
   test("simpleWhileLoop") {
@@ -94,7 +94,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
         int m;
       }
     }
-    """)
+    """, p.compoundStatement)
   }
 
   test("ifthenelsechain") {
@@ -113,7 +113,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
         k = 1;
       }
     }
-    """)
+    """, p.compoundStatement)
   }
 
 //  test("conditionaldeclaration") {
@@ -255,7 +255,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     DotGraph.map2file(getAllSucc(e0.entry))
   }
 
-  test("conditional while statement", simpletest) {
+  test("conditional while statement") {
     val e0 = Opt(True, LabelStatement(Id("e0"), None))
     val e11 = Opt(True, LabelStatement(Id("e11"), None))
     val e12 = Opt(fy, LabelStatement(Id("e12"), None))
@@ -281,7 +281,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       ;i++) j++;
       int j;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
@@ -299,7 +299,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       else { k = 10; }
       int l = 3;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
@@ -317,7 +317,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       }
       int l = 2;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
@@ -346,7 +346,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       }
       int j;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
@@ -358,7 +358,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       }
       int j;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
@@ -371,7 +371,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       }
       int j;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
@@ -383,7 +383,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       k++;
       k++;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
@@ -414,7 +414,25 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       }
       int c;
     }
-    """)
+    """, p.compoundStatement)
+    DotGraph.map2file(getAllSucc(childAST(a.children.next)))
+  }
+
+  test("conditional label and goto statements", simpletest) {
+    val a = parsePrintASTGetAST("""
+    {
+      goto label1;
+      #ifdef A
+      label1:
+        int a;
+      #else
+      label1:
+        int b;
+      #endif
+      int c;
+    }
+    """, p.compoundStatement)
+    val f = FunctionDef(List(Opt(FeatureExpr.base, VoidSpecifier())), AtomicNamedDeclarator(List(),Id("foo"),List(Opt(True,DeclIdentifierList(List())))), List(), a.asInstanceOf[CompoundStatement])
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
@@ -431,7 +449,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       #endif
       int e;
     }
-    """)
+    """, p.compoundStatement)
     val t: TConditional[AST] = succ(childAST(a.children.next))
     print(t)
   }

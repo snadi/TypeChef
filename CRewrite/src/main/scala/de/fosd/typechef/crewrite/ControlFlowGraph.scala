@@ -61,8 +61,33 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
           case _ => List()
         } else List()
       }
+      case w@GotoStatement(Id(l)) => {
+        val f = findPriorFuncDefinition(w)
+        if (f == null) List()
+        else labelLookup(f, l)
+      }
       case s: Statement => getSuccSameLevel(s)
       case t => following(t)
+    }
+  }
+
+  private val findPriorFuncDefinition: AST ==> FunctionDef = attr {
+    case f: FunctionDef => f
+    case a: Attributable if (!a.isRoot) => findPriorFuncDefinition(parentAST(a))
+    case _ => null
+  }
+
+  private def labelLookup(a: AST, l: String): List[AST] = {
+    def iterateChildren(a: AST): List[AST] = {
+      a.children.asInstanceOf[Iterator[Attributable]].map(
+        x => x match {
+          case e: AST => labelLookup(e, l)
+          case e: Opt[AST] => labelLookup(childAST(e), l)
+        }).foldLeft(List[AST]())(_ ++ _)
+    }
+    a match {
+      case e @ LabelStatement(Id(n), _) if (n == l) => List(e) ++ iterateChildren(e)
+      case e : AST => iterateChildren(e)
     }
   }
 
