@@ -445,7 +445,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
-  test("conditional label and goto statements", simpletest) {
+  test("conditional label and goto statements", totest) {
     val a = parsePrintASTGetAST("""
     {
       goto label1;
@@ -497,59 +497,59 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     print(t)
   }
 
-//  test("boa hash.c") {
-//    val a = parsePrintASTGetAST("""
-//    {
-//          int i;
-//          hash_struct *temp;
-//          int total = 0;
-//          int count;
-//
-//          for (i = 0; i < MIME_HASHTABLE_SIZE; ++i) { /* these limits OK? */
-//              if (mime_hashtable[i]) {
-//                  count = 0;
-//                  temp = mime_hashtable[i];
-//                  while (temp) {
-//                      temp = temp->next;
-//                      ++count;
-//                  }
-//      #ifdef NOISY_SIGALRM
-//                  log_error_time();
-//                  fprintf(stderr, "mime_hashtable[%d] has %d entries\n",
-//                          i, count);
-//      #endif
-//                  total += count;
-//              }
-//          }
-//          log_error_time();
-//          fprintf(stderr, "mime_hashtable has %d total entries\n",
-//                  total);
-//
-//          total = 0;
-//          for (i = 0; i < PASSWD_HASHTABLE_SIZE; ++i) { /* these limits OK? */
-//              if (passwd_hashtable[i]) {
-//                  temp = passwd_hashtable[i];
-//                  count = 0;
-//                  while (temp) {
-//                      temp = temp->next;
-//                      ++count;
-//                  }
-//      #ifdef NOISY_SIGALRM
-//                  log_error_time();
-//                  fprintf(stderr, "passwd_hashtable[%d] has %d entries\n",
-//                          i, count);
-//      #endif
-//                  total += count;
-//              }
-//          }
-//
-//          log_error_time();
-//          fprintf(stderr, "passwd_hashtable has %d total entries\n",
-//                  total);
-//
-//      }
-//
-//    """)
-//    DotGraph.map2file(getAllSucc(childAST(a.children.next)))
-//  }
+  test("boa hash.c", simpletest) {
+    val a = parsePrintASTGetAST("""
+    {
+          int i;
+          hash_struct *temp;
+          int total = 0;
+          int count;
+
+          for (i = 0; i < MIME_HASHTABLE_SIZE; ++i) { /* these limits OK? */
+              if (mime_hashtable[i]) {
+                  count = 0;
+                  temp = mime_hashtable[i];
+                  while (temp) {
+                      temp = temp->next;
+                      ++count;
+                  }
+      #ifdef NOISY_SIGALRM
+                  log_error_time();
+                  fprintf(stderr, "mime_hashtable[%d] has %d entries\n",
+                          i, count);
+      #endif
+                  total += count;
+              }
+          }
+          log_error_time();
+          fprintf(stderr, "mime_hashtable has %d total entries\n",
+                  total);
+
+          total = 0;
+          for (i = 0; i < PASSWD_HASHTABLE_SIZE; ++i) { /* these limits OK? */
+              if (passwd_hashtable[i]) {
+                  temp = passwd_hashtable[i];
+                  count = 0;
+                  while (temp) {
+                      temp = temp->next;
+                      ++count;
+                  }
+      #ifdef NOISY_SIGALRM
+                  log_error_time();
+                  fprintf(stderr, "passwd_hashtable[%d] has %d entries\n",
+                          i, count);
+      #endif
+                  total += count;
+              }
+          }
+
+          log_error_time();
+          fprintf(stderr, "passwd_hashtable has %d total entries\n",
+                  total);
+
+      }
+
+    """, p.compoundStatement)
+    DotGraph.map2file(getAllSucc(childAST(a.children.next)))
+  }
 }

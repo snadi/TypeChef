@@ -2,7 +2,7 @@ package de.fosd.typechef.crewrite
 
 import org.kiama.==>
 import org.kiama.attribution.Attributable
-import org.kiama.attribution.DynamicAttribution.{attr, childAttr}
+import org.kiama.attribution.DynamicAttribution._
 import de.fosd.typechef.parser.c._
 import de.fosd.typechef.conditional._
 import de.fosd.typechef.featureexpr._
@@ -318,14 +318,20 @@ object DotGraph extends IOUtilities with ASTNavigation with FeatureExprLookup {
   }
 
   private def esc(i: String) = {
-    i.replace("\n", "\\n").replace("{", "\\{").replace("}", "\\}").replace("<", "\\<").replace(">", "\\>")
+    i.replace("\n", "\\n").replace("{", "\\{").replace("}", "\\}").replace("<", "\\<").replace(">", "\\>").replace("\"", "\\\"")
   }
 
 }
 
 trait Variables {
-  val uses: AST ==> Set[Id]
-  val defines: AST ==> Set[Id]
+  val uses: Attributable ==> Set[Id]
+  val defines: Attributable ==> Set[Id]
+}
+
+
+trait VariablesTChoice {
+  val uses: Attributable ==> TChoice[Set[Id]]
+  val defines: Attributable ==> TChoice[Set[Id]]
 }
 
 trait VariablesImpl extends Variables with ASTNavigation {
@@ -384,6 +390,25 @@ trait VariablesImpl extends Variables with ASTNavigation {
       case o@One(_) => defines(childAST(o))
       case c@Choice(_, thenBranch, elseBranch) => defines(thenBranch) ++ defines(elseBranch)
       case _ => Set()
+    }
+}
+
+trait Liveness {
+  val in : Attributable ==> Set[Id]
+  val out : Attributable ==> Set[Id]
+}
+
+trait LivenessImpl extends Liveness {
+  self : Liveness with Variables with ControlFlow =>
+
+  val in : Attributable ==> Set[Id] =
+    circular (Set[Id]()) {
+      case s => uses(s) ++ (out(s) -- defines(s))
+    }
+
+  val out : Attributable ==> Set[Id] =
+    circular (Set[Id]()) {
+      case s => succ(s).toSet flatMap (in)
     }
 }
 
