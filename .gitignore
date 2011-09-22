@@ -30,5 +30,5 @@ tokenstream.txt
 *.macroDbg
 .idea
 linux-2.6.33.3
-casestudies
+busybox
 tmp

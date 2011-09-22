@@ -14,7 +14,7 @@ abstract class TConditional[+T] {
 
     def map[U](f: T => U): TConditional[U] = mapr(x => TOne(f(x)))
     def mapf[U](inFeature: FeatureExpr, f: (FeatureExpr, T) => U): TConditional[U] = mapfr(inFeature, (c, x) => TOne(f(c, x)))
-    def mapr[U](f: T => TConditional[U]): TConditional[U] = mapfr(FeatureExpr.base, (c, x) => f(x))
+    def mapr[U](f: T => TConditional[U]): TConditional[U] = mapfr(FeatureExpr.base, (_, x) => f(x))
     def mapfr[U](inFeature: FeatureExpr, f: (FeatureExpr, T) => TConditional[U]): TConditional[U]
 
     def forall(f: T => Boolean): Boolean

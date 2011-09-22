@@ -9,6 +9,7 @@ import org.scalatest.FunSuite
 import org.scalatest.Tag
 import org.scalatest.matchers.ShouldMatchers
 
+object simpletest extends Tag("simpletest")
 object totest extends Tag("totest")
 
 @RunWith(classOf[JUnitRunner])
@@ -16,54 +17,30 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
 
   private def cp(pro: p.MultiParser[AST]) = pro ^^ { One(_) }
 
-  private def parsePrintAST(code: String) = {
-    val ast = parse(code, cp(p.compoundStatement))
+  private def parsePrintAST(code: String, pro: p.MultiParser[AST]) = {
+    val ast = parse(code, cp(pro))
     println("AST: " + ast.get.asInstanceOf[One[AST]].value)
     println(PrettyPrinter.print(ast.get.asInstanceOf[One[AST]].value))
   }
 
-  private def parsePrintASTGetAST(code: String) = {
-    val ast = parse(code, cp(p.compoundStatement)).get.asInstanceOf[One[AST]].value
+  private def parsePrintASTGetAST(code: String, pro: p.MultiParser[AST]) = {
+    val ast = parse(code, cp(pro)).get.asInstanceOf[One[AST]].value
     println("AST: " + ast)
     println(PrettyPrinter.print(ast))
     ast
   }
 
-  private def parsePrintGetDefines(code: String) = {
-    val ast = parse(code, cp(p.compoundStatement))
+  private def parsePrintGetDefines(code: String, pro: p.MultiParser[AST]) = {
+    val ast = parse(code, cp(pro))
     println("AST: " + ast.get)
     defines(ast.get.asInstanceOf[One[AST]].value)
   }
 
-  private def parsePrintGetSucc(code: String) = {
-    val ast = parse(code, cp(p.compoundStatement))
+  private def parsePrintGetSucc(code: String, pro: p.MultiParser[AST]) = {
+    val ast = parse(code, cp(pro))
     println("AST: " + ast.get)
     succ(ast.get.asInstanceOf[One[AST]].value)
   }
-
-//  private def parsePrintGetPred(code: String) = {
-//    val ast = parse(code, cp(p.compoundStatement))
-//    println("AST: " + ast.get)
-//    pred(ast.get.asInstanceOf[One[AST]].value)
-//  }
-
-//  test("twoDeclarations") {
-//    parsePrintGetDefines("""
-//    {
-//      int k = 2;
-//      int l = 3;
-//    }
-//    """) should be(Set(Id("k"), Id("l")))
-//  }
-//
-//  test("multipleDeclarations") {
-//    parsePrintGetDefines("""
-//    {
-//      int k,l = 3;
-//      k = 4;
-//    }
-//    """) should be(Set(Id("k"), Id("l")))
-//  }
 
   test("if-then-else", totest) {
     parsePrintAST("""
@@ -79,14 +56,13 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     """)
   }
 
-
   test("forLoop") {
     parsePrintAST("""
     {
       for(;;) {
       }
     }
-    """)
+    """, p.compoundStatement)
   }
 
   test("nestedForLoop") {
@@ -99,7 +75,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
         }
       }
     }
-    """)
+    """, p.compoundStatement)
   }
 
   test("switchCase") {
@@ -112,7 +88,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       default: break;
       }
     }
-    """)
+    """, p.compoundStatement)
   }
 
   test("doWhileLoop") {
@@ -121,7 +97,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       do {
       } while (k);
     }
-    """)
+    """, p.compoundStatement)
   }
 
   test("simpleWhileLoop") {
@@ -132,7 +108,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
         int m;
       }
     }
-    """)
+    """, p.compoundStatement)
   }
 
   test("ifthenelsechain") {
@@ -151,7 +127,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
         k = 1;
       }
     }
-    """)
+    """, p.compoundStatement)
   }
 
 //  test("conditionaldeclaration") {
@@ -220,61 +196,20 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
 //    e1->pred should be (Set(c.value))
 //  }
 //
-//  test("conditional labelstatements succ elifelse") {
-//    val e1 = Opt(True, LabelStatement(Id("e1"), None))
-//    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-//    val e3 = Opt(fy.and(fx.not), LabelStatement(Id("e3"), None))
-//    val e4 = Opt(fy.not.and(fx.not), LabelStatement(Id("e4"), None))
-//    val e5 = Opt(True, LabelStatement(Id("e5"), None))
-//    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5)))
-//    println("AST: " + c)
-//    println(PrettyPrinter.print(c.value))
-//    e1->succ should be (Set(e2, e3, e4))
-//    e2->succ should be (Set(e5))
-//    e3->succ should be (Set(e5))
-//    e4->succ should be (Set(e5))
-//    e5->succ should be (Set(null))
-//  }
-//
-//  test("conditional labelstatements pred if") {
-//    val e1 = Opt(True, LabelStatement(Id("e1"), None))
-//    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-//    val e3 = Opt(True, LabelStatement(Id("e3"), None))
-//    val c = One(CompoundStatement(List(e1, e2, e3)))
-//    println("AST: " + c)
-//    println(PrettyPrinter.print(c.value))
-//    e1->pred should be (Set(c.value))
-//    e2->pred should be (Set(e1))
-//    e3->pred should be (Set(e1))
-//  }
-//
-//  test("conditional labelstatements isPartOfIEEChain") {
-//    val e1 = Opt(True, LabelStatement(Id("e1"), None))
-//    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-//    val e3 = Opt(fx.not, LabelStatement(Id("e3"), None))
-//    val e4 = Opt(True, LabelStatement(Id("e4"), None))
-//    val e5 = Opt(True, LabelStatement(Id("e5"), None))
-//    val e6 = Opt(fx, LabelStatement(Id("e6"), None))
-//    val e7 = Opt(True, LabelStatement(Id("e7"), None))
-//    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5, e6, e7)))
-////    println("AST: " + c)
-////    println(PrettyPrinter.print(c.value))
-//
-//  }
-//
-//  test("conditional labelstatements isPartOfIEEChain2") {
-//    val e1 = Opt(True, LabelStatement(Id("e1"), None))
-//    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
-//    val e3 = Opt(fx.not, LabelStatement(Id("e3"), None))
-//    val e4 = Opt(True, LabelStatement(Id("e4"), None))
-//    val e5 = Opt(fx, LabelStatement(Id("e5"), None))
-//    val e6 = Opt(fy, LabelStatement(Id("e6"), None))
-//    val e7 = Opt(fy.not, LabelStatement(Id("e7"), None))
-//    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5, e6, e7)))
-////    println("AST: " + c)
-////    println(PrettyPrinter.print(c.value))
-//
-//  }
+  test("conditional labelstatements succ elifelse") {
+    val e1 = Opt(True, LabelStatement(Id("e1"), None))
+    val e2 = Opt(fx, LabelStatement(Id("e2"), None))
+    val e3 = Opt(fy.and(fx.not), LabelStatement(Id("e3"), None))
+    val e4 = Opt(fy.not.and(fx.not), LabelStatement(Id("e4"), None))
+    val e5 = Opt(True, LabelStatement(Id("e5"), None))
+    val c = One(CompoundStatement(List(e1, e2, e3, e4, e5)))
+    println("AST: " + c)
+    println(PrettyPrinter.print(c.value))
+    succ(e1) should be (List(e2.entry, e3.entry, e4.entry))
+    succ(e2) should be (List(e5.entry))
+    succ(e3) should be (List(e5.entry))
+    succ(e4) should be (List(e5.entry))
+  }
 
   test("conditional labelstatements with sequence of annotated elements", totest) {
     val e1 = Opt(True, LabelStatement(Id("e1"), None))
@@ -338,12 +273,13 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     val e0 = Opt(True, LabelStatement(Id("e0"), None))
     val e11 = Opt(True, LabelStatement(Id("e11"), None))
     val e12 = Opt(fy, LabelStatement(Id("e12"), None))
-    val e1 = Opt(fx, WhileStatement(Id("k"), One(
-      CompoundStatement(List(e11, e12)))))
+    val e1c = Id("k")
+    val e1 = Opt(fx, WhileStatement(e1c, One(CompoundStatement(List(e11, e12)))))
     val e2 = Opt(True, LabelStatement(Id("e2"), None))
     val c = One(CompoundStatement(List(e0, e1, e2)))
     succ(e0) should be(List(e1.entry, e2.entry))
-    succ(e1) should be(List(e2.entry, e11.entry))
+    succ(e1) should be(List(e1c))
+    succ(e1c) should be(List(e11.entry, e2.entry))
     DotGraph.map2file(getAllSucc(e0.entry))
   }
 
@@ -359,7 +295,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       ;i++) j++;
       int j;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
@@ -377,7 +313,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       else { k = 10; }
       int l = 3;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
@@ -395,7 +331,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       }
       int l = 2;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
@@ -424,7 +360,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       }
       int j;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
@@ -436,7 +372,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       }
       int j;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
@@ -449,7 +385,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       }
       int j;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
@@ -474,7 +410,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       if (l != 0)
         goto label1;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 
@@ -505,8 +441,60 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       }
       int c;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
+  }
+
+  test("conditional label and goto statements", simpletest) {
+    val a = parsePrintASTGetAST("""
+    {
+      goto label1;
+      #ifdef A
+      label1:
+        int a;
+      #else
+      label1:
+        int b;
+      #endif
+      label2:
+    }
+    """, p.compoundStatement)
+    DotGraph.map2file(getAllSucc(childAST(a.children.next)))
+  }
+
+
+  test("conditional label and goto statements - constructed", totest) {
+    val e0 = Opt(FeatureExpr.base, GotoStatement(Id("label1")))
+    val e1 = Opt(fx, LabelStatement(Id("label1"), None))
+    val e2 = Opt(fx, DeclarationStatement(Declaration(List(Opt(fx, IntSpecifier())), List(Opt(fx, InitDeclaratorI(AtomicNamedDeclarator(List(), Id("a"), List()), List(), None))))))
+    val e3 = Opt(fx.not, LabelStatement(Id("label1"), None))
+    val e4 = Opt(fx.not, DeclarationStatement(Declaration(List(Opt(fx.not, IntSpecifier())), List(Opt(fx.not, InitDeclaratorI(AtomicNamedDeclarator(List(), Id("b"), List()), List(), None))))))
+    val e5 = Opt(FeatureExpr.base, LabelStatement(Id("label2"), None))
+    val f = FunctionDef(List(Opt(FeatureExpr.base, VoidSpecifier())), AtomicNamedDeclarator(List(),Id("foo"),List(Opt(True,DeclIdentifierList(List())))), List(), CompoundStatement(List(e0, e1, e2, e3, e4, e5)))
+    succ(e0) should be (List(e1.entry, e3.entry))
+    succ(e1) should be (List(e2.entry))
+    succ(e2) should be (List(e5.entry))
+    succ(e3) should be (List(e4.entry))
+    succ(e4) should be (List(e5.entry))
+    DotGraph.map2file(getAllSucc(childAST(e0)))
+  }
+
+  test("testTChoice", totest) {
+    val a = parsePrintASTGetAST("""
+    {
+      int a;
+      #ifdef B
+      int b;
+      #elif defined(C)
+      int c;
+      #else
+      int d;
+      #endif
+      int e;
+    }
+    """, p.compoundStatement)
+    val t: TConditional[AST] = succ(childAST(a.children.next))
+    print(t)
   }
 
 //  test("boa hash.c") {

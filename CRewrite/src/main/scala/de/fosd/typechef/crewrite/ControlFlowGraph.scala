@@ -22,12 +22,12 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   private implicit def optList2ASTList(l: List[Opt[AST]]) = l.map(_.entry)
   private implicit def opt2AST(s: Opt[AST]) = s.entry
 
-  implicit def list2Conditional(s: List[AST]): TConditional[AST] = convertList2Conditional(s)
+  implicit def list2TChoice(l: List[AST]): TConditional[AST] = {
+    if (l.size == 1) TOne(l.head)
+    else if (l.size == 2) TChoice(featureExpr(l.head), TOne(l.head), TOne(l.tail.head))
+    else TChoice(featureExpr(l.head), TOne(l.head), list2TChoice(l.tail))
+  }
 
-  def convertList2Conditional(s: List[AST]): TConditional[AST] = {
-    if (s.size == 1) return TOne(s.head)
-    if (s.size == 2) return TChoice(parentOpt(s.head).feature, TOne(s.head), TOne(s.tail.head))
-    return TChoice(parentOpt(s.head).feature, TOne(s.head), convertList2Conditional(s.tail))
   }
 
   // handling of successor determination of a single statement
@@ -63,10 +63,35 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
           case _ => List()
         } else List()
       }
+      case w@GotoStatement(Id(l)) => {
+        val f = findPriorFuncDefinition(w)
+        if (f == null) List()
+        else labelLookup(f, l)
+      }
       case s: Statement => getSuccSameLevel(s)
       case t => following(t)
     }
   }
+  private val findPriorFuncDefinition: AST ==> FunctionDef = attr {
+    case f: FunctionDef => f
+    case a: Attributable if (!a.isRoot) => findPriorFuncDefinition(parentAST(a))
+    case _ => null
+  }
+
+  private def labelLookup(a: AST, l: String): List[AST] = {
+    def iterateChildren(a: AST): List[AST] = {
+      a.children.asInstanceOf[Iterator[Attributable]].map(
+        x => x match {
+          case e: AST => labelLookup(e, l)
+          case e: Opt[AST] => labelLookup(childAST(e), l)
+        }).foldLeft(List[AST]())(_ ++ _)
+    }
+    a match {
+      case e @ LabelStatement(Id(n), _) if (n == l) => List(e) ++ iterateChildren(e)
+      case e : AST => iterateChildren(e)
+    }
+  }
+
   private def simpleOrCompoundStatement(p: Statement, c: Conditional[_]) = {
     c.asInstanceOf[One[_]].value match {
       case CompoundStatement(l) => if (l.isEmpty) List(p) else getSuccNestedLevel(l)
@@ -127,8 +152,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       // 1.
       case Some(x) => List(x)
       case None => {
-        val foll = sandf.drop(1)
-        val succel = getSuccFromList(featureExpr(s), foll)
+        val succel = getSuccFromList(featureExpr(s), sandf.drop(1))
         succel match {
           case CFComplete(r) => r // 2.
           case CFIncomplete(r) => r ++ followUp(s).getOrElse(List()) // 3.
@@ -140,7 +164,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   private def getSuccNestedLevel(l: List[AST]) = {
     if (l.isEmpty) List()
     else {
-      val wsandf = determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l)).reverse)
+      val wsandf = determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l)).reverse).reverse
       val succel = getSuccFromList(featureExpr(parentOpt(l.head)), wsandf)
 
       succel match {
@@ -172,7 +196,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       val cs = as.intersect(bs)
       as.--(cs).foldLeft(FeatureExpr.base)(_ and _).implies(bs.--(cs).foldLeft(FeatureExpr.base)(_ and _).not).isTautology()
     }
-    pack[List[AST]]({ (x,y) => checkImplication(x.head, y.head)})(l.reverse)
+    pack[List[AST]]({ (x,y) => checkImplication(x.head, y.head)})(l.reverse).reverse
   }
 
   // get type of List[List[AST]:
@@ -184,7 +208,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       case (h::t) => {
         val f = h.map({ x => featureExpr(x.head)})
         if (f.foldLeft(FeatureExpr.base)(_ and _).isTautology()) (0, h)::determineTypeOfGroupedOptLists(t)
-        else if (f.map(_.not).foldLeft(FeatureExpr.base)(_ and _).isContradiction()) (2, h)::determineTypeOfGroupedOptLists(t)
+        else if (f.map(_.not).foldLeft(FeatureExpr.base)(_ and _).isContradiction()) (2, h.reverse)::determineTypeOfGroupedOptLists(t)
              else (1, h)::determineTypeOfGroupedOptLists(t)
       }
       case Nil => List()
@@ -194,7 +218,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   // returns a list of previous and next AST elems grouped according to feature expressions
   private def getFeatureGroupedASTElems(s: AST) = {
     val l = prevASTElems(s) ++ nextASTElems(s).drop(1)
-    val d = determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l))).reverse
+    val d = determineTypeOfGroupedOptLists(groupOptListsImplication(groupOptBlocksEquivalence(l)))
     getSuccTailList(s, d)
   }
 
@@ -204,8 +228,10 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     var el = l.head
 
     // take tuple with o and examine it
-    var il = el._2.filter(_.contains(o)).head.span(_.ne(o))._2.drop(1)
-    if (! il.isEmpty) Some(il.head)
+    // _.map(_.eq(o)).max compares object identity and not structural identity as list.contains does
+    val il = el._2.filter(_.map(_.eq(o)).max)
+    val jl = il.head.span(_.ne(o))._2.drop(1)
+    if (! jl.isEmpty) Some(jl.head)
     else None
   }
 
