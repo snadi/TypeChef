@@ -1,7 +1,7 @@
 package de.fosd.typechef.crewrite
 
 import org.kiama.==>
-import org.kiama.attribution.Attributable
+import org.kiama.attribution._
 import org.kiama.attribution.DynamicAttribution._
 import de.fosd.typechef.parser.c._
 import de.fosd.typechef.conditional._
@@ -238,7 +238,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     // get the list with o and all following lists
     // iterate each sublist of the incoming tuples (Int, List[List[Opt[_]]] combine equality check
     // with foldLeft and drop tuples in which o does not occur
-    l.dropWhile(_._2.map(_.map(_.eq(o)).foldLeft(false)(_ || _)).foldLeft(false)(_ || _).unary_!)
+    l.dropWhile(_._2.map(_.map(_.eq(o)).max).max.unary_!)
   }
 
   // get all succ nodes of an unknown input node; useful for cases in which successor nodes occur
@@ -248,7 +248,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     for (e <- l) {
       e match {
         case (0, opts) => r = r ++ List(opts.head.head)
-        case (_, opts) => r = r ++ opts.map({ x=> List(x.head)}).foldLeft(List[AST]())(_ ++ _)
+        case (_, opts) => r = r ++ opts.flatMap({ x=> List(x.head)})
       }
 
       if (e._1 == 2 || e._1 == 0) return CFComplete(r)
@@ -323,21 +323,16 @@ object DotGraph extends IOUtilities with ASTNavigation with FeatureExprLookup {
 
 }
 
+// defines and uses we can jump to using succ
 trait Variables {
   val uses: Attributable ==> Set[Id]
   val defines: Attributable ==> Set[Id]
 }
 
-
-trait VariablesTChoice {
-  val uses: Attributable ==> TChoice[Set[Id]]
-  val defines: Attributable ==> TChoice[Set[Id]]
-}
-
 trait VariablesImpl extends Variables with ASTNavigation {
   val uses: Attributable ==> Set[Id] =
     attr {
-      case InitDeclaratorI(declarator, _, Some(i)) => uses(declarator)// ++ i->uses
+      case InitDeclaratorI(declarator, _, Some(i)) => uses(declarator) ++ uses(i)
       case AtomicNamedDeclarator(_, id, _) => Set(id)
       case NestedNamedDeclarator(_, nestedDecl, _) => uses(nestedDecl)
       case Initializer(_, expr) => uses(expr)
@@ -346,9 +341,9 @@ trait VariablesImpl extends Variables with ASTNavigation {
       case StringLit(_) => Set()
       case SimplePostfixSuffix(_) => Set()
       case PointerPostfixSuffix(kind, id) => Set(id)
-      case FunctionCall(params) => Set() // TODO List[Opt[Expr]]
+      case FunctionCall(params) => params.exprs.map(childAST).flatMap(uses).toSet
       case ArrayAccess(expr) => uses(expr)
-      case PostfixExpr(p, s) => uses(p)// ++ s->uses
+      case PostfixExpr(p, s) => uses(p) ++ uses(s)
       case UnaryExpr(_, e) => uses(e)
       case SizeOfExprT(_) => Set()
       case SizeOfExprU(expr) => uses(expr)
@@ -356,39 +351,21 @@ trait VariablesImpl extends Variables with ASTNavigation {
       case PointerDerefExpr(castExpr) => uses(castExpr)
       case PointerCreationExpr(castExpr) => uses(castExpr)
       case UnaryOpExpr(kind, castExpr) => uses(castExpr)
-      case NAryExpr(e, others) => uses(e) // TODO others List[Opt[NarySubExpr]]
+      case NAryExpr(e, others) => uses(e) ++ others.flatMap(uses).toSet
       case NArySubExpr(_, e) => uses(e)
-      case ConditionalExpr(condition, Some(thenExpr), elseExpr) => uses(condition) //++ thenExpr->uses ++ elseExpr->uses
+      case ConditionalExpr(condition, _, _) => uses(condition)
       case AssignExpr(target, _, _) => uses(target)
       case ExprList(_) => Set()
       case _ => Set()
     }
 
-
   val defines: Attributable ==> Set[Id] =
     attr {
-      case CompoundStatement(innerStatements) => innerStatements.map(defines).foldLeft(Set[Id]())(_ ++ _)
-      case DeclarationStatement(decl) => uses(decl)
-      case Declaration(_, init) => init.map(defines).foldLeft(Set[Id]())(_ ++ _)
-      case InitDeclaratorI(declarator, _, _) => uses(declarator)
-      case AtomicNamedDeclarator(_, id, _) => Set(id)
-      case WhileStatement(_, s) => uses(s)
-      case DoStatement(_, s) => uses(s)
-      case ForStatement(_, _, _, s) => uses(s)
-      case CaseStatement(_, Some(s)) => uses(s)
-      case DefaultStatement(Some(s)) => uses(s)
-      case SwitchStatement(_, s) => uses(s)
-      case IfStatement(_, thenBranch, elifs, elseBranch) => {
-          var r = uses(thenBranch) ++ elifs.map(defines).foldLeft(Set[Id]())(_ ++ _)
-          if (elseBranch.getOrElse("") != "")
-            r ++ defines(elseBranch.get)
-          else
-            r
-      }
-      case ElifStatement(_, thenBranch) => defines(childAST(thenBranch))
-      case o@Opt(_, _) => defines(childAST(o))
-      case o@One(_) => defines(childAST(o))
-      case c@Choice(_, thenBranch, elseBranch) => defines(thenBranch) ++ defines(elseBranch)
+      case DeclarationStatement(d) => defines(d)
+      case Declaration(_, init) => init.flatMap(defines).toSet
+      case o : Opt[Attributable] => defines(o.entry)
+      case InitDeclaratorI(a, _, _) => defines(a)
+      case AtomicNamedDeclarator(_, i, _) => Set(i)
       case _ => Set()
     }
 }
@@ -401,15 +378,15 @@ trait Liveness {
 trait LivenessImpl extends Liveness {
   self : Liveness with Variables with ControlFlow =>
 
-  val in : Attributable ==> Set[Id] =
-    circular (Set[Id]()) {
-      case s => uses(s) ++ (out(s) -- defines(s))
-    }
-
-  val out : Attributable ==> Set[Id] =
-    circular (Set[Id]()) {
-      case s => succ(s).toSet flatMap (in)
-    }
+//  val in : Attributable ==> Set[Id] =
+//    circular (Set[Id]()) {
+//      case s => uses(s) ++ (out(s) -- defines(s))
+//    }
+//
+//  val out : Attributable ==> Set[Id] =
+//    circular (Set[Id]()) {
+//      case s => succ(s).toSet flatMap (in)
+//    }
 }
 
 
