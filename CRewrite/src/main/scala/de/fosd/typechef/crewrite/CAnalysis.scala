@@ -9,6 +9,8 @@ import de.fosd.typechef.featureexpr.FeatureExpr
 
 trait CAnalysis extends ConditionalNavigation with ASTNavigation {
 
+  // according to paper listed below; computation of cyclomatic complexity already contains
+  // conditional inclusion directives of preprocessor
   // cf. http://www.verifysoft.com/de_cmtpp_mscoder.pdf
   val cc: Attributable ==> Int = attr { case a: Attributable => eCC(a) + 1}
 

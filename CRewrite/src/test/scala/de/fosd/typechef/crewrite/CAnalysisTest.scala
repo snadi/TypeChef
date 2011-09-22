@@ -15,8 +15,8 @@ object totest extends Tag("totest")
 class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CAnalysis{
   private def cp(pro: p.MultiParser[AST]) = pro ^^ {One(_)}
 
-  private def parsePrintCC(code: String) = {
-    val ast = parse(code, cp(p.compoundStatement)).get.asInstanceOf[One[AST]].value
+  private def parsePrintCC(code: String, pro: p.MultiParser[AST]) = {
+    val ast = parse(code, cp(pro)).get.asInstanceOf[One[AST]].value
     println(ast)
     println(PrettyPrinter.print(ast))
     println("cyclomatic complexity: " + cc(ast))
@@ -31,7 +31,7 @@ class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CA
       int b;
       #endif
     }
-    """)
+    """, p.compoundStatement)
   }
 
   test("if-then", totest) {
@@ -42,7 +42,7 @@ class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CA
       int b;
       #endif
     }
-    """)
+    """, p.compoundStatement)
   }
 
 }
