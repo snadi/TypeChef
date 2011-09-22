@@ -429,11 +429,27 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       label1:
         int b;
       #endif
-      int c;
+      label2:
     }
     """, p.compoundStatement)
-    val f = FunctionDef(List(Opt(FeatureExpr.base, VoidSpecifier())), AtomicNamedDeclarator(List(),Id("foo"),List(Opt(True,DeclIdentifierList(List())))), List(), a.asInstanceOf[CompoundStatement])
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
+  }
+
+
+  test("conditional label and goto statements - constructed", totest) {
+    val e0 = Opt(FeatureExpr.base, GotoStatement(Id("label1")))
+    val e1 = Opt(fx, LabelStatement(Id("label1"), None))
+    val e2 = Opt(fx, DeclarationStatement(Declaration(List(Opt(fx, IntSpecifier())), List(Opt(fx, InitDeclaratorI(AtomicNamedDeclarator(List(), Id("a"), List()), List(), None))))))
+    val e3 = Opt(fx.not, LabelStatement(Id("label1"), None))
+    val e4 = Opt(fx.not, DeclarationStatement(Declaration(List(Opt(fx.not, IntSpecifier())), List(Opt(fx.not, InitDeclaratorI(AtomicNamedDeclarator(List(), Id("b"), List()), List(), None))))))
+    val e5 = Opt(FeatureExpr.base, LabelStatement(Id("label2"), None))
+    val f = FunctionDef(List(Opt(FeatureExpr.base, VoidSpecifier())), AtomicNamedDeclarator(List(),Id("foo"),List(Opt(True,DeclIdentifierList(List())))), List(), CompoundStatement(List(e0, e1, e2, e3, e4, e5)))
+    succ(e0) should be (List(e1.entry, e3.entry))
+    succ(e1) should be (List(e2.entry))
+    succ(e2) should be (List(e5.entry))
+    succ(e3) should be (List(e4.entry))
+    succ(e4) should be (List(e5.entry))
+    DotGraph.map2file(getAllSucc(childAST(e0)))
   }
 
   test("testTChoice", totest) {

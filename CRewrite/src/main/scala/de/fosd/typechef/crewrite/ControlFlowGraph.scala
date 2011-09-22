@@ -227,8 +227,10 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     var el = l.head
 
     // take tuple with o and examine it
-    var il = el._2.filter(_.contains(o)).head.span(_.ne(o))._2.drop(1)
-    if (! il.isEmpty) Some(il.head)
+    // _.map(_.eq(o)).max compares object identity and not structural identity as list.contains does
+    val il = el._2.filter(_.map(_.eq(o)).max)
+    val jl = il.head.span(_.ne(o))._2.drop(1)
+    if (! jl.isEmpty) Some(jl.head)
     else None
   }
 
