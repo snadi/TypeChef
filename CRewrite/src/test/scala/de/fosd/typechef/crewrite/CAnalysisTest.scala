@@ -3,13 +3,10 @@ package de.fosd.typechef.crewrite
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Tag
 import org.scalatest.matchers.ShouldMatchers
 
 import de.fosd.typechef.parser.c._
 import de.fosd.typechef.conditional._
-
-object totest extends Tag("totest")
 
 @RunWith(classOf[JUnitRunner])
 class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CAnalysis{

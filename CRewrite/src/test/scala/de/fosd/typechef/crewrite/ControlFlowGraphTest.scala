@@ -53,7 +53,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       int c;
       #endif
     }
-    """)
+    """, p.compoundStatement)
   }
 
   test("forLoop") {
@@ -397,7 +397,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       k++;
       k++;
     }
-    """)
+    """, p.compoundStatement)
     DotGraph.map2file(getAllSucc(childAST(a.children.next)))
   }
 

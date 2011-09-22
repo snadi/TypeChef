@@ -28,8 +28,6 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     else TChoice(featureExpr(l.head), TOne(l.head), list2TChoice(l.tail))
   }
 
-  }
-
   // handling of successor determination of a single statement
   def succ(a: Attributable): List[AST] = {
     a match {
