@@ -378,6 +378,16 @@ trait Liveness {
 trait LivenessImpl extends Liveness {
   self : Liveness with Variables with ControlFlow =>
 
+  val in : Attributable ==> Set[Id] =
+    circular (Set[Id]()) {
+      case s => uses(s) ++ (out(s).--(defines(s)))
+    }
+
+
+  val out : Attributable ==> Set[Id] =
+    circular (Set[Id]()) {
+      case s => succ(s).toSet flatMap (in)
+    }
 //  val in : Attributable ==> Set[Id] =
 //    circular (Set[Id]()) {
 //      case s => uses(s) ++ (out(s) -- defines(s))

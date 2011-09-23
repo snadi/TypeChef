@@ -13,7 +13,7 @@ object simpletest extends Tag("simpletest")
 object totest extends Tag("totest")
 
 @RunWith(classOf[JUnitRunner])
-class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers with VariablesImpl with ControlFlowImpl {
+class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers with VariablesImpl with ControlFlowImpl with LivenessImpl{
 
   private def cp(pro: p.MultiParser[AST]) = pro ^^ { One(_) }
 
@@ -497,7 +497,25 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     print(t)
   }
 
-  test("boa hash.c", simpletest) {
+  test("testLiveness", simpletest) {
+    val a = parsePrintASTGetAST("""
+    {
+      int y = v;
+      int z = y;
+      int x = v;
+      while (x) {
+        x = w;
+        x = v;
+      }
+      return x;
+    }
+    """, p.compoundStatement)
+    println("out: " + out(childAST(a.children.next)))
+    println("defines: " + defines(childAST(a.children.next)))
+    println("uses: " + uses(childAST(a.children.next)))
+  }
+
+  test("boa hash.c") {
     val a = parsePrintASTGetAST("""
     {
           int i;
