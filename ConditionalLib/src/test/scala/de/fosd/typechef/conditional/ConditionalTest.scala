@@ -52,6 +52,12 @@ class ConditionalTest {
     }
 
     @Test
+    def testInsert {
+        assertEquals(TChoice(fa, TOne(Set(1, 2)), TOne(Set(3))), insert[Set[Int]](fa, Set(2), {_++_}, TChoice(fa, TOne(Set(1)), TOne(Set(3)))))
+        assertEquals(TChoice(fa, TOne(1), TChoice(fa.not.and(fb), TOne(2), TOne(3))), insert[Int](fa.not.and(fb), 2, {_+_}, TChoice(fa, TOne(1), TOne(3))))
+    }
+
+    @Test
     def testEquals {
         assert(ConditionalLib.equals(TOne(1), TOne(1)))
         assert(ConditionalLib.equals(TChoice(fa, TOne(1), TOne(2)), TChoice(fa.not, TOne(2), TOne(1))))

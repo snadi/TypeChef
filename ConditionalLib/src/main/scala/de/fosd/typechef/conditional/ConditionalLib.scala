@@ -50,6 +50,17 @@ object ConditionalLib {
             else TChoice(feature, aa, bb)
     }
 
+    def insert[T](context: FeatureExpr, elem: T, join: (T, T) => T, tree: TConditional[T]): TConditional[T] = {
+      tree match {
+        case o@TOne(_) => TChoice(context, TOne(elem), o)
+        case TChoice(feature, a, b) => {
+          if (feature.equivalentTo(context)) TChoice(feature, mapCombination(a, TOne(elem), join), b)
+          else if (feature.and(context).isContradiction()) TChoice(feature, a, insert(context, elem, join, b))
+          else TChoice(feature, insert(context, elem, join, a), b)
+        }
+      }
+    }
+
 
     /**
      * returns the last element (which may differ in different contexts)
