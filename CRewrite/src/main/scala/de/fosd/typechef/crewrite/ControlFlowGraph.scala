@@ -330,9 +330,21 @@ trait Variables {
 }
 
 trait VariablesImpl extends Variables with ASTNavigation {
-  val uses: Attributable ==> Set[Id] =
-    attr {
-      case InitDeclaratorI(declarator, _, Some(i)) => uses(declarator) ++ uses(i)
+  val uses: Attributable ==> Set[Id] = attr {case a: Attributable => findUses(a)}
+
+  private def findUses(a: Attributable): Set[Id] = {
+    a match {
+      case ForStatement(expr1, expr2, expr3, _) => {
+        var res = Set[Id]()
+        if (expr1.isDefined) res = res ++ uses(expr1.get)
+        if (expr2.isDefined) res = res ++ uses(expr2.get)
+        if (expr3.isDefined) res = res ++ uses(expr3.get)
+        return res
+      }
+      case WhileStatement(expr, _) => uses(expr)
+      case DeclarationStatement(d) => uses(d)
+      case Declaration(_, init) => init.flatMap(uses).toSet
+      case InitDeclaratorI(_, _, Some(i)) => uses(i)
       case AtomicNamedDeclarator(_, id, _) => Set(id)
       case NestedNamedDeclarator(_, nestedDecl, _) => uses(nestedDecl)
       case Initializer(_, expr) => uses(expr)
@@ -356,16 +368,18 @@ trait VariablesImpl extends Variables with ASTNavigation {
       case ConditionalExpr(condition, _, _) => uses(condition)
       case AssignExpr(target, _, _) => uses(target)
       case ExprList(_) => Set()
+      case o: Opt[Attributable] => uses(o.entry)
       case _ => Set()
     }
+  }
 
   val defines: Attributable ==> Set[Id] =
     attr {
       case DeclarationStatement(d) => defines(d)
       case Declaration(_, init) => init.flatMap(defines).toSet
-      case o : Opt[Attributable] => defines(o.entry)
       case InitDeclaratorI(a, _, _) => defines(a)
       case AtomicNamedDeclarator(_, i, _) => Set(i)
+      case o : Opt[Attributable] => defines(o.entry)
       case _ => Set()
     }
 }
@@ -382,7 +396,6 @@ trait LivenessImpl extends Liveness {
     circular (Set[Id]()) {
       case s => uses(s) ++ (out(s).--(defines(s)))
     }
-
 
   val out : Attributable ==> Set[Id] =
     circular (Set[Id]()) {

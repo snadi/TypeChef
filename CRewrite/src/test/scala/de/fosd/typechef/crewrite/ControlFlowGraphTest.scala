@@ -510,6 +510,7 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
       return x;
     }
     """, p.compoundStatement)
+    println("in: " + in(childAST(a.children.next)))
     println("out: " + out(childAST(a.children.next)))
     println("defines: " + defines(childAST(a.children.next)))
     println("uses: " + uses(childAST(a.children.next)))
