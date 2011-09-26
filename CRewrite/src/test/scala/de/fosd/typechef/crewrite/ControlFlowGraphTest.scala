@@ -501,7 +501,9 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     val a = parsePrintASTGetAST("""
     {
       int y = v;
+      #ifdef A
       int z = y;
+      #endif
       int x = v;
       while (x) {
         x = w;

@@ -385,33 +385,45 @@ trait VariablesImpl extends Variables with ASTNavigation {
 }
 
 trait Liveness {
-  val in : Attributable ==> TConditional[Set[Id]]
-  val out : Attributable ==> TConditional[Set[Id]]
+  val in : Attributable ==> List[(FeatureExpr, Set[Id])]
+  val out : Attributable ==> List[(FeatureExpr, Set[Id])]
 }
 
 trait LivenessImpl extends Liveness with FeatureExprLookup {
   self : Liveness with Variables with ControlFlow =>
 
-  val in : Attributable ==> TConditional[Set[Id]] =
-    circular (TOne(Set[Id]())) {
+  private def insertIntoList[T](l: List[T], e: T, f: (T, T) => Boolean, j: (T, T) => T): List[T] = {
+    l match {
+      case Nil => e::Nil
+      case x::xs => {
+        if (f(e,x)) j(e,x)::xs
+        else x::insertIntoList(xs, e, f, j)
+      }
+    }
+  }
+
+  val in : Attributable ==> List[(FeatureExpr, Set[Id])] =
+    circular (List((FeatureExpr.base, Set[Id]()))) {
       case s => {
         val u = uses(s.asInstanceOf[Attributable])
         val d = defines(s.asInstanceOf[Attributable])
         var res = out(s.asInstanceOf[Attributable])
-        if (!u.isEmpty) res = ConditionalLib.insert[Set[Id]](featureExpr(u.head), u, {_ ++ _}, res)
-        if (!d.isEmpty) res = ConditionalLib.insert[Set[Id]](featureExpr(d.head), u, {_ ++ _}, res)
+        if (!u.isEmpty)
+          res = insertIntoList[(FeatureExpr, Set[Id])](res, (featureExpr(u.head), u), {(a,b)=>a._1.equivalentTo(b._1)}, {(a,b)=>(a._1, a._2++b._2)})
+        if (!d.isEmpty)
+          res = insertIntoList[(FeatureExpr, Set[Id])](res, (featureExpr(d.head), d), {(a,b)=>a._1.equivalentTo(b._1)}, {(a,b)=>(a._1, a._2++b._2)})
         res
       }
     }
 
-  val out : Attributable ==> TConditional[Set[Id]] =
-    circular (TOne(Set[Id]())) {
+  val out : Attributable ==> List[(FeatureExpr, Set[Id])] =
+    circular (List((FeatureExpr.base, Set[Id]()))) {
       case s => {
         val sl = succ(s)
-        var res = in(sl.head)
-        for (a: AST <- sl.tail)
-          for ((f: FeatureExpr, e: Set[Id]) <- TConditional.toList(in(a)))
-            res = ConditionalLib.insert[Set[Id]](f, e, {_ ++ _}, res)
+        var res = List[(FeatureExpr, Set[Id])]()
+        for (a: AST <- sl)
+          for ((f: FeatureExpr, e: Set[Id]) <- in(a))
+            res = insertIntoList[(FeatureExpr, Set[Id])](res, (f, e), {(a,b)=>a._1.equivalentTo(b._1)}, {(a,b)=>(a._1, a._2++b._2)})
         res
       }
     }
