@@ -385,21 +385,35 @@ trait VariablesImpl extends Variables with ASTNavigation {
 }
 
 trait Liveness {
-  val in : Attributable ==> Set[Id]
-  val out : Attributable ==> Set[Id]
+  val in : Attributable ==> TConditional[Set[Id]]
+  val out : Attributable ==> TConditional[Set[Id]]
 }
 
-trait LivenessImpl extends Liveness {
+trait LivenessImpl extends Liveness with FeatureExprLookup {
   self : Liveness with Variables with ControlFlow =>
 
-  val in : Attributable ==> Set[Id] =
-    circular (Set[Id]()) {
-      case s => uses(s) ++ (out(s).--(defines(s)))
+  val in : Attributable ==> TConditional[Set[Id]] =
+    circular (TOne(Set[Id]())) {
+      case s => {
+        val u = uses(s.asInstanceOf[Attributable])
+        val d = defines(s.asInstanceOf[Attributable])
+        var res = out(s.asInstanceOf[Attributable])
+        if (!u.isEmpty) res = ConditionalLib.insert[Set[Id]](featureExpr(u.head), u, {_ ++ _}, res)
+        if (!d.isEmpty) res = ConditionalLib.insert[Set[Id]](featureExpr(d.head), u, {_ ++ _}, res)
+        res
+      }
     }
 
-  val out : Attributable ==> Set[Id] =
-    circular (Set[Id]()) {
-      case s => succ(s).toSet flatMap (in)
+  val out : Attributable ==> TConditional[Set[Id]] =
+    circular (TOne(Set[Id]())) {
+      case s => {
+        val sl = succ(s)
+        var res = in(sl.head)
+        for (a: AST <- sl.tail)
+          for ((f: FeatureExpr, e: Set[Id]) <- TConditional.toList(in(a)))
+            res = ConditionalLib.insert[Set[Id]](f, e, {_ ++ _}, res)
+        res
+      }
     }
 //  val in : Attributable ==> Set[Id] =
 //    circular (Set[Id]()) {

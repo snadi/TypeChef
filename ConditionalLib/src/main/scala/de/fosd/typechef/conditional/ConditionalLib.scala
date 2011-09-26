@@ -61,7 +61,6 @@ object ConditionalLib {
       }
     }
 
-
     /**
      * returns the last element (which may differ in different contexts)
      * or None if the list is empty
