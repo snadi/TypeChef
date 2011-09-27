@@ -497,25 +497,72 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     print(t)
   }
 
-  test("testLiveness", simpletest) {
+  test("testLiveness") {
     val a = parsePrintASTGetAST("""
     {
-      int y = v;
-      #ifdef A
-      int z = y;
-      #endif
-      int x = v;
-      while (x) {
-        x = w;
-        x = v;
+      int y = v;       // s1
+      int z = y;       // s2
+      int x = v;       // s3
+      while (x) {      // s4
+        x = w;         // s41
+        x = v;         // s42
       }
-      return x;
+      return x;        // s5
     }
     """, p.compoundStatement)
     println("in: " + in(childAST(a.children.next)))
     println("out: " + out(childAST(a.children.next)))
     println("defines: " + defines(childAST(a.children.next)))
     println("uses: " + uses(childAST(a.children.next)))
+  }
+
+  test("testLiveness - constructed", simpletest) {
+    val s1 = Opt(True, DeclarationStatement(Declaration(List(Opt(True, IntSpecifier())), List(Opt(True, InitDeclaratorI(AtomicNamedDeclarator(List(), Id("y"), List()), List(), Some(Initializer(None, Id("v")))))))))
+    val s2 = Opt(True, DeclarationStatement(Declaration(List(Opt(True, IntSpecifier())), List(Opt(True, InitDeclaratorI(AtomicNamedDeclarator(List(), Id("z"), List()), List(), Some(Initializer(None, Id("y")))))))))
+    val s3 = Opt(True, DeclarationStatement(Declaration(List(Opt(True, IntSpecifier())), List(Opt(True, InitDeclaratorI(AtomicNamedDeclarator(List(), Id("x"), List()), List(), Some(Initializer(None, Id("v")))))))))
+    val s41 = Opt(True, ExprStatement(AssignExpr(Id("x"), "=", Id("w"))))
+    val s42 = Opt(True, ExprStatement(AssignExpr(Id("x"), "=", Id("v"))))
+    val s4 = Opt(True, WhileStatement(Id("x"), One(CompoundStatement(List(s41, s42)))))
+    val s5 = Opt(True, ReturnStatement(Some(Id("x"))))
+    val c = One(CompoundStatement(List(s1, s2, s3, s4, s5)))
+
+    println("in      (s1): " + in(childAST(s1)))
+    println("out     (s1): " + out(childAST(s1)))
+    println("defines (s1): " + defines(childAST(s1)))
+    println("uses    (s1): " + uses(childAST(s1)))
+    println("#"*80)
+    println("in      (s2): " + in(childAST(s2)))
+    println("out     (s2): " + out(childAST(s2)))
+    println("defines (s2): " + defines(childAST(s2)))
+    println("uses    (s2): " + uses(childAST(s2)))
+    println("#"*80)
+    println("in      (s3): " + in(childAST(s3)))
+    println("out     (s3): " + out(childAST(s3)))
+    println("defines (s3): " + defines(childAST(s3)))
+    println("uses    (s3): " + uses(childAST(s3)))
+    println("#"*80)
+    println("in      (s4): " + in(childAST(s4)))
+    println("out     (s4): " + out(childAST(s4)))
+    println("defines (s4): " + defines(childAST(s4)))
+    println("uses    (s4): " + uses(childAST(s4)))
+    println("#"*80)
+    println("in      (s41): " + in(childAST(s41)))
+    println("out     (s41): " + out(childAST(s41)))
+    println("defines (s41): " + defines(childAST(s41)))
+    println("uses    (s41): " + uses(childAST(s41)))
+    println("#"*80)
+    println("in      (s42): " + in(childAST(s42)))
+    println("out     (s42): " + out(childAST(s42)))
+    println("defines (s42): " + defines(childAST(s42)))
+    println("uses    (s42): " + uses(childAST(s42)))
+    println("#"*80)
+    println("in      (s5): " + in(childAST(s5)))
+    println("out     (s5): " + out(childAST(s5)))
+    println("defines (s5): " + defines(childAST(s5)))
+    println("uses    (s5): " + uses(childAST(s5)))
+    
+    
+
   }
 
   test("boa hash.c") {

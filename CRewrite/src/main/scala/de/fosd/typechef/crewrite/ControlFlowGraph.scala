@@ -22,6 +22,15 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   private implicit def optList2ASTList(l: List[Opt[AST]]) = l.map(_.entry)
   private implicit def opt2AST(s: Opt[AST]) = s.entry
 
+  // TODO: TConditional may not be the right representation of control flow variability as construction
+  // depends on order of the input:
+  // int a;
+  // a = 2;
+  // #ifdef B a = 3; #endif
+  // a = 4;
+  // succ(a = 2) => [(B, a = 3), (True, a = 4)]; if we reverse the output of succ here
+  // TChoice(B, a = 3, a = 4); we get the wrong output here: TChoice(True, a = 4, a = 3) // a = 3 is dead here
+  // a = 4 is now !B
   implicit def list2TChoice(l: List[AST]): TConditional[AST] = {
     if (l.size == 1) TOne(l.head)
     else if (l.size == 2) TChoice(featureExpr(l.head), TOne(l.head), TOne(l.tail.head))
@@ -341,6 +350,7 @@ trait VariablesImpl extends Variables with ASTNavigation {
         if (expr3.isDefined) res = res ++ uses(expr3.get)
         return res
       }
+      case ReturnStatement(Some(x)) => uses(x)
       case WhileStatement(expr, _) => uses(expr)
       case DeclarationStatement(d) => uses(d)
       case Declaration(_, init) => init.flatMap(uses).toSet
@@ -366,7 +376,8 @@ trait VariablesImpl extends Variables with ASTNavigation {
       case NAryExpr(e, others) => uses(e) ++ others.flatMap(uses).toSet
       case NArySubExpr(_, e) => uses(e)
       case ConditionalExpr(condition, _, _) => uses(condition)
-      case AssignExpr(target, _, _) => uses(target)
+      case ExprStatement(expr) => uses(expr)
+      case AssignExpr(target, _, source) => uses(target) ++ uses(source)
       case ExprList(_) => Set()
       case o: Opt[Attributable] => uses(o.entry)
       case _ => Set()
@@ -402,16 +413,20 @@ trait LivenessImpl extends Liveness with FeatureExprLookup {
     }
   }
 
+  // cf. http://www.cs.colostate.edu/~mstrout/CS553/slides/lecture03.pdf
+  // page 5
+  //  in(n) = uses(n) + (out(n) - defines(n))
+  // out(n) = for s in succ(n) r = r + in(s); r
   val in : Attributable ==> List[(FeatureExpr, Set[Id])] =
     circular (List((FeatureExpr.base, Set[Id]()))) {
       case s => {
         val u = uses(s.asInstanceOf[Attributable])
         val d = defines(s.asInstanceOf[Attributable])
         var res = out(s.asInstanceOf[Attributable])
+        if (!d.isEmpty)
+          res = insertIntoList[(FeatureExpr, Set[Id])](res, (featureExpr(d.head), d), {(a,b)=>a._1.equivalentTo(b._1)}, {(a,b)=>(a._1, a._2--b._2)})
         if (!u.isEmpty)
           res = insertIntoList[(FeatureExpr, Set[Id])](res, (featureExpr(u.head), u), {(a,b)=>a._1.equivalentTo(b._1)}, {(a,b)=>(a._1, a._2++b._2)})
-        if (!d.isEmpty)
-          res = insertIntoList[(FeatureExpr, Set[Id])](res, (featureExpr(d.head), d), {(a,b)=>a._1.equivalentTo(b._1)}, {(a,b)=>(a._1, a._2++b._2)})
         res
       }
     }
@@ -427,15 +442,6 @@ trait LivenessImpl extends Liveness with FeatureExprLookup {
         res
       }
     }
-//  val in : Attributable ==> Set[Id] =
-//    circular (Set[Id]()) {
-//      case s => uses(s) ++ (out(s) -- defines(s))
-//    }
-//
-//  val out : Attributable ==> Set[Id] =
-//    circular (Set[Id]()) {
-//      case s => succ(s).toSet flatMap (in)
-//    }
 }
 
 
