@@ -54,6 +54,31 @@ class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CA
     """, p.compoundStatement)
   }
 
+  test("switch-case", totest) {
+    parsePrintCC("""
+    {
+      switch (x) {
+       case 1:
+       case 2:
+       case 3: break;
+      }
+    }
+    """, p.compoundStatement)
+  }
+
+  test("if-then with &&", simpletest) {
+    parsePrintCC("""
+    {
+      if (a && b || c) {
+        int k;
+      }
+      #if defined(A) && defined(B)
+      int l;
+      #endif
+    }
+    """, p.compoundStatement)
+  }
+
   test("simple deadcode return", totest) {
     parsePrintDeadCode("""
     void foo() {

@@ -18,19 +18,21 @@ trait CAnalysis extends ControlFlowImpl with ConditionalNavigation with ASTNavig
     a match {
       case e: IfStatement => 1 + childrenCC(e);
       case e: ElifStatement => 1 + childrenCC(e);
-      case e: Conditional[_] => 1 + childrenCC(e);
+      case e: Conditional[_] => childrenCC(e);
       case e: Opt[Attributable] => {
         if (featureExpr(e.entry).isDead()) childrenCC(e) // necessary as parser generates dead AST nodes; cf. http://goo.gl/7Rr1a
         else if (featureExpr(e.entry).equivalentTo(FeatureExpr.base)) childrenCC(e)
         else if (featureExpr(e.entry).equivalentTo(featureExpr(parentAST(e.entry)))) childrenCC(e)
-        else 1 + childrenCC(e)
+        else featureExpr(e.entry).collectDistinctFeatures.size + childrenCC(e)
       }
       case e: SwitchStatement => 1 + childrenCC(e);
-      case e: CaseStatement => 1 + childrenCC(e);
+      // fall-through case blocks count in sum only one
+      case e: CaseStatement => if (parentAST(e).isInstanceOf[CaseStatement]) childrenCC(e) else childrenCC(e) + 1;
       case e: DefaultStatement => 1 + childrenCC(e);
       case e: ForStatement => 1 + childrenCC(e);
       case e: WhileStatement => 1 + childrenCC(e);
       case w@List(_) => w.asInstanceOf[List[Attributable]].map(eCC(_)).foldLeft(0)(_ + _)
+      case e: NArySubExpr => 1 + childrenCC(e)
       case _ => childrenCC(a);
     };
   }
