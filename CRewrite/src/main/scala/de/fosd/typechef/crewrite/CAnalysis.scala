@@ -7,7 +7,7 @@ import org.kiama.attribution._
 import org.kiama.attribution.Attribution._
 import de.fosd.typechef.featureexpr.FeatureExpr
 
-trait CAnalysis extends ConditionalNavigation with ASTNavigation {
+trait CAnalysis extends ControlFlowImpl with ConditionalNavigation with ASTNavigation {
 
   // according to paper listed below; computation of cyclomatic complexity already contains
   // conditional inclusion directives of preprocessor
@@ -37,5 +37,25 @@ trait CAnalysis extends ConditionalNavigation with ASTNavigation {
 
   private def childrenCC(a: Attributable): Int = {
     a.children.map(eCC).foldLeft(0)(_ + _)
+  }
+
+  def collectStatements(a: Attributable): List[Statement] = {
+    var res = List[Statement]()
+    if (a.isInstanceOf[Statement]) res = res ++ List(a.asInstanceOf[Statement])
+    if (a.hasChildren) res = res ++ a.children.flatMap(collectStatements)
+    res
+  }
+
+  def deadCode(f: FunctionDef): List[Statement] = {
+    // filtering necessary because our control-flow analysis flattens over compoundstatements
+    var res = collectStatements(f).filterNot(_.isInstanceOf[CompoundStatement])
+    val ccfg = getAllSucc(f)
+
+    for ((_, succs: List[AST]) <- ccfg) {
+      val fstmts = succs.filter(_.isInstanceOf[Statement])
+      res = res.filterNot( x => fstmts.map(_.eq(x)).foldLeft(false)(_||_) )
+    }
+
+    return res
   }
 }

@@ -9,11 +9,11 @@ import org.scalatest.FunSuite
 import org.scalatest.Tag
 import org.scalatest.matchers.ShouldMatchers
 
-object simpletest extends Tag("simpletest")
-object totest extends Tag("totest")
-
 @RunWith(classOf[JUnitRunner])
 class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers with VariablesImpl with ControlFlowImpl with LivenessImpl{
+
+  object simpletest extends Tag("simpletest")
+  object totest extends Tag("totest")
 
   private def cp(pro: p.MultiParser[AST]) = pro ^^ { One(_) }
 
@@ -497,6 +497,19 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     print(t)
   }
 
+  test("cfg function", simpletest) {
+    val a = parsePrintASTGetAST("""
+    void foo() {
+      #ifdef A
+      int a;
+      #else
+      int anot;
+      #endif
+    }
+    """, p.functionDef)
+    DotGraph.map2file(getAllSucc(a))
+  }
+
   test("testLiveness") {
     val a = parsePrintASTGetAST("""
     {
@@ -516,11 +529,11 @@ class ControlFlowGraphTest extends FunSuite with TestHelper with ShouldMatchers 
     println("uses: " + uses(childAST(a.children.next)))
   }
 
-  test("testLiveness - constructed", simpletest) {
+  test("testLiveness - constructed") {
     val s1 = Opt(True, DeclarationStatement(Declaration(List(Opt(True, IntSpecifier())), List(Opt(True, InitDeclaratorI(AtomicNamedDeclarator(List(), Id("y"), List()), List(), Some(Initializer(None, Id("v")))))))))
-    val s2 = Opt(True, DeclarationStatement(Declaration(List(Opt(True, IntSpecifier())), List(Opt(True, InitDeclaratorI(AtomicNamedDeclarator(List(), Id("z"), List()), List(), Some(Initializer(None, Id("y")))))))))
+    val s2 = Opt(fx, DeclarationStatement(Declaration(List(Opt(True, IntSpecifier())), List(Opt(True, InitDeclaratorI(AtomicNamedDeclarator(List(), Id("z"), List()), List(), Some(Initializer(None, Id("y")))))))))
     val s3 = Opt(True, DeclarationStatement(Declaration(List(Opt(True, IntSpecifier())), List(Opt(True, InitDeclaratorI(AtomicNamedDeclarator(List(), Id("x"), List()), List(), Some(Initializer(None, Id("v")))))))))
-    val s41 = Opt(True, ExprStatement(AssignExpr(Id("x"), "=", Id("w"))))
+    val s41 = Opt(fy, ExprStatement(AssignExpr(Id("x"), "=", Id("w"))))
     val s42 = Opt(True, ExprStatement(AssignExpr(Id("x"), "=", Id("v"))))
     val s4 = Opt(True, WhileStatement(Id("x"), One(CompoundStatement(List(s41, s42)))))
     val s5 = Opt(True, ReturnStatement(Some(Id("x"))))

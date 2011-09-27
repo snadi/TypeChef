@@ -51,7 +51,7 @@ import org.kiama._
 import attribution.Attributable
 import org.kiama.attribution.DynamicAttribution._
 import de.fosd.typechef.conditional._
-import de.fosd.typechef.typesystem.ASTNavigation
+import de.fosd.typechef.parser.c.ASTNavigation
 
 class CRefactorings extends ASTNavigation with ConditionalNavigation {
 

@@ -40,6 +40,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
   // handling of successor determination of a single statement
   def succ(a: Attributable): List[AST] = {
     a match {
+      case f@FunctionDef(_, _, _, stmt) => succ(stmt)
       case o: Opt[AST] => succ(o.entry)
       case t@ForStatement(init, break, inc, b) => {
         if (init.isDefined) List(init.get)

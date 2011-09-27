@@ -116,4 +116,14 @@ trait ASTNavigation {
   protected def outer[T](f: AST ==> T, init: () => T, e: AST): T =
     if (prevOrParentAST(e) != null) f(prevOrParentAST(e))
     else init()
+
+  def visitAST(ast: Attributable, f: AST => Boolean): Unit = {
+    val visitChildren =
+      if (ast.isInstanceOf[AST])
+        f(ast.asInstanceOf[AST])
+      else true
+        if (visitChildren)
+          for (child <- ast.children)
+            visitAST(child, f)
+    }
 }

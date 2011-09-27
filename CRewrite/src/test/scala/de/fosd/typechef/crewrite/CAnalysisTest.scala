@@ -4,12 +4,17 @@ import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Tag
 
 import de.fosd.typechef.parser.c._
 import de.fosd.typechef.conditional._
 
 @RunWith(classOf[JUnitRunner])
 class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CAnalysis{
+
+  object simpletest extends Tag("simpletest")
+  object totest extends Tag("totest")
+
   private def cp(pro: p.MultiParser[AST]) = pro ^^ {One(_)}
 
   private def parsePrintCC(code: String, pro: p.MultiParser[AST]) = {
@@ -17,6 +22,13 @@ class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CA
     println(ast)
     println(PrettyPrinter.print(ast))
     println("cyclomatic complexity: " + cc(ast))
+  }
+
+  private def parsePrintDeadCode(code: String) = {
+    val ast = parse(code, cp(p.functionDef)).get.asInstanceOf[One[AST]].value
+    println(ast)
+    println(PrettyPrinter.print(ast))
+    println("dead code: " + deadCode(ast.asInstanceOf[FunctionDef]))
   }
 
   test("if-then-else", totest) {
@@ -42,4 +54,25 @@ class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CA
     """, p.compoundStatement)
   }
 
+  test("simple deadcode return", totest) {
+    parsePrintDeadCode("""
+    void foo() {
+      int a;
+      return a;
+      int b;
+    }
+    """)
+  }
+
+  test("simple deadcode return variable", totest) {
+    parsePrintDeadCode("""
+    void foo() {
+      int a;
+      #ifdef A
+      return a;
+      #endif
+      int b;
+    }
+    """)
+  }
 }
