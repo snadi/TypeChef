@@ -66,7 +66,7 @@ class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CA
     """, p.compoundStatement)
   }
 
-  test("if-then with &&", simpletest) {
+  test("if-then with &&", totest) {
     parsePrintCC("""
     {
       if (a && b || c) {
@@ -89,7 +89,20 @@ class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CA
     """)
   }
 
-  test("simple deadcode return variable", totest) {
+  test("simple deadcode return variable", simpletest) {
+    parsePrintDeadCode("""
+    void foo() {
+      int a;
+      #ifdef A
+      return a;
+      int c;
+      #endif
+      int b;
+    }
+    """)
+  }
+
+  test("simple deadcode return variable different block", totest) {
     parsePrintDeadCode("""
     void foo() {
       int a;
