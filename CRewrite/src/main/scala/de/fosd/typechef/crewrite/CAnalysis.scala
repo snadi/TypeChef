@@ -41,16 +41,16 @@ trait CAnalysis extends ControlFlowImpl with ConditionalNavigation with ASTNavig
     a.children.map(eCC).foldLeft(0)(_ + _)
   }
 
-  def collectStatements(a: Attributable): List[Statement] = {
-    var res = List[Statement]()
-    if (a.isInstanceOf[Statement]) res = res ++ List(a.asInstanceOf[Statement])
-    if (a.hasChildren) res = res ++ a.children.flatMap(collectStatements)
+  def collectASTElements[T <: Attributable](a: Attributable): List[T] = {
+    var res = List[T]()
+    if (a.isInstanceOf[T]) res = res ++ List(a.asInstanceOf[T])
+    if (a.hasChildren) res = res ++ a.children.flatMap(collectASTElements[T])
     res
   }
 
   def deadCode(f: FunctionDef): List[Statement] = {
     // filtering necessary because our control-flow analysis flattens over compoundstatements
-    var res = collectStatements(f).filterNot(_.isInstanceOf[CompoundStatement])
+    var res = collectASTElements[Statement](f).filterNot(_.isInstanceOf[CompoundStatement])
     val ccfg = getAllSucc(f)
 
     for ((_, succs: List[AST]) <- ccfg) {
