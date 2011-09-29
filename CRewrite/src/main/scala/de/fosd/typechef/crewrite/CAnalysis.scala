@@ -41,16 +41,23 @@ trait CAnalysis extends ControlFlowImpl with ConditionalNavigation with ASTNavig
     a.children.map(eCC).foldLeft(0)(_ + _)
   }
 
-  def collectASTElements[T](a: Attributable, t: Class[T]): List[T] = {
+  def collectASTElementsJavaStyle[T](a: Attributable, t: Class[T]): List[T] = {
     var res = List[T]()
-    if (t.isInstance(a)) res = res ++ List(t.cast(a))
-    if (a.hasChildren) res = res ++ a.children.flatMap(collectASTElements[T](_, t))
+    if (t.isInstance(a)) res = res :+ t.cast(a)
+    if (a.hasChildren) res = res ++ a.children.flatMap(collectASTElementsJavaStyle[T](_, t))
+    res
+  }
+
+  def collectASTElements[T](a: Attributable)(implicit m: Manifest[T]): List[T] = {
+    var res = List[T]()
+    if (m.erasure.isInstance(a)) res = res :+ a.asInstanceOf[T]
+    if (a.hasChildren) res = res ++ a.children.flatMap(collectASTElements[T](_))
     res
   }
 
   def deadCode(f: FunctionDef): List[Statement] = {
-    // filtering necessary because our control-flow analysis flattens over compoundstatements
-    var res = collectASTElements[Statement](f, classOf[Statement]).filterNot(_.isInstanceOf[CompoundStatement])
+    //var res = collectASTElementsJavaStyle[Statement](f, classOf[Statement]).filterNot(_.isInstanceOf[CompoundStatement])
+    var res = collectASTElements[Statement](f).filterNot(_.isInstanceOf[CompoundStatement])
     val ccfg = getAllSucc(f)
 
     for ((_, succs: List[AST]) <- ccfg) {
@@ -58,6 +65,6 @@ trait CAnalysis extends ControlFlowImpl with ConditionalNavigation with ASTNavig
       res = res.filterNot( x => fstmts.map(_.eq(x)).foldLeft(false)(_||_) )
     }
 
-    return res
+    res
   }
 }
