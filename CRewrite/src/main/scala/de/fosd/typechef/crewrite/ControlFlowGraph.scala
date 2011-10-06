@@ -123,7 +123,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
       case t@DoStatement(e, b) if e.eq(a) => simpleOrCompoundStatement(t, b) ++ getSuccSameLevel(t)
       case t@IfStatement(e, tb, elif, el) if e.eq(a) => {
         var res = simpleOrCompoundStatement(t, tb)
-        if (! elif.isEmpty) res = res ++ getSuccNestedLevel(elif)
+        if (! elif.isEmpty) res = res ++ getSuccNestedLevel(elif)  // call getSuccNestedLevel on elif does not seem right
         if (el.isDefined) res = res ++ simpleOrCompoundStatement(t, el.get)
         res
       }

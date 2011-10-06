@@ -126,4 +126,5 @@ trait ASTNavigation {
           for (child <- ast.children)
             visitAST(child, f)
     }
+
 }
