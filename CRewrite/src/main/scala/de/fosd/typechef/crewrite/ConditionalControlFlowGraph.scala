@@ -13,11 +13,11 @@ case class CFComplete(s: List[AST]) extends CFCompleteness
 case class CFIncomplete(s: List[AST]) extends CFCompleteness
 
 // http://code.google.com/p/kiama/source/browse/src/org/kiama/example/dataflow/Dataflow.scala
-trait ControlFlow {
+trait ConditionalControlFlow {
   def succ(a: Attributable): List[AST]
 }
 
-trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNavigation {
+trait ConditionalControlFlowImpl extends ConditionalControlFlow with ASTNavigation with ConditionalNavigation {
 
   private implicit def optList2ASTList(l: List[Opt[AST]]) = l.map(_.entry)
   private implicit def opt2AST(s: Opt[AST]) = s.entry
@@ -402,7 +402,7 @@ trait Liveness {
 }
 
 trait LivenessImpl extends Liveness with FeatureExprLookup {
-  self : Liveness with Variables with ControlFlow =>
+  self : Liveness with Variables with ConditionalControlFlow =>
 
   private def insertIntoList[T](l: List[T], e: T, f: (T, T) => Boolean, j: (T, T) => T): List[T] = {
     l match {

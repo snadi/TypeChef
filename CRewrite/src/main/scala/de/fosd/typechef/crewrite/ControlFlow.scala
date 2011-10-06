@@ -8,15 +8,15 @@ import de.fosd.typechef.conditional._
 // ignores annotations and leaves reasoning about it to the
 // sat solver and to the implementation using variabilityflow
 // functions
-trait VariabilityFlow {
-  def succvar(a: Attributable): List[AST]
+trait ControlFlow {
+  def succ(a: Attributable): List[AST]
 }
 
-trait VariabilityFlowImpl extends VariabilityFlow with ASTNavigation with ConditionalNavigation {
-  def succvar(a: Attributable): List[AST] = {
+trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNavigation {
+  def succ(a: Attributable): List[AST] = {
     a match {
-      case f@FunctionDef(_, _, _, stmt) => succvar(stmt)
-      case o: Opt[AST] => succvar(o.entry)
+      case f@FunctionDef(_, _, _, stmt) => succ(stmt)
+      case o: Opt[AST] => succ(o.entry)
       case t@ForStatement(init, break, inc, b) => {
         if (init.isDefined) List(init.get)
         else if (break.isDefined) List(break.get)
@@ -29,7 +29,7 @@ trait VariabilityFlowImpl extends VariabilityFlow with ASTNavigation with Condit
       case SwitchStatement(c, _) => List(c)
       case CompoundStatement(l) => List(l.head.entry)
       case s: Statement => nextOrFollowUp(s)
-      case t => followingvar(t)
+      case t => following(t)
     }
   }
 
@@ -39,7 +39,7 @@ trait VariabilityFlowImpl extends VariabilityFlow with ASTNavigation with Condit
     else followUp(s)
   }
 
-  def followingvar(s: Attributable): List[AST] = {
+  def following(s: Attributable): List[AST] = {
     parentAST(s) match {
       case t@ForStatement(Some(e), c, _, b) if e.eq(s) => if (c.isDefined) List(c.get) else simpleOrCompoundStatement(t, b)
       case t@ForStatement(_, Some(e), _, b) if e.eq(s) => nextOrFollowUp(t) ++ simpleOrCompoundStatement (t, b)
@@ -94,7 +94,7 @@ trait VariabilityFlowImpl extends VariabilityFlow with ASTNavigation with Condit
       s = s.tail
 
       if (d.filter(_.eq(c)).isEmpty) {
-        r = (c, succvar(c)) :: r
+        r = (c, succ(c)) :: r
         s = s ++ r.head._2
         d = d ++ List(c)
       }

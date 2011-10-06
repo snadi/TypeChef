@@ -7,7 +7,7 @@ import org.kiama.attribution._
 import org.kiama.attribution.Attribution._
 import de.fosd.typechef.featureexpr.FeatureExpr
 
-trait CAnalysis extends ControlFlowImpl with ConditionalNavigation with ASTNavigation {
+trait CAnalysis extends ConditionalControlFlowImpl with ConditionalNavigation with ASTNavigation {
 
   // according to paper listed below; computation of cyclomatic complexity already contains
   // conditional inclusion directives of preprocessor
