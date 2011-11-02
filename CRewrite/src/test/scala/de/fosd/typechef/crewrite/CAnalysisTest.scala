@@ -10,9 +10,8 @@ import de.fosd.typechef.parser.c._
 import de.fosd.typechef.conditional._
 
 @RunWith(classOf[JUnitRunner])
-class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CAnalysis{
+class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CAnalysis {
 
-  object simpletest extends Tag("simpletest")
   object totest extends Tag("totest")
 
   private def cp(pro: p.MultiParser[AST]) = pro ^^ {One(_)}
@@ -28,10 +27,10 @@ class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CA
     val ast = parse(code, cp(p.functionDef)).get.asInstanceOf[One[AST]].value
     println(ast)
     println(PrettyPrinter.print(ast))
-    println("dead code: " + deadCode(ast.asInstanceOf[FunctionDef]))
+    println("dead code: " + deadCodeSAT(ast.asInstanceOf[FunctionDef]))
   }
 
-  test("if-then-else", totest) {
+  test("if-then-else") {
     parsePrintCC("""
     {
       #ifdef A
@@ -43,7 +42,7 @@ class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CA
     """, p.compoundStatement)
   }
 
-  test("if-then", totest) {
+  test("if-then") {
     parsePrintCC("""
     {
       int a;
@@ -54,7 +53,7 @@ class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CA
     """, p.compoundStatement)
   }
 
-  test("switch-case", totest) {
+  test("switch-case") {
     parsePrintCC("""
     {
       switch (x) {
@@ -66,7 +65,7 @@ class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CA
     """, p.compoundStatement)
   }
 
-  test("if-then with &&", totest) {
+  test("if-then with &&") {
     parsePrintCC("""
     {
       if (a && b || c) {
@@ -89,7 +88,7 @@ class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CA
     """)
   }
 
-  test("simple deadcode return variable", simpletest) {
+  test("simple deadcode return variable", totest) {
     parsePrintDeadCode("""
     void foo() {
       int a;
@@ -106,7 +105,7 @@ class CAnalysisTest extends FunSuite with TestHelper with ShouldMatchers with CA
     parsePrintDeadCode("""
     void foo() {
       int a;
-      #ifdef A
+      #if defined(A)
       return a;
       #endif
       int b;

@@ -7,7 +7,7 @@ import org.kiama.attribution._
 import org.kiama.attribution.Attribution._
 import de.fosd.typechef.featureexpr.FeatureExpr
 
-trait CAnalysis extends ConditionalControlFlowImpl with ConditionalNavigation with ASTNavigation {
+trait CAnalysis extends ControlFlowImpl with ConditionalNavigation with ASTNavigation {
 
   // according to paper listed below; computation of cyclomatic complexity already contains
   // conditional inclusion directives of preprocessor
@@ -63,6 +63,47 @@ trait CAnalysis extends ConditionalControlFlowImpl with ConditionalNavigation wi
     for ((_, succs: List[AST]) <- ccfg) {
       val fstmts = succs.filter(_.isInstanceOf[Statement])
       res = res.filterNot( x => fstmts.map(_.eq(x)).foldLeft(false)(_||_) )
+    }
+
+    res
+  }
+
+  private def causeDeadCode(s: AST): Boolean = {
+    s match {
+      case e: BreakStatement => true
+      case e: ContinueStatement => true
+      case e: ReturnStatement => true
+      case _ => false
+    }
+  }
+
+  private def isDead(s: AST): Boolean = {
+    var p = prevOrParentAST(s)
+
+    while (featureExpr(p).and(featureExpr(s)).isContradiction())
+      p = prevOrParentAST(p)
+
+    if (!featureExpr(p).isDead() && causeDeadCode(p)) true
+    else false
+  }
+
+  def deadCodeSAT(f: FunctionDef): List[AST] = {
+    var res = List[AST]()
+    var done = List[AST]()
+    var wq = List[AST](f)
+
+    while (!wq.isEmpty) {
+      val ce = wq.head
+      wq = wq.tail
+
+      if (!done.map(_.eq(ce)).foldLeft(false)(_||_)) {
+        done = done :+ ce
+        val sce = succ(ce)
+        wq = wq ++ sce
+
+        for (s: AST <- sce)
+          if (isDead(s)) res = res :+ s
+      }
     }
 
     res

@@ -165,6 +165,10 @@ class PrettyPrinterTest  {
         parsePrintParse("asm volatile { 3+3};", p.asm_expr)
     }
 
+    @Test def undisciplinedAnnotations {
+        parseFile("other/perror.c")
+    }
+
     @Test def testFunctionDef {
 
         parsePrintParse("void foo(){}", p.functionDef)

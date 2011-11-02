@@ -10,9 +10,12 @@ import de.fosd.typechef.conditional._
 // functions
 trait ControlFlow {
   def succ(a: Attributable): List[AST]
+  def prev(a: Attributable): List[AST]
 }
 
 trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNavigation {
+
+  // basically ignore annotations, in comparision to
   def succ(a: Attributable): List[AST] = {
     a match {
       case f@FunctionDef(_, _, _, stmt) => succ(stmt)
@@ -33,13 +36,22 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     }
   }
 
+  // we do not go into nested structures such as:
+  // if (x) {
+  //   int b;
+  //   return c;
+  // }
+  // int d;
+  // prev("int d") is "if (x) ..."
+  def prev(a: Attributable): List[AST] = List(prevOrParentAST(a))
+
   private def nextOrFollowUp(s: AST): List[AST] = {
     val sn = nextAST(s)
     if (sn != null) List(sn)
     else followUp(s)
   }
 
-  def following(s: Attributable): List[AST] = {
+  private def following(s: Attributable): List[AST] = {
     parentAST(s) match {
       case t@ForStatement(Some(e), c, _, b) if e.eq(s) => if (c.isDefined) List(c.get) else simpleOrCompoundStatement(t, b)
       case t@ForStatement(_, Some(e), _, b) if e.eq(s) => nextOrFollowUp(t) ++ simpleOrCompoundStatement (t, b)
@@ -61,7 +73,7 @@ trait ControlFlowImpl extends ControlFlow with ASTNavigation with ConditionalNav
     }
   }
 
-  def followUp(s: Attributable): List[AST] = {
+  private def followUp(s: Attributable): List[AST] = {
     s.parent[Attributable] match {
       case c: CompoundStatement => followUp(c)
       case w @ WhileStatement(e, _) => List(e)
