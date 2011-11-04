@@ -26,7 +26,9 @@ trait ConditionalControlFlowImpl extends ConditionalControlFlow with ASTNavigati
   // depends on order of the input:
   // int a;
   // a = 2;
-  // #ifdef B a = 3; #endif
+  // #ifdef B
+  // a = 3;
+  // #endif
   // a = 4;
   // succ(a = 2) => [(B, a = 3), (True, a = 4)]; if we reverse the output of succ here
   // TChoice(B, a = 3, a = 4); we get the wrong output here: TChoice(True, a = 4, a = 3) // a = 3 is dead here
@@ -52,11 +54,11 @@ trait ConditionalControlFlowImpl extends ConditionalControlFlow with ASTNavigati
       case t@IfStatement(c, _, _, _) => List(c)
       case t@ElifStatement(c, _) => List(c)
       case SwitchStatement(c, _) => List(c)
-      case ReturnStatement(_) => List()
+      case w@ReturnStatement(_) => getSuccSameLevel(w)
       case w@CompoundStatement(l) => getSuccSameLevel(w) ++ getSuccNestedLevel(l)
       case w@BreakStatement() => {
         val f = followUp(w)
-        if (f.isDefined) getSuccSameLevel(f.get.head) else List()
+        if (f.isDefined) getSuccSameLevel(f.get.head) else getSuccSameLevel(w)
       }
       case w@ContinueStatement() => {
         val f = followUp(w)
@@ -68,12 +70,12 @@ trait ConditionalControlFlowImpl extends ConditionalControlFlow with ASTNavigati
           }
           case WhileStatement(c, _) => List(c)
           case DoStatement(c, _) => List(c)
-          case _ => List()
-        } else List()
+          case _ => List() // TODO
+        } else getSuccSameLevel(w)
       }
       case w@GotoStatement(Id(l)) => {
         val f = findPriorFuncDefinition(w)
-        if (f == null) List()
+        if (f == null) getSuccSameLevel(w)
         else labelLookup(f, l)
       }
       case s: Statement => getSuccSameLevel(s)
