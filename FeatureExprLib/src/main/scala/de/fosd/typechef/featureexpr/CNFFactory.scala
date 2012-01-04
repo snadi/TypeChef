@@ -47,7 +47,6 @@ trait CNFFactory {
                     var result = init + (id -> newClauses)
 
                     _rewrite(c, result)
-                case And(Seq()) => init + (id -> Nil)
                 case And(cl) => //id <=> c1 and c2 and ...
                     var newClauses: List[Seq[Sign[UUID]]] = Nil
                     //id => c_n
