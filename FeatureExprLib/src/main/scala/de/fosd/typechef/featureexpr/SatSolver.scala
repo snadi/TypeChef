@@ -4,7 +4,9 @@ import org.sat4j.core.VecInt
 import collection.mutable.WeakHashMap
 import org.sat4j.specs.IConstr;
 import org.sat4j.minisat.SolverFactory;
-import org.sat4j.specs.ContradictionException;
+import org.sat4j.specs.ContradictionException
+import java.util.UUID
+;
 
 /**
  * connection to the SAT4j SAT solver
@@ -19,7 +21,26 @@ class SatSolver {
      * hence caching is currently disabled
      */
     val CACHING = false
+
     def isSatisfiable(exprCNF: FeatureExpr, featureModel: FeatureModel = NoFeatureModel): Boolean = {
+        (if (CACHING && (nfm(featureModel) != NoFeatureModel))
+            SatSolverCache.get(nfm(featureModel))
+        else
+            new SatSolverImpl(nfm(featureModel), false)).isSatisfiable(exprCNF)
+    }
+
+    private def nfm(fm: FeatureModel) = if (fm == null) NoFeatureModel else fm
+}
+
+class SatSolver2 {
+    /**
+     * caching can reuse SAT solver instances, but experience
+     * has shown that it can lead to incorrect results,
+     * hence caching is currently disabled
+     */
+    val CACHING = false
+
+    def isSatisfiable(exprCNF: Map[UUID, Seq[Seq[Sign[UUID]]]], featureModel: FeatureModel = NoFeatureModel): Boolean = {
         (if (CACHING && (nfm(featureModel) != NoFeatureModel))
             SatSolverCache.get(nfm(featureModel))
         else
@@ -31,6 +52,7 @@ class SatSolver {
 
 private object SatSolverCache {
     val cache: WeakHashMap[FeatureModel, SatSolverImpl] = new WeakHashMap()
+
     def get(fm: FeatureModel) =
     /*if (fm == NoFeatureModel) new SatSolverImpl(fm)
    else */ cache.getOrElseUpdate(fm, new SatSolverImpl(fm, true))
@@ -55,7 +77,6 @@ private class SatSolverImpl(featureModel: FeatureModel, isReused: Boolean) {
 
     assert(featureModel != null)
     solver.addAllClauses(featureModel.clauses)
-    var uniqueFlagIds: Map[String, Int] = featureModel.variables
 
     /**
      * determines whether
@@ -64,6 +85,7 @@ private class SatSolverImpl(featureModel: FeatureModel, isReused: Boolean) {
      * featureModel is optional
      */
     def isSatisfiable(exprCNF: CNF): Boolean = {
+        var uniqueFlagIds: Map[String, Int] = featureModel.variables
         assert(CNFHelper.isCNF(exprCNF))
 
         if (exprCNF == True) return true
@@ -105,7 +127,7 @@ private class SatSolverImpl(featureModel: FeatureModel, isReused: Boolean) {
              * which is removed from the solver at the end
              */
 
-            var constraintGroup:Set[IConstr] = Set()
+            var constraintGroup: Set[IConstr] = Set()
             try {
                 val assumptions = new VecInt();
                 try {
@@ -131,7 +153,7 @@ private class SatSolverImpl(featureModel: FeatureModel, isReused: Boolean) {
                 return result
             } finally {
                 if (isReused)
-                    for (constr<-constraintGroup)
+                    for (constr <- constraintGroup)
                         assert(solver.removeConstr(constr))
             }
         } finally {
@@ -139,6 +161,87 @@ private class SatSolverImpl(featureModel: FeatureModel, isReused: Boolean) {
                 println(" in " + (System.currentTimeMillis() - startTimeSAT) + " ms>")
         }
     }
+
+
+    /**
+     * determines whether
+     * (exprCNF AND featureModel) is satisfiable
+     *
+     * featureModel is optional
+     */
+    def isSatisfiable(exprCNF: Map[UUID, Seq[Seq[Sign[UUID]]]]): Boolean = {
+        //as long as we do not consider feature models, expressions with a single variable
+        //are always satisfiable
+        if ((featureModel == NoFeatureModel) && (CNFHelper.isLiteralExternal(exprCNF))) return true
+
+        val startTime = System.currentTimeMillis();
+
+        if (PROFILING)
+            print("<SAT " + countClauses(exprCNF) + " with " + exprCNF.size + " flags; ")
+
+        val startTimeSAT = System.currentTimeMillis();
+        try {
+
+            //find used macros, combine them by common expansion
+            if (PROFILING)
+                print(";")
+            var uniqueFlagIds: Map[UUID, Int] = Map()
+            if (featureModel == NoFeatureModel) {
+                for (flag <- exprCNF.keys)
+                    uniqueFlagIds = uniqueFlagIds + ((flag, uniqueFlagIds.size + 1))
+
+            } else {
+                uniqueFlagIds = featureModel.variables.map(x => (FeatureExpr.createDefinedExternal(x._1).getId, x._2))
+                for (flag <- exprCNF.keys)
+                    if (!uniqueFlagIds.contains(flag))
+                        uniqueFlagIds = uniqueFlagIds + ((flag, uniqueFlagIds.size + 1))
+            }
+
+            //update max size (nothing happens if smaller than previous setting)
+            solver.newVar(uniqueFlagIds.size)
+
+            /**
+             * to reuse SAT solver state, use the following strategy for adding
+             * (adopted from Thomas Thuems solution in FeatureIDE):
+             *
+             * clauses with only a single literal are added to "assumptions" and can be
+             * checked as paramter to isSatisfiable
+             * all other clauses are added to the Solver but remembered in "constraintGroup"
+             * which is removed from the solver at the end
+             */
+
+            var constraintGroup: Set[IConstr] = Set()
+            try {
+                try {
+                    for (cl <- exprCNF.values; c <- cl) {
+                        val clause = new VecInt();
+                        for (x: Sign[UUID] <- c)
+                            clause.push(uniqueFlagIds(x.id) * x.fact)
+                        solver.addClause(clause)
+                    }
+                } catch {
+                    case e: ContradictionException => return false;
+                }
+
+                if (PROFILING)
+                    print(";")
+
+                val result = solver.isSatisfiable()
+                if (PROFILING)
+                    print(result + ";")
+                return result
+            } finally {
+                if (isReused)
+                    for (constr <- constraintGroup)
+                        assert(solver.removeConstr(constr))
+            }
+        } finally {
+            if (PROFILING)
+                println(" in " + (System.currentTimeMillis() - startTimeSAT) + " ms>")
+        }
+    }
+
+
 }
 
 private object SatSolver {
@@ -148,6 +251,8 @@ private object SatSolver {
     type Literal = FeatureExpr
     type Flag = DefinedExpr
 
+
+    def countClauses(expr: Map[UUID, Seq[Seq[Sign[UUID]]]]) = expr.values.map(_.length).reduce(_ + _)
 
     def countClauses(expr: CNF) = CNFHelper.getCNFClauses(expr).size
 

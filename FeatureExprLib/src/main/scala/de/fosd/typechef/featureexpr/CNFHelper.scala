@@ -1,5 +1,7 @@
 package de.fosd.typechef.featureexpr
 
+import java.util.UUID
+
 
 /**
  * CNFHelper provides several auxiliary functions to determine whether an expression is
@@ -13,21 +15,29 @@ object CNFHelper {
         case And(clauses) => clauses.forall(isClause(_))
         case e => false
     })
+
     def isClauseOrTF(expr: FeatureExpr) = isTrueFalse(expr) || isClause(expr)
+
     def isClause(expr: FeatureExpr) = isLiteral(expr) || (expr match {
         case Or(literals) => literals.forall(isLiteral(_))
         case _ => false
     })
+
     def isLiteral(expr: FeatureExpr) = expr match {
         case x: DefinedExpr => true
         case Not(DefinedExpr(_)) => true
         case _ => false
     }
+
+    def isLiteralExternal(expr: Map[UUID, Seq[Seq[Sign[UUID]]]]) =
+        (expr.size == 1) && (expr.values.head.length == 1) && (expr.values.head.head.length == 1)
+
     def isLiteralExternal(expr: FeatureExpr) = expr match {
         case x: DefinedExternal => true
         case Not(x: DefinedExternal) => true
         case _ => false
     }
+
     def isTrueFalse(expr: FeatureExpr) = expr match {
         case True => true
         case False => true

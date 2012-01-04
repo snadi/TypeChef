@@ -11,16 +11,20 @@ object MacroContext {
     def setPrefixFilter(prefix: String) {
         flagFilters = ((x: String) => !x.startsWith(prefix)) :: flagFilters
     }
+
     def setPostfixFilter(postfix: String) {
         flagFilters = ((x: String) => !x.endsWith(postfix)) :: flagFilters
     }
+
     def setPrefixOnlyFilter(prefix: String) {
         flagFilters = ((x: String) => x.startsWith(prefix)) :: flagFilters
     }
+
     def setListFilter(openFeaturesPath: String) {
         val openFeatures = io.Source.fromFile(openFeaturesPath).getLines.toSet
         flagFilters = (x => openFeatures.contains(x)) :: flagFilters
     }
+
     /**
      * Returns whether the macro x represents a feature.
      * It checks if any flag filters classify this as non-feature - equivalently, if all
@@ -45,8 +49,14 @@ import FeatureExpr.createDefinedExternal
  * by construction, all alternatives are mutually exclusive (but do not necessarily add to BASE)
  */
 class MacroContext[T](knownMacros: Map[String, Macro[T]], var cnfCache: Map[String, (String, Susp[FeatureExpr])], featureModel: FeatureModel) extends FeatureProvider {
-    def this(fm: FeatureModel) = {this (Map(), Map(), fm)}
-    def this() = {this (null)}
+    def this(fm: FeatureModel) = {
+        this (Map(), Map(), fm)
+    }
+
+    def this() = {
+        this (null)
+    }
+
     def define(name: String, infeature: FeatureExpr, other: T): MacroContext[T] = {
         val feature = infeature //.resolveToExternal()
         val newMC = new MacroContext(
@@ -118,7 +128,7 @@ class MacroContext[T](knownMacros: Map[String, Macro[T]], var cnfCache: Map[Stri
         val c = getMacroCondition(name)
         val d = FeatureExpr.createDefinedExternal(newMacroName)
         val condition = c equiv d
-        val cnf = LazyLib.delay(condition.toCnfEquiSat)
+        val cnf = LazyLib.delay(condition.toCNF())
         val result = (newMacroName, cnf)
         cnfCache = cnfCache + (name -> result)
         result
@@ -133,10 +143,14 @@ class MacroContext[T](knownMacros: Map[String, Macro[T]], var cnfCache: Map[Stri
             case Some(macro) => macro.getOther(featureModel).toArray
             case None => Array()
         }
+
     def getApplicableMacroExpansions(identifier: String, currentPresenceCondition: FeatureExpr): Array[MacroExpansion[T]] =
         getMacroExpansions(identifier).filter(m => !currentPresenceCondition.and(m.getFeature()).isContradiction(featureModel));
 
-    override def toString() = {knownMacros.values.mkString("\n\n\n") + printStatistics}
+    override def toString() = {
+        knownMacros.values.mkString("\n\n\n") + printStatistics
+    }
+
     def debugPrint(writer: PrintWriter) {
         knownMacros.values.foreach(x => {
             writer print x;
@@ -144,14 +158,16 @@ class MacroContext[T](knownMacros: Map[String, Macro[T]], var cnfCache: Map[Stri
         })
         writer print printStatistics
     }
+
     def printStatistics =
         "\n\n\nStatistics (macros,macros with >1 alternative expansions,>2,>3,>4,non-trivial presence conditions):\n" +
-                knownMacros.size + ";" +
-                knownMacros.values.filter(_.numberOfExpansions > 1).size + ";" +
-                knownMacros.values.filter(_.numberOfExpansions > 2).size + ";" +
-                knownMacros.values.filter(_.numberOfExpansions > 3).size + ";" +
-                knownMacros.values.filter(_.numberOfExpansions > 4).size + ";" +
-                knownMacros.values.filter(!_.getFeature.isTautology(featureModel)).size + "\n"
+            knownMacros.size + ";" +
+            knownMacros.values.filter(_.numberOfExpansions > 1).size + ";" +
+            knownMacros.values.filter(_.numberOfExpansions > 2).size + ";" +
+            knownMacros.values.filter(_.numberOfExpansions > 3).size + ";" +
+            knownMacros.values.filter(_.numberOfExpansions > 4).size + ";" +
+            knownMacros.values.filter(!_.getFeature.isTautology(featureModel)).size + "\n"
+
     //,number of distinct configuration flags
     //    	+getNumberOfDistinctFlagsStatistic+"\n";
     //    private def getNumberOfDistinctFlagsStatistic = {
@@ -176,12 +192,15 @@ class MacroContext[T](knownMacros: Map[String, Macro[T]], var cnfCache: Map[Stri
  */
 private class Macro[T](name: String, feature: FeatureExpr, var featureExpansions: List[MacroExpansion[T]]) {
     def getName() = name;
+
     def getFeature() = feature;
+
     def getOther(fm: FeatureModel) = {
         //lazy filtering
         featureExpansions = featureExpansions.filter(!_.getFeature().isContradiction(fm))
         featureExpansions;
     }
+
     def addNewAlternative(exp: MacroExpansion[T]) =
     //note addExpansion changes presence conditions of existing expansions
         new Macro[T](name, feature.or(exp.getFeature()), addExpansion(exp))
@@ -200,18 +219,25 @@ private class Macro[T](name: String, feature: FeatureExpr, var featureExpansions
                 other.andNot(exp.getFeature()))
         if (found) modifiedExpansions else exp :: modifiedExpansions
     }
+
     def andNot(expr: FeatureExpr) =
         new Macro[T](name, feature and (expr.not), featureExpansions.map(_.andNot(expr)));
+
     //  override def equals(that:Any) = that match { case m:Macro => m.getName() == name; case _ => false; }
     override def toString() = "#define " + name + " if " + feature.toString + " \n\texpansions \n" + featureExpansions.mkString("\n")
+
     def numberOfExpansions = featureExpansions.size
 }
 
 class MacroExpansion[T](feature: FeatureExpr, expansion: T /* Actually, MacroData from PartialPreprocessor*/) {
     def getFeature(): FeatureExpr = feature
+
     def getExpansion(): T = expansion
+
     def andNot(expr: FeatureExpr): MacroExpansion[T] = new MacroExpansion[T](feature and (expr.not), expansion)
+
     override def toString() = "\t\t" + expansion.toString() + " if " + feature.toString
+
     //if the other has the same expansion, merge features as OR
     def extend(other: MacroExpansion[T]) =
         new MacroExpansion[T](feature.or(other.getFeature()), expansion)
@@ -219,6 +245,7 @@ class MacroExpansion[T](feature: FeatureExpr, expansion: T /* Actually, MacroDat
 
 object MacroIdGenerator {
     var macroId = 0
+
     def nextMacroId = {
         macroId = macroId + 1
         macroId

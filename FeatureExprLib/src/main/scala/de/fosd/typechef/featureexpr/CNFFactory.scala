@@ -3,11 +3,19 @@ package de.fosd.typechef.featureexpr
 import java.util.UUID
 
 
-abstract class Sign[T](v: T)
+abstract class Sign[T](v: T) {
+    def id = v;
 
-case class Pos[T](v: T) extends Sign[T](v)
+    def fact: Int;
+}
 
-case class Neg[T](v: T) extends Sign[T](v)
+case class Pos[T](v: T) extends Sign[T](v) {
+    override def fact = 1;
+}
+
+case class Neg[T](v: T) extends Sign[T](v) {
+    override def fact = -1;
+}
 
 trait CNFFactory {
 
@@ -19,9 +27,10 @@ trait CNFFactory {
      *
      *
      */
+    def rewrite(expr: FeatureExpr): Map[UUID, Seq[Seq[Sign[UUID]]]] = _rewrite(expr, Map()) + (UUID.randomUUID() -> Seq(Pos(expr.getId) :: Nil)) //root always selected
 
 
-    def rewrite(expr: FeatureExpr, init: Map[UUID, Seq[Seq[Sign[UUID]]]]): Map[UUID, Seq[Seq[Sign[UUID]]]] = {
+    private def _rewrite(expr: FeatureExpr, init: Map[UUID, Seq[Seq[Sign[UUID]]]]): Map[UUID, Seq[Seq[Sign[UUID]]]] = {
         if (init.contains(expr.getId))
             init
         else {
@@ -35,9 +44,10 @@ trait CNFFactory {
                     val v2: Seq[Sign[UUID]] = Pos(id) :: Neg(c.getId) :: Nil
                     var newClauses: List[Seq[Sign[UUID]]] = v1 :: v2 :: Nil
 
-                    var result = init + (expr.getId -> newClauses)
+                    var result = init + (id -> newClauses)
 
-                    rewrite(c, result)
+                    _rewrite(c, result)
+                case And(Seq()) => init + (id -> Nil)
                 case And(cl) => //id <=> c1 and c2 and ...
                     var newClauses: List[Seq[Sign[UUID]]] = Nil
                     //id => c_n
@@ -51,12 +61,15 @@ trait CNFFactory {
                         newClauses = v :: newClauses
                     }
 
-                    var result = init + (expr.getId -> newClauses)
+                    var result = init + (id -> newClauses)
 
                     for (c <- cl)
-                        result = rewrite(c, result)
+                        result = _rewrite(c, result)
                     result
                 case Or(cl) => //id <=> c1 or c2 or ...
+                    if (cl.isEmpty) //FALSE
+                        return init + (id -> Seq(Neg(id) :: Nil))
+
                     var newClauses: List[Seq[Sign[UUID]]] = Nil
                     //id <= c_n
                     for (c <- cl) {
@@ -69,10 +82,10 @@ trait CNFFactory {
                         newClauses = v :: newClauses
                     }
 
-                    var result = init + (expr.getId -> newClauses)
+                    var result = init + (id -> newClauses)
 
                     for (c <- cl)
-                        result = rewrite(c, result)
+                        result = _rewrite(c, result)
                     result
                 case Not(c) => //id <=> not c
                     // id => not c = not id or not c
@@ -81,9 +94,9 @@ trait CNFFactory {
                     val v2: Seq[Sign[UUID]] = Pos(id) :: Pos(c.getId) :: Nil
                     var newClauses: List[Seq[Sign[UUID]]] = v1 :: v2 :: Nil
 
-                    var result = init + (expr.getId -> newClauses)
+                    var result = init + (id -> newClauses)
 
-                    rewrite(c, result)
+                    _rewrite(c, result)
             }
         }
 
@@ -92,10 +105,10 @@ trait CNFFactory {
 
 }
 
-object Test extends App {
+object MuTest extends App {
     val a = FeatureExpr.createDefinedExternal("a")
     val b = FeatureExpr.createDefinedExternal("b")
     val c = FeatureExpr.createDefinedExternal("c")
-    println(new CNFFactory() {}.rewrite(FeatureExpr.base, Map()).mkString("\n"))
+    println(new CNFFactory() {}.rewrite(FeatureExpr.dead).mkString("\n"))
 }
 

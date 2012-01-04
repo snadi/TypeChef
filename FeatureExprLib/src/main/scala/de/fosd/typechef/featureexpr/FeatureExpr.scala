@@ -7,6 +7,8 @@ import collection.mutable.HashMap
 import collection.mutable.ArrayBuffer
 import scala.ref.WeakReference
 import java.io.Writer
+import java.util.UUID
+import collection.immutable
 
 /**
  * External interface for construction of non-boolean feature expressions
@@ -18,39 +20,61 @@ import java.io.Writer
 object FeatureExpr extends FeatureExprValueOps {
 
     def createComplement(expr: FeatureExprValue): FeatureExprValue = FExprBuilder.applyUnaryOperation(expr)(~_)
+
     def createNeg(expr: FeatureExprValue) = FExprBuilder.applyUnaryOperation(expr)(-_)
+
     def createBitAnd(left: FeatureExprValue, right: FeatureExprValue) = FExprBuilder.applyBinaryOperation(left, right)(_ & _)
+
     def createBitOr(left: FeatureExprValue, right: FeatureExprValue) = FExprBuilder.applyBinaryOperation(left, right)(_ | _)
+
     def createDivision(left: FeatureExprValue, right: FeatureExprValue): FeatureExprValue = FExprBuilder.applyBinaryOperation(left, right)(
         (l, r) => if (r == 0) ErrorValue[Long]("division by zero") else FExprBuilder.createValue(l / r))
+
     def createModulo(left: FeatureExprValue, right: FeatureExprValue) = FExprBuilder.applyBinaryOperation(left, right)(_ % _)
+
     def createEquals(left: FeatureExprValue, right: FeatureExprValue) = FExprBuilder.evalRelation(left, right)(_ == _)
+
     def createNotEquals(left: FeatureExprValue, right: FeatureExprValue) = FExprBuilder.evalRelation(left, right)(_ != _)
+
     def createLessThan(left: FeatureExprValue, right: FeatureExprValue) = FExprBuilder.evalRelation(left, right)(_ < _)
+
     def createLessThanEquals(left: FeatureExprValue, right: FeatureExprValue) = FExprBuilder.evalRelation(left, right)(_ <= _)
+
     def createGreaterThan(left: FeatureExprValue, right: FeatureExprValue) = FExprBuilder.evalRelation(left, right)(_ > _)
+
     def createGreaterThanEquals(left: FeatureExprValue, right: FeatureExprValue) = FExprBuilder.evalRelation(left, right)(_ >= _)
+
     def createMinus(left: FeatureExprValue, right: FeatureExprValue) = FExprBuilder.applyBinaryOperation(left, right)(_ - _)
+
     def createMult(left: FeatureExprValue, right: FeatureExprValue) = FExprBuilder.applyBinaryOperation(left, right)(_ * _)
+
     def createPlus(left: FeatureExprValue, right: FeatureExprValue) = FExprBuilder.applyBinaryOperation(left, right)(_ + _)
+
     def createPwr(left: FeatureExprValue, right: FeatureExprValue) = FExprBuilder.applyBinaryOperation(left, right)(_ ^ _)
+
     def createShiftLeft(left: FeatureExprValue, right: FeatureExprValue) = FExprBuilder.applyBinaryOperation(left, right)(_ << _)
+
     def createShiftRight(left: FeatureExprValue, right: FeatureExprValue) = FExprBuilder.applyBinaryOperation(left, right)(_ >> _)
 
     def createInteger(value: Long): FeatureExprValue = FExprBuilder.createValue(value)
+
     def createCharacter(value: Char): FeatureExprValue = FExprBuilder.createValue(value)
+
     def createValue[T](v: T): FeatureExprTree[T] = FExprBuilder.createValue(v)
 
 
     def createDefinedExternal(name: String): DefinedExternal = FExprBuilder.definedExternal(name)
+
     def createDefinedMacro(name: String, macroTable: FeatureProvider): FeatureExpr = FExprBuilder.definedMacro(name, macroTable)
 
 
     //helper
     def createIf(condition: FeatureExpr, thenBranch: FeatureExpr, elseBranch: FeatureExpr): FeatureExpr = FExprBuilder.createIf(condition, thenBranch, elseBranch)
+
     def createIf[T](condition: FeatureExpr, thenBranch: FeatureExprTree[T], elseBranch: FeatureExprTree[T]): FeatureExprTree[T] = FExprBuilder.createIf(condition, thenBranch, elseBranch)
 
     def createImplies(left: FeatureExpr, right: FeatureExpr) = left implies right
+
     def createEquiv(left: FeatureExpr, right: FeatureExpr) = left equiv right
 
     val base: FeatureExpr = True
@@ -62,7 +86,9 @@ object FeatureExpr extends FeatureExprValueOps {
                 case StructuralEqualityWrapper(thatF) => f.equal1Level(thatF)
                 case _ => false
             })
+
         final override def hashCode = f.hashCode
+
         final def unwrap = f
     }
 
@@ -73,6 +99,7 @@ object FeatureExprHelper {
         macroTable.getMacroCondition(macro.feature)
 
     private var freshFeatureNameCounter = 0
+
     def calcFreshFeatureName(): String = {
         freshFeatureNameCounter = freshFeatureNameCounter + 1;
         "__fresh" + freshFeatureNameCounter;
@@ -115,19 +142,29 @@ object FeatureExprHelper {
  *
  * It would be interesting to see what happens for toEquiCNF.
  */
-sealed abstract class FeatureExpr {
+sealed abstract class FeatureExpr(id: UUID = UUID.randomUUID()) {
+    def getId: UUID = id
+
     def or(that: FeatureExpr): FeatureExpr = FExprBuilder.or(this, that)
+
     def and(that: FeatureExpr): FeatureExpr = FExprBuilder.and(this, that)
+
     def not(): FeatureExpr = FExprBuilder.not(this)
 
     def unary_! = not
+
     def &(that: FeatureExpr) = and(that)
+
     def |(that: FeatureExpr) = or(that)
 
     def orNot(that: FeatureExpr) = this or (that.not)
+
     def andNot(that: FeatureExpr) = this and (that.not)
+
     def implies(that: FeatureExpr) = this.not.or(that)
+
     def mex(that: FeatureExpr): FeatureExpr = (this and that).not
+
     def xor(that: FeatureExpr) = (this or that) and (this mex that)
 
     // According to advanced textbooks, this representation is not always efficient:
@@ -138,22 +175,29 @@ sealed abstract class FeatureExpr {
     def equiv(that: FeatureExpr) = (this implies that) and (that implies this)
 
     def isContradiction(): Boolean = isContradiction(NoFeatureModel)
+
     def isTautology(): Boolean = isTautology(NoFeatureModel)
+
     def isDead(): Boolean = isContradiction(NoFeatureModel)
+
     def isBase(): Boolean = isTautology(NoFeatureModel)
+
     def isSatisfiable(): Boolean = isSatisfiable(NoFeatureModel)
+
     /**
      * FM -> X is tautology if FM.implies(X).isTautology or
      * !FM.and.(x.not).isSatisfiable
      *
      **/
     def isTautology(fm: FeatureModel): Boolean = !this.not.isSatisfiable(fm)
+
     def isContradiction(fm: FeatureModel): Boolean = !isSatisfiable(fm)
+
     /**
      * x.isSatisfiable(fm) is short for x.and(fm).isSatisfiable
      * but is faster because FM is cached
      */
-    def isSatisfiable(fm: FeatureModel): Boolean = cacheIsSatisfiable.getOrElseUpdate(fm, new SatSolver().isSatisfiable(toCnfEquiSat, fm))
+    def isSatisfiable(fm: FeatureModel): Boolean = cacheIsSatisfiable.getOrElseUpdate(fm, new SatSolver2().isSatisfiable(toCnfEquiSat, fm))
 
     /**
      * Check structural equality, assuming that all component nodes have already been canonicalized.
@@ -176,11 +220,13 @@ sealed abstract class FeatureExpr {
      * overhead)
      */
     def equivalentTo(that: FeatureExpr): Boolean = (this eq that) || (this equiv that).isTautology();
+
     def equivalentTo(that: FeatureExpr, fm: FeatureModel): Boolean = (this eq that) || (this equiv that).isTautology(fm);
 
     protected def indent(level: Int): String = "\t" * level
 
     final lazy val size: Int = calcSize
+
     protected def calcSize: Int
 
     /**
@@ -204,13 +250,17 @@ sealed abstract class FeatureExpr {
      * in the expression tree
      */
     lazy val isResolved: Boolean = calcIsResolved
+
     private def calcIsResolved: Boolean = {
         //exception used to stop at the first found Macro
         //map used for caching (to not look twice at the same subtree)
         class FoundUnresolvedException extends Exception
         try {
             this.mapDefinedExpr({
-                case e: DefinedMacro => {throw new FoundUnresolvedException(); e}
+                case e: DefinedMacro => {
+                    throw new FoundUnresolvedException();
+                    e
+                }
                 case e => e
             }, Map())
             return true
@@ -235,10 +285,11 @@ sealed abstract class FeatureExpr {
      * @param p the output Writer
      */
     def print(p: Writer) = p.write(toTextExpr)
+
     def debug_print(indent: Int): String
 
     private var cache_cnf: FeatureExpr = null
-    private var cache_cnfEquiSat: FeatureExpr = null
+    private var cache_cnfEquiSat: immutable.Map[UUID, Seq[Seq[Sign[UUID]]]] = null
 
     /**
      * creates an equivalent feature expression in CNF
@@ -246,13 +297,16 @@ sealed abstract class FeatureExpr {
      * be aware of exponential explosion. consider using toCnfEquiSat instead if possible
      */
     def toCNF(): FeatureExpr = {
-        if (cache_cnf == null) {cache_cnf = calcCNF; cache_cnfEquiSat = cache_cnf}
+        if (cache_cnf == null) {
+            cache_cnf = calcCNF; /*cache_cnfEquiSat = cache_cnf*/
+        }
         assert(CNFHelper.isCNF(cache_cnf))
         //XXX: add and test!
         //cache_cnfEquiSat.cache_cnf = cache_cnf
         //cache_cnfEquiSat.cache_cnfEquiSat = cache_cnf
         cache_cnf
     }
+
     /**
      * creates an equisatisfiable feature expression in CNF
      *
@@ -261,15 +315,14 @@ sealed abstract class FeatureExpr {
      *
      * the algorithm introduces new variables and is faster than toCNF
      */
-    def toCnfEquiSat(): FeatureExpr = {
+    def toCnfEquiSat(): immutable.Map[UUID, Seq[Seq[Sign[UUID]]]] = {
         if (cache_cnfEquiSat == null) cache_cnfEquiSat = calcCNFEquiSat
-        assert(CNFHelper.isCNF(cache_cnfEquiSat))
-        //XXX: add and test!
-        //cache_cnfEquiSat.cache_cnfEquiSat = cache_cnfEquiSat
         cache_cnfEquiSat
     }
+
     protected def calcCNF: FeatureExpr
-    protected def calcCNFEquiSat: FeatureExpr
+
+    protected def calcCNFEquiSat: immutable.Map[UUID, Seq[Seq[Sign[UUID]]]] = new CNFFactory {}.rewrite(this)
 
     private val cacheIsSatisfiable: WeakHashMap[FeatureModel, Boolean] = WeakHashMap()
     //only access these caches from FExprBuilder
@@ -313,6 +366,7 @@ sealed abstract class FeatureExpr {
         }, Map())
         result
     }
+
     /**
      * counts the number of features in this expression for statistic
      * purposes
@@ -328,11 +382,17 @@ class FeatureArithmeticException(msg: String) extends FeatureException(msg)
 // however, this is only a concern for erroneous input anyway (but isn't it our point to detect it?)
 case class ErrorFeature(msg: String) extends FeatureExpr {
     private def error: Nothing = throw new FeatureArithmeticException(msg)
+
     override def calcCNF = error
-    override def calcCNFEquiSat = error
+
+    override def calcCNFEquiSat = immutable.Map()
+
     override def toTextExpr = error
+
     override def calcSize = error
+
     override def mapDefinedExpr(f: DefinedExpr => FeatureExpr, cache: Map[FeatureExpr, FeatureExpr]) = error
+
     override def debug_print(x: Int) = error
 }
 
@@ -358,7 +418,11 @@ private[featureexpr] object FExprBuilder {
     private val hashConsingCache: WeakHashMap[FeatureExpr.StructuralEqualityWrapper, WeakReference[FeatureExpr.StructuralEqualityWrapper]] = WeakHashMap()
 
     private def cacheGetOrElseUpdate[A, B <: AnyRef](map: Map[A, WeakReference[B]], key: A, op: => B): B = {
-        def update() = {val d = op; map(key) = new WeakReference[B](d); d}
+        def update() = {
+            val d = op;
+            map(key) = new WeakReference[B](d);
+            d
+        }
         map.get(key) match {
             case Some(WeakRef(value)) => value
             case _ => update()
@@ -371,6 +435,7 @@ private[featureexpr] object FExprBuilder {
             case _ => None
         }
     }
+
     private def binOpCacheGetOrElseUpdate(a: FeatureExpr,
                                           b: FeatureExpr,
                                           getCache: FeatureExpr => WeakHashMap[FeatureExpr, WeakReference[FeatureExpr]],
@@ -557,6 +622,7 @@ private[featureexpr] object FExprBuilder {
 
 
     def and(a: FeatureExpr, b: FeatureExpr): FeatureExpr = canonical(fastAnd(a, b))
+
     def or(a: FeatureExpr, b: FeatureExpr): FeatureExpr = canonical(fastOr(a, b))
 
     def not(a: FeatureExpr): FeatureExpr =
@@ -568,7 +634,10 @@ private[featureexpr] object FExprBuilder {
                 e.notCache match {
                     case Some(NotRef(res)) => res
                     case _ =>
-                        def storeCache(e: FeatureExpr, neg: FeatureExpr) = {e.notCache = Some(new NotReference(neg)); e}
+                        def storeCache(e: FeatureExpr, neg: FeatureExpr) = {
+                            e.notCache = Some(new NotReference(neg));
+                            e
+                        }
                         val res = canonical(e match {
                             /* This transformation is expensive, so we need to store
                             * a reference to e in the created expression. However,
@@ -634,7 +703,7 @@ private[featureexpr] object FExprBuilder {
                             createIf(i2.expr, evalRelation(i1.elseBr, i2.thenBr)(relation), evalRelation(i1.elseBr, i2.elseBr)(relation)))
                     case (i: If[_], x) => createIf(i.expr, evalRelation(i.thenBr, x)(relation), evalRelation(i.elseBr, x)(relation))
                     case (x, i: If[_]) => createIf(i.expr, evalRelation(x, i.thenBr)(relation), evalRelation(x, i.elseBr)(relation))
-                    case _ => throw new Exception("evalRelation: unexpected " + (smaller, larger))
+                    case _ => throw new Exception("evalRelation: unexpected " +(smaller, larger))
                 }
         }
     }
@@ -651,7 +720,7 @@ private[featureexpr] object FExprBuilder {
                             createIf(i2.expr, applyBinaryOperation(i1.elseBr, i2.thenBr)(operation), applyBinaryOperation(i1.elseBr, i2.elseBr)(operation)))
                     case (i: If[_], x) => createIf(i.expr, applyBinaryOperation(i.thenBr, x)(operation), applyBinaryOperation(i.elseBr, x)(operation))
                     case (x, i: If[_]) => createIf(i.expr, applyBinaryOperation(x, i.thenBr)(operation), applyBinaryOperation(x, i.elseBr)(operation))
-                    case _ => throw new Exception("applyBinaryOperation: unexpected " + (left, right))
+                    case _ => throw new Exception("applyBinaryOperation: unexpected " +(left, right))
                 }
         }
     }
@@ -710,24 +779,34 @@ private[featureexpr] object FExprBuilder {
  */
 object True extends And(Set()) with DefaultPrint {
     override def toString = "True"
+
     override def toTextExpr = "1"
+
     override def debug_print(ind: Int) = indent(ind) + toTextExpr + "\n"
+
     override def isSatisfiable(fm: FeatureModel) = true
 }
 
 object False extends Or(Set()) with DefaultPrint {
     override def toString = "False"
+
     override def toTextExpr = "0"
+
     override def debug_print(ind: Int) = indent(ind) + toTextExpr + "\n"
+
     override def isSatisfiable(fm: FeatureModel) = false
 }
 
-trait DefaultPrint extends FeatureExpr {override def print(p: Writer) = p.write(toTextExpr)}
+trait DefaultPrint extends FeatureExpr {
+    override def print(p: Writer) = p.write(toTextExpr)
+}
 
 //The class name means And/Or (Un)Extractor.
 abstract class AndOrUnExtractor[This <: BinaryLogicConnective[This]] {
     def identity: FeatureExpr
+
     def unapply(x: This) = Some(x.clauses)
+
     private def optBuild(clauses: Set[FeatureExpr], defaultRes: => This) = {
         clauses.size match {
             case 0 => identity
@@ -739,23 +818,29 @@ abstract class AndOrUnExtractor[This <: BinaryLogicConnective[This]] {
     }
 
     private[featureexpr] def apply(clauses: Set[FeatureExpr]) = optBuild(clauses, createRaw(clauses))
+
     private[featureexpr] def apply(clauses: Set[FeatureExpr], old: This, newF: FeatureExpr) = optBuild(clauses, createRaw(clauses, old, newF))
 
     //Factory methods for the actual object type
     protected def createRaw(clauses: Set[FeatureExpr]): This
+
     protected def createRaw(clauses: Set[FeatureExpr], old: This, newF: FeatureExpr): This
 }
 
 //objects And and Or are just boilerplate instances of AndOrUnExtractor
 object And extends AndOrUnExtractor[And] {
     def identity = True
+
     protected def createRaw(clauses: Set[FeatureExpr]) = new And(clauses)
+
     protected def createRaw(clauses: Set[FeatureExpr], old: And, newF: FeatureExpr) = new And(clauses, old, newF)
 }
 
 object Or extends AndOrUnExtractor[Or] {
     def identity = False
+
     protected def createRaw(clauses: Set[FeatureExpr]) = new Or(clauses)
+
     protected def createRaw(clauses: Set[FeatureExpr], old: Or, newF: FeatureExpr) = new Or(clauses, old, newF)
 }
 
@@ -764,19 +849,22 @@ abstract class BinaryLogicConnective[This <: BinaryLogicConnective[This]] extend
     private[featureexpr] def clauses: Set[FeatureExpr]
 
     def operName: String
+
     def create(clauses: Traversable[FeatureExpr]): FeatureExpr
+
     //Can't declare This as return type - the optimizations in FExprBuilder are such that it might build an object of
     //unexpected type.
 
     override def equal1Level(that: FeatureExpr) = that match {
         case e: BinaryLogicConnective[_] =>
             e.primeHashMult == primeHashMult && //check this as a class tag
-                    e.clauses.subsetOf(clauses) &&
-                    e.clauses.size == clauses.size
+                e.clauses.subsetOf(clauses) &&
+                e.clauses.size == clauses.size
         case _ => false
     }
 
     def primeHashMult: Int
+
     override def calcHashCode = primeHashMult * clauses.map(_.hashCode).foldLeft(0)(_ + _)
 
     // We need to compute the hashCode lazily (and pay a penalty when accessing it) because too many temporaries are
@@ -784,6 +872,7 @@ abstract class BinaryLogicConnective[This <: BinaryLogicConnective[This]] extend
     // retest this choice.
     // In a few cases, however, we compute the hashcode eagerly and incrementally (to reuse old hashcode computations).
     protected var cachedHash: Option[Int] = None
+
     final override def hashCode =
         cachedHash match {
             case Some(hash) =>
@@ -802,7 +891,9 @@ abstract class BinaryLogicConnective[This <: BinaryLogicConnective[This]] extend
 
 
     override def toString = clauses.mkString("(", operName, ")")
+
     override def toTextExpr = clauses.map(_.toTextExpr).mkString("(", " " + operName + operName + " ", ")")
+
     override def print(p: Writer) = {
         trait PrintValue
         case object NoPrint extends PrintValue
@@ -810,14 +901,23 @@ abstract class BinaryLogicConnective[This <: BinaryLogicConnective[This]] extend
         case class ToPrint[T](x: T) extends PrintValue
         p write "("
         clauses.map(x => ToPrint(x)).foldLeft[PrintValue](NoPrint)({
-            case (NoPrint, ToPrint(c)) => {c.print(p); Printed}
-            case (Printed, ToPrint(c)) => {p.write(" " + operName + operName + " "); c.print(p); Printed}
+            case (NoPrint, ToPrint(c)) => {
+                c.print(p);
+                Printed
+            }
+            case (Printed, ToPrint(c)) => {
+                p.write(" " + operName + operName + " ");
+                c.print(p);
+                Printed
+            }
         })
         p write ")"
     }
+
     override def debug_print(ind: Int) = indent(ind) + operName + "\n" + clauses.map(_.debug_print(ind + 1)).mkString
 
     override def calcSize = clauses.foldLeft(0)(_ + _.size)
+
     override def mapDefinedExpr(f: DefinedExpr => FeatureExpr, cache: Map[FeatureExpr, FeatureExpr]): FeatureExpr = cache.getOrElseUpdate(this, {
         var anyChange = false
         val newClauses = clauses.map(x => {
@@ -841,11 +941,12 @@ class And(val clauses: Set[FeatureExpr]) extends BinaryLogicConnective[And] {
     }
 
     override def primeHashMult = 37
+
     override def operName = "&"
+
     override def create(clauses: Traversable[FeatureExpr]) = FExprBuilder.createAnd(clauses)
 
     override protected def calcCNF: FeatureExpr = FExprBuilder.createAnd(clauses.map(_.toCNF))
-    override protected def calcCNFEquiSat: FeatureExpr = FExprBuilder.createAnd(clauses.map(_.toCnfEquiSat))
 }
 
 //private[featureexpr]
@@ -857,28 +958,13 @@ class Or(val clauses: Set[FeatureExpr]) extends BinaryLogicConnective[Or] {
     }
 
     override def primeHashMult = 97
+
     override def operName = "|"
+
     override def create(clauses: Traversable[FeatureExpr]) = FExprBuilder.createOr(clauses)
 
     override protected def calcCNF: FeatureExpr =
         combineCNF(clauses.map(_.toCNF))
-    override protected def calcCNFEquiSat: FeatureExpr = {
-        val cnfchildren = clauses.map(_.toCnfEquiSat)
-        //XXX: There is no need to estimate the size this way, we could maybe
-        //use the more precise size method. However, possibly this is the
-        //correct calculation of the number of generated clauses. The name
-        //predictedCNFClauses is maybe misleading, but I introduced it, and it
-        //would be my fault then. PG
-        //
-        //heuristic: up to a medium size do not introduce new variables but use normal toCNF mechanism
-        //rationale: we might actually simplify the formula by transforming it into CNF and in such cases it's not very expensive
-        def size(child: FeatureExpr) = child match {case And(inner) => inner.size; case _ => 1}
-        val predictedCNFClauses = cnfchildren.foldRight(1)((x, y) => if (y <= 16) size(x) * y else y)
-        if (predictedCNFClauses <= 16)
-            combineCNF(cnfchildren)
-        else
-            combineEquiCNF(cnfchildren)
-    }
 
 
     /**
@@ -911,79 +997,42 @@ class Or(val clauses: Set[FeatureExpr]) extends BinaryLogicConnective[Or] {
                 List(FExprBuilder.createOr(cnfchildren))
             })
 
-    /**
-     * Produce a CNF formula equiSatisfiable to the disjunction of @param cnfchildren.
-     * Introduces new variables to avoid exponential behavior
-     *
-     * for n CNF expressions with e1, e2, .., en clauses
-     * this mechanism produces n new variables and results
-     * in e1+e2+..+en+1 clauses
-     *
-     * Algorithm: we need to represent Or(X_i, i=i..n), where X_i are subformulas in CNF. Each of them is a conjunction
-     * (or a literal, as a degenerate case).
-     * We produce a clause Or(Z_i) and clauses such that Z_i implies X_i, conjuncted together. For literals we just
-     * reuse the literal; if X_i = And(Y_ij, j=1..e_i), we produce clauses (Z_i implies Y_ij) for j=1..e_i.
-     */
-    private def combineEquiCNF(cnfchildren: Set[FeatureExpr]) =
-        if (cnfchildren.exists(_.isInstanceOf[And])) {
-            var orClauses = ArrayBuffer[FeatureExpr]() //list of Or expressions
-            var renamedDisjunction = ArrayBuffer[FeatureExpr]()
-            for (child <- cnfchildren) {
-                child match {
-                    case And(innerChildren) =>
-                        val freshFeature = FExprBuilder.definedExternal(FeatureExprHelper.calcFreshFeatureName())
-                        orClauses ++= innerChildren.map(freshFeature implies _)
-                        renamedDisjunction += freshFeature
-                    case e =>
-                        renamedDisjunction += e
-                }
-            }
-            orClauses += FExprBuilder.createOr(renamedDisjunction)
-            FExprBuilder.createAnd(orClauses)
-            /*val (orClauses, renamedDisjunction) = cnfchildren.map({
-                case And(innerChildren) =>
-                    val freshFeature = FExprBuilder.definedExternal(FeatureExprHelper.calcFreshFeatureName())
-                    (innerChildren.map(freshFeature implies _), freshFeature)
-                case e =>
-                    (Set.empty, e)
-            }).unzip
-            FExprBuilder.createAnd(orClauses.flatten[FeatureExpr] + FExprBuilder.createOr(renamedDisjunction))*/
-        } else FExprBuilder.createOr(cnfchildren)
 
 }
 
 //private[featureexpr]
 class Not(val expr: FeatureExpr) extends HashCachingFeatureExpr {
     override def calcHashCode = 701 * expr.hashCode
+
     override def equal1Level(that: FeatureExpr) = that match {
         case Not(expr2) => expr eq expr2
         case _ => false
     }
 
     override def toString = "!" + expr.toString
+
     override def toTextExpr = "!" + expr.toTextExpr
+
     override def print(p: Writer) = {
         p.write("!")
         expr.print(p)
     }
+
     override def debug_print(ind: Int) = indent(ind) + "!\n" + expr.debug_print(ind + 1)
 
     override def calcSize = expr.size
+
     override def mapDefinedExpr(f: DefinedExpr => FeatureExpr, cache: Map[FeatureExpr, FeatureExpr]): FeatureExpr = cache.getOrElseUpdate(this, {
         val newExpr = expr.mapDefinedExpr(f, cache)
         if (newExpr != expr) FExprBuilder.not(newExpr) else this
     })
+
     override protected def calcCNF: FeatureExpr = expr match {
         case And(children) => FExprBuilder.createOr(children.map(_.not.toCNF)).toCNF
         case Or(children) => FExprBuilder.createAnd(children.map(_.not.toCNF))
         case e => this
     }
 
-    override protected def calcCNFEquiSat: FeatureExpr = expr match {
-        case And(children) => FExprBuilder.createOr(children.map(_.not.toCnfEquiSat())).toCnfEquiSat()
-        case Or(children) => FExprBuilder.createAnd(children.map(_.not.toCnfEquiSat()))
-        case e => this
-    }
 
     private[featureexpr] override def retrieveMemoizedNot = expr
 }
@@ -1003,15 +1052,21 @@ abstract class DefinedExpr extends FeatureExpr {
      * avoiding case classes and open-coding everything would take too much code.
      */
     def feature: String
+
     def debug_print(level: Int): String = indent(level) + feature + "\n";
+
     def accept(f: FeatureExpr => Unit): Unit = f(this)
+
     def satName = feature
+
     //used for sat solver only to distinguish extern and macro
     def isExternal: Boolean
+
     override def calcSize = 1
+
     override def mapDefinedExpr(f: DefinedExpr => FeatureExpr, cache: Map[FeatureExpr, FeatureExpr]): FeatureExpr = cache.getOrElseUpdate(this, f(this))
+
     override def calcCNF = this
-    override def calcCNFEquiSat = this
 }
 
 object DefinedExpr {
@@ -1020,6 +1075,7 @@ object DefinedExpr {
         case x: DefinedMacro => Some(x)
         case _ => None
     }
+
     def checkFeatureName(name: String) = assert(name != "1" && name != "0" && name != "")
 }
 
@@ -1030,9 +1086,13 @@ class DefinedExternal(name: String) extends DefinedExpr {
     DefinedExpr.checkFeatureName(name)
 
     def feature = name
+
     override def toTextExpr = "definedEx(" + name + ")";
+
     override def toString = "def(" + name + ")"
+
     def countSize() = 1
+
     def isExternal = true
 }
 
@@ -1045,10 +1105,15 @@ class DefinedMacro(val name: String, val presenceCondition: FeatureExpr, val exp
     DefinedExpr.checkFeatureName(name)
 
     def feature = name
+
     override def toTextExpr = "defined(" + name + ")"
+
     override def toString = "macro(" + name + ")"
+
     override def satName = expandedName
+
     def countSize() = 1
+
     def isExternal = false
 }
 
