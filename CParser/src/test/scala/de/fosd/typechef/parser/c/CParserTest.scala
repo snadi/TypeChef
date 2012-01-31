@@ -350,8 +350,9 @@ class CParserTest {
         					|#endif""", p.statement)
         assertParseAnyResult(One(CompoundStatement(List(
             Opt(fa, IfStatement(a, ExprStatement(b), List(), None)),
-            Opt(fa, ExprStatement(c)),
-            Opt(fa.not, IfStatement(a, ExprStatement(c), List(), None))))),
+            Opt(fa.not, IfStatement(a, ExprStatement(c), List(), None)),
+            Opt(fa, ExprStatement(c))
+        ))),
             """|{
         		|if (a)
     			  			|#ifdef a
@@ -861,7 +862,7 @@ typedef struct spinlock {} spinlock_t;
             typedef int b;
             __expectType[:a:]
             """, p.phrase(p.translationUnit))
-        //TODO currently this is not checked! check at type system level! any type is known as type if it was defined in a satisfiable context
+        // currently this is not checked here! check at type system level!
         //        assertParseError("""
         //            #ifdef X
         //            typedef int a;

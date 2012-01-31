@@ -17,7 +17,11 @@ object Frontend {
         // load options
         val opt = new FrontendOptionsWithConfigFiles()
         try {
-            opt.parseOptions(args)
+            try {
+                opt.parseOptions(args)
+            } catch {
+                case o: OptionException => if (!opt.isPrintVersion) throw o;
+            }
 
             if (opt.isPrintVersion) {
                 var version = "development build"
@@ -68,7 +72,8 @@ object Frontend {
                 serializeAST(ast, opt.getSerializedASTFilename)
 
             if (ast != null) {
-                val ts = new CTypeSystemFrontend(ast.asInstanceOf[TranslationUnit], fm)
+                val fm_ts = opt.getFeatureModelTypeSystem().and(opt.getLocalFeatureModel).and(opt.getFilePresenceCondition)
+                val ts = new CTypeSystemFrontend(ast.asInstanceOf[TranslationUnit], fm_ts)
                 if (opt.typecheck || opt.writeInterface) {
                     println("type checking.")
                     ts.checkAST

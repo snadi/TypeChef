@@ -42,5 +42,17 @@ trait TestHelper {
         r.asInstanceOf[p.Success[Declaration]].result
     }
 
+    def parseCompoundStmt(code: String): CompoundStatement = {
+        val in = CLexer.lex(code, null).setContext(new CTypeContext())
+        val p = new CParser()
+        val r = p.phrase(p.compoundStatement)(in, FeatureExpr.base)
+        r.asInstanceOf[p.Success[CompoundStatement]].result
+    }
 
+    def parseFunctionDef(code: String): FunctionDef = {
+        val in = CLexer.lex(code, null).setContext(new CTypeContext())
+        val p = new CParser()
+        val r = p.phrase(p.functionDef)(in, FeatureExpr.base)
+        r.asInstanceOf[p.Success[FunctionDef]].result
+    }
 }
