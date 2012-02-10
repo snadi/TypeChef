@@ -1,4 +1,5 @@
-package de.fosd.typechef.featureexpr
+package de.fosd.typechef.featureexprUtil
+
 
 /**
  * Factory interface to create feature models

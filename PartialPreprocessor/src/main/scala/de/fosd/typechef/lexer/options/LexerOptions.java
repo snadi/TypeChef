@@ -1,6 +1,5 @@
 package de.fosd.typechef.lexer.options;
 
-import de.fosd.typechef.featureexpr.FeatureModel;
 import de.fosd.typechef.lexer.Feature;
 import de.fosd.typechef.lexer.Warning;
 import gnu.getopt.Getopt;

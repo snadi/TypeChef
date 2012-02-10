@@ -1,10 +1,11 @@
-package de.fosd.typechef.featureexpr
+package de.fosd.typechef.featureexprTest
+import de.fosd.typechef.featureexpr._
 
 import junit.framework._
 import junit.framework.Assert._
 import org.junit.Test
 
-import FeatureExpr._
+import de.fosd.typechef.featureexpr.FeatureExprFactory._
 
 class TestSatSolver extends TestCase {
     def a = createDefinedExternal("a")

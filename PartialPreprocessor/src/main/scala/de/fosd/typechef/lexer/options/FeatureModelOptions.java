@@ -1,9 +1,9 @@
 package de.fosd.typechef.lexer.options;
 
 import de.fosd.typechef.featureexpr.FeatureExpr;
-import de.fosd.typechef.featureexpr.FeatureExprParser;
-import de.fosd.typechef.featureexpr.FeatureModel;
-import de.fosd.typechef.featureexpr.FeatureModelFactory;
+import de.fosd.typechef.featureexprUtil.FeatureExprParser;
+import de.fosd.typechef.featureexprUtil.FeatureModel;
+import de.fosd.typechef.featureexprUtil.FeatureModelFactory;
 import de.fosd.typechef.featureexpr.NoFeatureModel$;
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;

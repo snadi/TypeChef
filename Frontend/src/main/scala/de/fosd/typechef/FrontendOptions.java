@@ -1,8 +1,7 @@
 package de.fosd.typechef;
 
 import de.fosd.typechef.featureexpr.FeatureExpr;
-import de.fosd.typechef.featureexpr.FeatureExprParser;
-import de.fosd.typechef.featureexpr.FeatureModel;
+import de.fosd.typechef.featureexprUtil.FeatureExprParser;
 import de.fosd.typechef.lexer.options.LexerOptions;
 import de.fosd.typechef.lexer.options.OptionException;
 import de.fosd.typechef.lexer.options.Options;

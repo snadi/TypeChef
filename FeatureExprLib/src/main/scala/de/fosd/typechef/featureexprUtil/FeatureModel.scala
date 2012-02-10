@@ -1,8 +1,9 @@
-package de.fosd.typechef.featureexpr
+package de.fosd.typechef.featureexprUtil
 
 import org.sat4j.core.{VecInt, Vec}
 import org.sat4j.specs.{IVec, IVecInt}
 import scala.collection.{mutable, immutable}
+import de.fosd.typechef.featureexpr.FeatureExpr
 
 /**
  * the feature model is a special container for a single feature expression

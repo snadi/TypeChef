@@ -1,4 +1,5 @@
-package de.fosd.typechef.featureexpr
+package de.fosd.typechef.featureexprTest
+import de.fosd.typechef.featureexpr._
 
 import junit.framework._
 import junit.framework.Assert._

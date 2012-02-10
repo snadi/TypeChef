@@ -1,4 +1,6 @@
-package de.fosd.typechef.featureexpr
+package de.fosd.typechef.featureexprUtil
+
+import de.fosd.typechef.featureexpr.FeatureExpr
 
 
 abstract class FeatureProvider {
