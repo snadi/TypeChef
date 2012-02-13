@@ -11,6 +11,7 @@ object BDDFeatureExprLibrary extends AbstractFeatureExprModule {
 
     def FeatureExprFactory = BDDFeatureExprFactory
     type FeatureExpr = BDDFeatureExprImpl
+    val FeatureExpr = BDDFeatureExprFactory
 
     /**
      * External interface for construction of non-boolean feature expressions
@@ -250,7 +251,7 @@ object BDDFeatureExprLibrary extends AbstractFeatureExprModule {
         //create a macro definition (which expands to the current entry in the macro table; the current entry is stored in a closure-like way).
         //a form of caching provided by MacroTable, which we need to repeat here to create the same FeatureExpr object
         def definedMacro(name: String, macroTable: FeatureProvider): FeatureExpr = {
-            macroTable.getMacroCondition(name)
+            macroTable.getMacroCondition(name).asInstanceOf[FeatureExpr]
         }
     }
 
