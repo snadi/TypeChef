@@ -1,5 +1,4 @@
 package de.fosd.typechef.featureexprTest
-import de.fosd.typechef.featureexpr._
 
 import junit.framework.TestCase
 import org.junit.Test
@@ -18,6 +17,7 @@ class FeatureExprTest extends TestCase {
 
     import org.junit.Assert._
     import de.fosd.typechef.featureexpr.FeatureExpr._
+    import de.fosd.typechef.featureexpr.FeatureExpr
 
 
     @Test

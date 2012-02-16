@@ -1,4 +1,5 @@
 package de.fosd.typechef.featureexprTest
+
 import de.fosd.typechef.featureexpr._
 import de.fosd.typechef.featureexpr.FeatureExpr._
 
@@ -6,10 +7,12 @@ import org.scalacheck._
 import Gen._
 import Prop._
 import java.io._
-import de.fosd.typechef.featureexprUtil.{FeatureExprParser, FeatureModel}
+import de.fosd.typechef.featureexpr.FeatureExpr
+import de.fosd.typechef.featureexpr.FeatureModel
+import de.fosd.typechef.featureexprUtil.FeatureExprParser
 
 object FeatureExprAutoCheck extends Properties("FeatureExpr") {
-    def feature(a: String) = FeatureExprFactory.createDefinedExternal(a)
+    def feature(a: String) = FeatureExpr.createDefinedExternal(a)
     val featureNames = List("a", "b", "c", "d", "e", "f")
     val a = feature("a")
     val b = feature("b")
@@ -102,12 +105,12 @@ object FeatureExprAutoCheck extends Properties("FeatureExpr") {
     property("taut(a=>b) == contr(a and !b)") = Prop.forAll((a: FeatureExpr, b: FeatureExpr) => a.implies(b).isTautology() == a.and(b.not).isContradiction)
 
     property("featuremodel.tautology") = Prop.forAll((a: FeatureExpr, b: FeatureExpr) => (!a.isDead) ==> {
-        val fm = FeatureModel.create(a)
+        val fm = FeatureModelLoader.create(a)
         b.isTautology(fm) == a.implies(b).isTautology
     })
 
     property("featuremodel.sat") = Prop.forAll((a: FeatureExpr, b: FeatureExpr) => (!a.isDead) ==> {
-        val fm = FeatureModel.create(a)
+        val fm = FeatureModelLoader.create(a)
         b.isSatisfiable(fm) == a.and(b).isSatisfiable
     })
 

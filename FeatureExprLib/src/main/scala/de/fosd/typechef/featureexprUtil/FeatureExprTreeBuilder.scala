@@ -52,7 +52,7 @@ private[featureexprUtil] object FeatureExprTreeBuilder {
             case Some(ErrorValue(msg)) => return ErrorFeature(msg)
             case _ =>
                 (smaller, larger) match {
-                    case (a: Value[_], b: Value[_]) => if (relation(a.value.asInstanceOf[T], b.value.asInstanceOf[T])) FeatureExprFactory.True else FeatureExprFactory.False
+                    case (a: Value[_], b: Value[_]) => if (relation(a.value.asInstanceOf[T], b.value.asInstanceOf[T])) FeatureExpr.True else FeatureExpr.False
                     case (i1: If[_], i2: If[_]) =>
                         createBooleanIf(i1.expr,
                             createBooleanIf(i2.expr, evalRelation(i1.thenBr, i2.thenBr)(relation), evalRelation(i1.thenBr, i2.elseBr)(relation)),

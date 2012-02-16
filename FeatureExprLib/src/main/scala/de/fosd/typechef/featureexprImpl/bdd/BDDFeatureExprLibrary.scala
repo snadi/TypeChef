@@ -8,9 +8,12 @@ import collection.mutable.{WeakHashMap, Map}
 
 object BDDFeatureExprLibrary extends AbstractFeatureExprModule {
 
-    def FeatureExprFactory = BDDFeatureExprFactory
     type FeatureExpr = BDDFeatureExprImpl
     val FeatureExpr = BDDFeatureExprFactory
+
+    type FeatureModel = BDDFeatureModel
+    val FeatureModelLoader = BDDFeatureModelLoader
+    val NoFeatureModel: FeatureModel = BDDNoFeatureModel
 
 
     /**
@@ -28,7 +31,7 @@ object BDDFeatureExprLibrary extends AbstractFeatureExprModule {
 
 
         //helper
-//        def createIf(condition: FeatureExpr, thenBranch: FeatureExpr, elseBranch: FeatureExpr): FeatureExpr = FeatureExprFactory.createBooleanIf(condition, thenBranch, elseBranch)
+        //        def createIf(condition: FeatureExpr, thenBranch: FeatureExpr, elseBranch: FeatureExpr): FeatureExpr = FeatureExprFactory.createBooleanIf(condition, thenBranch, elseBranch)
 
         val base: FeatureExpr = TrueImpl
         val dead: FeatureExpr = FalseImpl
@@ -84,15 +87,15 @@ object BDDFeatureExprLibrary extends AbstractFeatureExprModule {
 
         private val cacheIsSatisfiable: WeakHashMap[FeatureModel, Boolean] = WeakHashMap()
         def isSatisfiable(fm: FeatureModel): Boolean =
-               if (bdd.isOne) true //assuming a valid feature model
-               else if (bdd.isZero) false
-               else if (fm == NoFeatureModel || fm == null) bdd.satOne() != BDDFExprBuilder.FALSE
-               //combination with a small FeatureExpr feature model
-               else if (fm.clauses.isEmpty) (bdd and fm.extraConstraints.asInstanceOf[BDDFeatureExprImpl].bdd).satOne() != BDDFExprBuilder.FALSE
-               //combination with SAT
-               else cacheIsSatisfiable.getOrElseUpdate(fm,
-                   SatSolver.isSatisfiable(fm, toDnfClauses(toScalaAllSat((bdd and fm.extraConstraints.asInstanceOf[BDDFeatureExprImpl].bdd).not().allsat())), BDDFExprBuilder.lookupFeatureName)
-               )
+            if (bdd.isOne) true //assuming a valid feature model
+            else if (bdd.isZero) false
+            else if (fm == NoFeatureModel || fm == null) bdd.satOne() != BDDFExprBuilder.FALSE
+            //combination with a small FeatureExpr feature model
+            else if (fm.clauses.isEmpty) (bdd and fm.extraConstraints.asInstanceOf[BDDFeatureExprImpl].bdd).satOne() != BDDFExprBuilder.FALSE
+            //combination with SAT
+            else cacheIsSatisfiable.getOrElseUpdate(fm,
+                SatSolver.isSatisfiable(fm, toDnfClauses(toScalaAllSat((bdd and fm.extraConstraints.asInstanceOf[BDDFeatureExprImpl].bdd).not().allsat())), BDDFExprBuilder.lookupFeatureName)
+            )
 
         final override def equals(that: Any) = that match {
             case x: FeatureExpr => bdd.equals(x.bdd)
@@ -139,12 +142,12 @@ object BDDFeatureExprLibrary extends AbstractFeatureExprModule {
         }
 
 
-//        /**
-//         * simple translation into a FeatureExprValue if needed for some reason
-//         * (creates IF(expr, 1, 0))
-//         */
-//        def toFeatureExprValue: FeatureExprValue =
-//            FeatureExprFactory.createIf(this, FeatureExprFactory.createValue(1l), FeatureExprFactory.createValue(0l))
+        //        /**
+        //         * simple translation into a FeatureExprValue if needed for some reason
+        //         * (creates IF(expr, 1, 0))
+        //         */
+        //        def toFeatureExprValue: FeatureExprValue =
+        //            FeatureExprFactory.createIf(this, FeatureExprFactory.createValue(1l), FeatureExprFactory.createValue(0l))
 
 
         /**
@@ -166,7 +169,8 @@ object BDDFeatureExprLibrary extends AbstractFeatureExprModule {
     }
 
 
-    override def ErrorFeature(msg: String): FeatureExpr =  ErrorFeatureImpl(msg)
+    override def ErrorFeature(msg: String): FeatureExpr = ErrorFeatureImpl(msg)
+
     //
     //// XXX: this should be recognized by the caller and lead to clean termination instead of a stack trace. At least,
     //// however, this is only a concern for erroneous input anyway (but isn't it our point to detect it?)

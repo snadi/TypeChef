@@ -3,7 +3,6 @@ package de.fosd.typechef.featureexprUtil
 import util.parsing.combinator._
 import java.io._
 import de.fosd.typechef.featureexpr.FeatureExpr
-import de.fosd.typechef.featureexpr.FeatureExprFactory
 
 
 /**
@@ -13,7 +12,7 @@ import de.fosd.typechef.featureexpr.FeatureExprFactory
  */
 class FeatureExprParser extends RegexParsers {
 
-    def toFeature(name: String) = FeatureExprFactory.createDefinedExternal(name)
+    def toFeature(name: String) = FeatureExpr.createDefinedExternal(name)
 
 
     //implications
@@ -54,15 +53,15 @@ class FeatureExprParser extends RegexParsers {
     def bool: Parser[FeatureExpr] =
         "!" ~> bool ^^ (_ not) |
             ("(" ~> expr <~ ")") |
-            "InvalidExpression()" ^^ (_ => FeatureExprFactory.dead) |
+            "InvalidExpression()" ^^ (_ => FeatureExpr.dead) |
             (("definedEx" | "defined" | "def") ~ "(" ~> ID <~ ")") ^^ {
                 toFeature(_)
             } |
             "1" ^^ {
-                x => FeatureExprFactory.base
+                x => FeatureExpr.base
             } |
             "0" ^^ {
-                x => FeatureExprFactory.dead
+                x => FeatureExpr.dead
             }
 
     def ID = "[A-Za-z0-9_]*".r
@@ -88,10 +87,10 @@ class FeatureExprParser extends RegexParsers {
         val featureModelFile = new File(cfilename)
         if (featureModelFile.exists) {
             scala.io.Source.fromFile(featureModelFile).getLines().map(trimComment(_)).map(line =>
-                if (line.trim.isEmpty) FeatureExprFactory.base
+                if (line.trim.isEmpty) FeatureExpr.base
                 else parse(line)
-            ).fold(FeatureExprFactory.base)(_ and _)
-        } else FeatureExprFactory.base
+            ).fold(FeatureExpr.base)(_ and _)
+        } else FeatureExpr.base
     }
 
     def parseFile(file: File): FeatureExpr =
@@ -100,11 +99,11 @@ class FeatureExprParser extends RegexParsers {
 
     private def oneOf(features: List[FeatureExpr]): FeatureExpr = {
         (for (f1 <- features; f2 <- features if (f1 != f2)) yield f1 mex f2).
-            foldLeft(features.foldLeft(FeatureExprFactory.dead)(_ or _))(_ and _)
+            foldLeft(features.foldLeft(FeatureExpr.dead)(_ or _))(_ and _)
 
     }
 
     def atLeastOne(featuresNames: List[FeatureExpr]): FeatureExpr =
-        featuresNames.foldLeft(FeatureExprFactory.dead)(_ or _)
+        featuresNames.foldLeft(FeatureExpr.dead)(_ or _)
 
 }

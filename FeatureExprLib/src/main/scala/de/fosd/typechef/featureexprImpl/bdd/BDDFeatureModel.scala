@@ -1,9 +1,9 @@
-package de.fosd.typechef.featureexprUtil
+package de.fosd.typechef.featureexprImpl.bdd
 
 import org.sat4j.core.{VecInt, Vec}
 import org.sat4j.specs.{IVec, IVecInt}
-import scala.collection.{mutable, immutable}
-import de.fosd.typechef.featureexpr.FeatureExpr
+import BDDFeatureExprLibrary._
+import de.fosd.typechef.featureexprUtil.SATBasedFeatureModel
 
 /**
  * the feature model is a special container for a single feature expression
@@ -16,44 +16,23 @@ import de.fosd.typechef.featureexpr.FeatureExpr
  * it can load an expression from a FeatureExpr or from a file in CNF
  * format
  */
-class FeatureModel(val variables: Map[String, Int], val clauses: IVec[IVecInt], val lastVarId: Int, val extraConstraints: FeatureExpr) {
+class BDDFeatureModel(val variables: Map[String, Int], val clauses: IVec[IVecInt], val lastVarId: Int, val extraConstraints: FeatureExpr) extends AbstractFeatureModel with SATBasedFeatureModel {
     /**
      * make the feature model stricter by a formula
      */
-    def and(expr: FeatureExpr /*CNF*/) =
-        new FeatureModel(variables, clauses, lastVarId, extraConstraints and expr)
-    //    def and(expr: FeatureExpr /*CNF*/) = if (expr == FeatureExpr.base) this
-    //    else {
-    //        val cnf = expr.toCNF
-    //        try {
-    //            assert(!expr.isContradiction(null))
-    //            val (newVariables, newLastVarId) = FeatureModel.getVariables(cnf, lastVarId, variables)
-    //            val newClauses = FeatureModel.addClauses(cnf, newVariables, clauses)
-    //            new FeatureModel(newVariables, newClauses, newLastVarId)
-    //        } catch {
-    //            case e: Exception => println("FeatureModel.and: Exception: " + e + " with expr: " + expr + " and cnf: " + cnf); throw e
-    //        }
-    //    }
+    def and(expr: FeatureExpr /*CNF*/): FeatureModel =
+        new BDDFeatureModel(variables, clauses, lastVarId, extraConstraints and expr)
 }
 
 /**
  * empty feature model
  */
-object NoFeatureModel extends FeatureModel(Map(), new Vec(), 0, FeatureExpr.base)
+object BDDNoFeatureModel extends BDDFeatureModel(Map(), new Vec(), 0, FeatureExpr.base)
 
 /**
  * companion object to create feature models
  */
-object FeatureModel {
-    /**
-     * create an empty feature model
-     */
-    def empty = NoFeatureModel
-
-    /**
-     * create a feature model from a feature expression
-     */
-    def create(expr: FeatureExpr) = NoFeatureModel.and(expr)
+object BDDFeatureModelLoader extends AbstractFeatureModelLoader {
 
     /**
      * create a feature model by loading a CNF file

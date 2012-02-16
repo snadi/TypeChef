@@ -1,7 +1,9 @@
 package de.fosd.typechef.featureexprInterface
 
-import de.fosd.typechef.featureexprUtil._
 import java.io.Writer
+import org.sat4j.specs.IVecInt
+import org.sat4j.core.{VecInt, Vec}
+import de.fosd.typechef.featureexprUtil.{FeatureProvider, FeatureExprTreeFactory}
 
 
 /**
@@ -16,6 +18,12 @@ trait AbstractFeatureExprModule {
     //Define a (bounded) abstract type member
     type FeatureExpr <: AbstractFeatureExpr
     val FeatureExpr: AbstractFeatureExprFactory
+
+    type FeatureModel <: AbstractFeatureModel
+    val NoFeatureModel: FeatureModel
+    val FeatureModelLoader: AbstractFeatureModelLoader
+
+    def ErrorFeature(msg: String): FeatureExpr
 
     trait AbstractFeatureExpr {
         //Use the abstract FeatureExpr here. Note that when FeatureExpr is refined, the accepted type here is refined as
@@ -118,6 +126,39 @@ trait AbstractFeatureExprModule {
 
     }
 
+    trait AbstractFeatureModel {
+        def and(expr: FeatureExpr): FeatureModel
+    }
+
+
+    trait AbstractFeatureModelLoader {
+
+        def empty = NoFeatureModel
+
+        /**
+         * create a feature model from a feature expression
+         *
+         * default impl. provided
+         */
+        def create(expr: FeatureExpr): FeatureModel = empty.and(expr)
+
+        /**
+         * create a feature model by loading a CNF file
+         * (proprietary format used previously by LinuxAnalysis tools)
+         */
+        def createFromCNFFile(file: String): FeatureModel
+
+        /**
+         * load a standard Dimacs file as feature model
+         */
+        def createFromDimacsFile(file: String): FeatureModel
+
+        /**
+         * special reader for the -2var model used by the LinuxAnalysis tools from waterloo
+         */
+        def createFromDimacsFile_2Var(file: String): FeatureModel
+    }
+
 
     trait AbstractFeatureExprFactory extends FeatureExprTreeFactory {
         def createDefinedExternal(v: String): FeatureExpr
@@ -131,8 +172,5 @@ trait AbstractFeatureExprModule {
         def False = dead
     }
 
-    def FeatureExprFactory: AbstractFeatureExprFactory
-
-    def ErrorFeature(msg: String): FeatureExpr
 
 }
