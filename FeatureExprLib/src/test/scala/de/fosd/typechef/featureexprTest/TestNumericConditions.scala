@@ -90,7 +90,7 @@ class TestNumericConditions extends TestCase {
 
         //!	__IF__		CONFIG_64BIT	__THEN__			1		<=			64	__ELSE__				1		<=		32
         assertTrue(
-            FeatureExpr.createIf(FeatureExpr.createDefinedExternal("CONFIG_64BIT"),
+            FeatureExpr.createBooleanIf(FeatureExpr.createDefinedExternal("CONFIG_64BIT"),
                 FeatureExpr.createLessThanEquals(
                     (FeatureExpr.createInteger(1)),
                     (FeatureExpr.createInteger(64))),

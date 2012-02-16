@@ -1,11 +1,12 @@
 package de.fosd.typechef.featureexprTest
 import de.fosd.typechef.featureexpr._
+import de.fosd.typechef.featureexpr.FeatureExpr._
 
 import org.scalacheck._
 import Gen._
 import Prop._
 import java.io._
-import de.fosd.typechef.featureexprUtil.FeatureModel
+import de.fosd.typechef.featureexprUtil.{FeatureExprParser, FeatureModel}
 
 object FeatureExprAutoCheck extends Properties("FeatureExpr") {
     def feature(a: String) = FeatureExprFactory.createDefinedExternal(a)

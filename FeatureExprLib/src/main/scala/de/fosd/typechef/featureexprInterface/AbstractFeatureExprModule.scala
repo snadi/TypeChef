@@ -123,7 +123,7 @@ trait AbstractFeatureExprModule {
         def createDefinedExternal(v: String): FeatureExpr
         def createDefinedMacro(name: String, macroTable: FeatureProvider): FeatureExpr
 
-        def createIf(expr: FeatureExpr, thenBr: FeatureExpr, elseBr: FeatureExpr): FeatureExpr = (expr and thenBr) or (expr.not and elseBr)
+        def createBooleanIf(expr: FeatureExpr, thenBr: FeatureExpr, elseBr: FeatureExpr): FeatureExpr = (expr and thenBr) or (expr.not and elseBr)
 
         def base: FeatureExpr
         def dead: FeatureExpr

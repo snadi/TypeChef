@@ -30,8 +30,8 @@ object BDDFeatureExprLibrary extends AbstractFeatureExprModule {
         //helper
 //        def createIf(condition: FeatureExpr, thenBranch: FeatureExpr, elseBranch: FeatureExpr): FeatureExpr = FeatureExprFactory.createBooleanIf(condition, thenBranch, elseBranch)
 
-        val base: FeatureExpr = True
-        val dead: FeatureExpr = False
+        val base: FeatureExpr = TrueImpl
+        val dead: FeatureExpr = FalseImpl
     }
 
 
@@ -204,21 +204,21 @@ object BDDFeatureExprLibrary extends AbstractFeatureExprModule {
      * apply methods of the And and Or companion objects, which convert any empty set of
      * clauses into the canonical True or False object.
      */
-    object True extends FeatureExpr(BDDFExprBuilder.TRUE) with DefaultPrint {
+    object TrueImpl extends BDDFeatureExprImpl(BDDFExprBuilder.TRUE) with DefaultPrint {
         override def toString = "True"
         override def toTextExpr = "1"
         override def debug_print(ind: Int) = indent(ind) + toTextExpr + "\n"
         override def isSatisfiable(fm: FeatureModel) = true
     }
 
-    object False extends FeatureExpr(BDDFExprBuilder.FALSE) with DefaultPrint {
+    object FalseImpl extends BDDFeatureExprImpl(BDDFExprBuilder.FALSE) with DefaultPrint {
         override def toString = "False"
         override def toTextExpr = "0"
         override def debug_print(ind: Int) = indent(ind) + toTextExpr + "\n"
         override def isSatisfiable(fm: FeatureModel) = false
     }
 
-    trait DefaultPrint extends FeatureExpr {
+    trait DefaultPrint extends BDDFeatureExprImpl {
         override def print(p: Writer) = p.write(toTextExpr)
     }
 

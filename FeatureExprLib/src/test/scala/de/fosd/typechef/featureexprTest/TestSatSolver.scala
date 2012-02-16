@@ -5,7 +5,7 @@ import junit.framework._
 import junit.framework.Assert._
 import org.junit.Test
 
-import de.fosd.typechef.featureexpr.FeatureExprFactory._
+import de.fosd.typechef.featureexpr.FeatureExpr._
 
 class TestSatSolver extends TestCase {
     def a = createDefinedExternal("a")
@@ -27,8 +27,8 @@ class TestSatSolver extends TestCase {
         assertEquals(true, a and (a.not) isContradiction())
         assertEquals(true, a or (a.not) isTautology())
         assertEquals(false, a and (a.not) isSatisfiable())
-        assertEquals(true, createIf(a, a, a.not) isSatisfiable())
-        assertEquals(true, createIf(a, a.not, a) isContradiction())
+        assertEquals(true, createBooleanIf(a, a, a.not) isSatisfiable())
+        assertEquals(true, createBooleanIf(a, a.not, a) isContradiction())
         assertEquals(true, dead isContradiction())
         assertEquals(true, base isTautology())
         assertEquals(true, createInteger(2).toFeatureExpr.isTautology())

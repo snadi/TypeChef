@@ -64,7 +64,7 @@ class TestFeatureExpr extends TestCase {
             FeatureExpr.createIf(DefinedExternal("b"), IntegerLit(64), IntegerLit(32))).and(createInteger(1).toFeatureExpr), BaseFeature());
 
         assertSimplify(
-            FeatureExpr.createIf(
+            FeatureExpr.createBooleanIf(
                 (FeatureExpr.createDefinedExternal("a")),
                 FeatureExpr.createLessThanEquals((FeatureExpr.createInteger(1)), (FeatureExpr.createInteger(64))),
                 FeatureExpr.createLessThanEquals((FeatureExpr.createInteger(1)), (FeatureExpr.createInteger(32)))).not, DeadFeature());
