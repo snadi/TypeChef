@@ -1,7 +1,7 @@
 package de.fosd.typechef.parser
 
 import scala.math._
-import de.fosd.typechef.featureexpr.{FeatureModel, FeatureExpr}
+import de.fosd.typechef.featureexpr.{FeatureModel, FeatureExpr, NoFeatureModel}
 import annotation.tailrec
 import de.fosd.typechef.conditional._
 
@@ -10,7 +10,7 @@ import de.fosd.typechef.conditional._
  *
  * @author kaestner
  */
-abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOutput: Boolean = false) {
+abstract class MultiFeatureParser(val featureModel: FeatureModel = NoFeatureModel, debugOutput: Boolean = false) {
     type Elem <: AbstractToken
     type TypeContext
     type Input = TokenReader[Elem, TypeContext]
@@ -466,7 +466,7 @@ try {
      *
      * nonprivate only for test cases
      */
-    protected def joinOptLists[T](a: List[Opt[T]], b: List[Opt[T]], feature: FeatureExpr = null): List[Opt[T]] = {
+    protected def joinOptLists[T](a: List[Opt[T]], b: List[Opt[T]], feature: FeatureExpr): List[Opt[T]] = {
         if (!a.isEmpty && !b.isEmpty && a.head.entry == b.head.entry) {
             //== needed because the ASTs were constructed independently
             val lastEntry = Opt(a.head.feature or b.head.feature, a.head.entry)
@@ -489,7 +489,7 @@ try {
     }
 
 
-    protected def joinOptLists_old[T](inA: List[Opt[T]], inB: List[Opt[T]], feature: FeatureExpr = null): List[Opt[T]] = {
+    protected def joinOptLists_old[T](inA: List[Opt[T]], inB: List[Opt[T]], feature: FeatureExpr): List[Opt[T]] = {
         var a = inA;
         var b = inB
         var lastEntry: Opt[T] = null;

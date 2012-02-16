@@ -1,6 +1,6 @@
 package de.fosd.typechef.lexer;
 
-import de.fosd.typechef.featureexprUtil.FeatureModel;
+import de.fosd.typechef.featureexprImpl.bdd.FeatureModel;
 
 import java.io.*;
 import java.util.ArrayList;

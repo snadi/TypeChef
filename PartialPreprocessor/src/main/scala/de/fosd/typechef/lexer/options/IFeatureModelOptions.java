@@ -1,6 +1,6 @@
 package de.fosd.typechef.lexer.options;
 
-import de.fosd.typechef.featureexprUtil.FeatureModel;
+import de.fosd.typechef.featureexprImpl.bdd.FeatureModel;
 
 
 public interface IFeatureModelOptions {
