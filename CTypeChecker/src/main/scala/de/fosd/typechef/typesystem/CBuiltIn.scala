@@ -42,7 +42,7 @@ trait CBuiltIn extends CEnv with CTypes with CDeclTyping {
             buffer = buffer + str
         }
         {
-            buffer = "#define __SIZE_TYPE__ long unsigned int\n"
+            buffer = "#define __SIZE_TYPE__ unsigned int\n"
 
             /* Gaah. gcc knows tons of builtin <string.h> functions */
             add_pre_buffer("extern void *__builtin_memcpy(void *, const void *, __SIZE_TYPE__);\n");
@@ -140,7 +140,7 @@ trait CBuiltIn extends CEnv with CTypes with CDeclTyping {
 
     private def getAST(code: String): TranslationUnit = {
         val ast: AST = new ParserMain(new CParser).parserMain(
-            () => CLexer.lex(code, null), new CTypeContext, false)
+            () => CLexer.lex(code, null), new CTypeContext, SilentParserOptions)
         assert(ast != null)
         ast.asInstanceOf[TranslationUnit]
     }

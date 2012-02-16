@@ -16,7 +16,7 @@ import org.junit.Test
 class FeatureExprTest extends TestCase {
 
     import org.junit.Assert._
-    import FeatureExpr._
+    import de.fosd.typechef.featureexpr.FeatureExpr._
 
 
     @Test
@@ -85,6 +85,14 @@ class FeatureExprTest extends TestCase {
         assertEquals(createLT(createIf(a, createPlus(createIf(b, v(1), v(2)), v(10)), createIf(b, v(3), v(4))), v(5)), a.not)
     }
 
+    @Test def testParserPrecedenceTest {
+        val p = new FeatureExprParser()
+        assertEquals(p.parse("def(a) && def(b) || def(c)"), p.parse("(def(a) && def(b)) || def(c)"))
+
+        assertTrue(p.parse("def(a) && def(b) || def(c)").equivalentTo((a and b) or c))
+
+
+    }
 
     def v(value: Int): FeatureExprValue = createInteger(value)
     def not(v: FeatureExpr) = v.not
@@ -94,4 +102,6 @@ class FeatureExprTest extends TestCase {
     def c = feature("c")
     def feature(n: String) = createDefinedExternal(n)
     def createLT(a: FeatureExprValue, b: FeatureExprValue) = createLessThan(a, b)
+
+
 }

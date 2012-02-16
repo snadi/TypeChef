@@ -5,13 +5,14 @@ import de.fosd.typechef.featureexprUtil.FeatureExprParser;
 import de.fosd.typechef.lexer.options.LexerOptions;
 import de.fosd.typechef.lexer.options.OptionException;
 import de.fosd.typechef.lexer.options.Options;
+import de.fosd.typechef.parser.c.ParserOptions;
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
 
 import java.util.List;
 
 
-public class FrontendOptions extends LexerOptions {
+public class FrontendOptions extends LexerOptions implements ParserOptions {
     boolean parse = true,
             typecheck = true,
             writeInterface = true,
@@ -19,6 +20,7 @@ public class FrontendOptions extends LexerOptions {
             writeDebugInterface = false,
             recordTiming = false,
             parserStatistics = false,
+            parserResults = true,
             writePI = false;
     String outputStem = "";
     private String filePresenceConditionFile = "";
@@ -32,6 +34,7 @@ public class FrontendOptions extends LexerOptions {
     private final static char F_RECORDTIMING = Options.genOptionId();
     private final static char F_FILEPC = Options.genOptionId();
     private final static char F_PARSERSTATS = Options.genOptionId();
+    private final static char F_HIDEPARSERRESULTS = Options.genOptionId();
 
     @Override
     protected List<Options.OptionGroup> getOptionGroups() {
@@ -64,6 +67,8 @@ public class FrontendOptions extends LexerOptions {
                         "Presence condition for the file (format like --featureModelFExpr). Default 'file.pc'.")
         ));
         r.add(new OptionGroup("Parser options", 23,
+                new Option("hideparserresults", LongOpt.NO_ARGUMENT, F_HIDEPARSERRESULTS, null,
+                        "Do not show parser results."),
                 new Option("parserstatistics", LongOpt.NO_ARGUMENT, F_PARSERSTATS, null,
                         "Print parser statistics.")
         ));
@@ -96,6 +101,8 @@ public class FrontendOptions extends LexerOptions {
         } else if (c == F_FILEPC) {//--filePC
             checkFileExists(g.getOptarg());
             filePresenceConditionFile = g.getOptarg();
+        } else if (c == F_HIDEPARSERRESULTS) {
+            parserResults = false;
         } else if (c == F_PARSERSTATS) {
             parserStatistics = true;
         } else if (c == F_WRITEPI) {
@@ -161,5 +168,13 @@ public class FrontendOptions extends LexerOptions {
 
     String getSerializedASTFilename() {
         return outputStem + ".ast";
+    }
+
+    public boolean printParserStatistics() {
+        return parserStatistics;
+    }
+
+    public boolean printParserResult() {
+        return parserResults;
     }
 }

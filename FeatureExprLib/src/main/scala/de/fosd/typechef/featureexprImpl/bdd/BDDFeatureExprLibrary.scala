@@ -1,17 +1,17 @@
 package de.fosd.typechef.featureexprImpl.bdd
 
-import collection.mutable.Map
 import java.io.Writer
 import net.sf.javabdd._
 import de.fosd.typechef.featureexprUtil._
 import de.fosd.typechef.featureexprInterface.AbstractFeatureExprModule
-;
+import collection.mutable.{WeakHashMap, Map}
 
 object BDDFeatureExprLibrary extends AbstractFeatureExprModule {
 
     def FeatureExprFactory = BDDFeatureExprFactory
     type FeatureExpr = BDDFeatureExprImpl
     val FeatureExpr = BDDFeatureExprFactory
+
 
     /**
      * External interface for construction of non-boolean feature expressions
@@ -82,7 +82,17 @@ object BDDFeatureExprLibrary extends AbstractFeatureExprModule {
         override def xor(that: FeatureExpr) = BDDFExprBuilder.xor(this, that)
         override def equiv(that: FeatureExpr) = BDDFExprBuilder.biimp(this, that)
 
-        def isSatisfiable(fm: FeatureModel): Boolean = bdd.satOne() != BDDFExprBuilder.FALSE
+        private val cacheIsSatisfiable: WeakHashMap[FeatureModel, Boolean] = WeakHashMap()
+        def isSatisfiable(fm: FeatureModel): Boolean =
+               if (bdd.isOne) true //assuming a valid feature model
+               else if (bdd.isZero) false
+               else if (fm == NoFeatureModel || fm == null) bdd.satOne() != BDDFExprBuilder.FALSE
+               //combination with a small FeatureExpr feature model
+               else if (fm.clauses.isEmpty) (bdd and fm.extraConstraints.asInstanceOf[BDDFeatureExprImpl].bdd).satOne() != BDDFExprBuilder.FALSE
+               //combination with SAT
+               else cacheIsSatisfiable.getOrElseUpdate(fm,
+                   SatSolver.isSatisfiable(fm, toDnfClauses(toScalaAllSat((bdd and fm.extraConstraints.asInstanceOf[BDDFeatureExprImpl].bdd).not().allsat())), BDDFExprBuilder.lookupFeatureName)
+               )
 
         final override def equals(that: Any) = that match {
             case x: FeatureExpr => bdd.equals(x.bdd)
@@ -111,10 +121,23 @@ object BDDFeatureExprLibrary extends AbstractFeatureExprModule {
                 return bddAllSat.map(clause(_)).mkString(or)
             }
 
-        private def bddAllSat: Iterator[Array[Byte]] = {
-            val allsat = bdd.allsat().asInstanceOf[java.util.List[Array[Byte]]];
-            scala.collection.JavaConversions.asScalaIterator(allsat.iterator())
+        private def bddAllSat: Iterator[Array[Byte]] = toScalaAllSat(bdd.allsat())
+
+        private def toScalaAllSat(allsat: java.util.List[_]): Iterator[Array[Byte]] =
+            scala.collection.JavaConversions.asScalaIterator(allsat.asInstanceOf[java.util.List[Array[Byte]]].iterator())
+
+        /**
+         * input allsat format
+         *
+         * output clausel format with sets of variable ids (negative means negated)
+         */
+        private def toDnfClauses(allsat: Iterator[Array[Byte]]): Iterator[Seq[Int]] = {
+            def clause(d: Array[Byte]): Seq[Int] = d.zip(0 to (d.length - 1)).filter(_._1 >= 0).map(
+                x => (if (x._1 == 0) -1 else 1) * x._2
+            )
+            allsat.map(clause(_))
         }
+
 
 //        /**
 //         * simple translation into a FeatureExprValue if needed for some reason
@@ -142,10 +165,12 @@ object BDDFeatureExprLibrary extends AbstractFeatureExprModule {
         def countDistinctFeatures: Int = collectDistinctFeatureIds.size
     }
 
+
+    override def ErrorFeature(msg: String): FeatureExpr =  ErrorFeatureImpl(msg)
     //
     //// XXX: this should be recognized by the caller and lead to clean termination instead of a stack trace. At least,
     //// however, this is only a concern for erroneous input anyway (but isn't it our point to detect it?)
-    case class ErrorFeature(msg: String) extends FeatureExpr(BDDFExprBuilder.FALSE) {
+    case class ErrorFeatureImpl(msg: String) extends FeatureExpr(BDDFExprBuilder.FALSE) {
         private def error: Nothing = throw new FeatureArithmeticException(msg)
         override def toTextExpr = error
         //    override def mapDefinedExpr(f: DefinedExpr => FeatureExpr, cache: Map[FeatureExpr, FeatureExpr]) = error

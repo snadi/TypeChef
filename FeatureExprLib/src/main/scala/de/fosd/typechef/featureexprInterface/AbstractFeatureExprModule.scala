@@ -15,6 +15,7 @@ trait AbstractFeatureExprModule {
 
     //Define a (bounded) abstract type member
     type FeatureExpr <: AbstractFeatureExpr
+    val FeatureExpr: AbstractFeatureExprFactory
 
     trait AbstractFeatureExpr {
         //Use the abstract FeatureExpr here. Note that when FeatureExpr is refined, the accepted type here is refined as
@@ -108,12 +109,12 @@ trait AbstractFeatureExprModule {
         def debug_print(indent: Int): String = toTextExpr
 
 
-//        /**
-//         * simple translation into a FeatureExprValue if needed for some reason
-//         * (creates IF(expr, 1, 0))
-//         */
-//        def toFeatureExprValue: FeatureExprValue =
-//            FeatureExprFactory.createIf(this, FeatureExprFactory.createValue(1l), FeatureExprFactory.createValue(0l))
+        //        /**
+        //         * simple translation into a FeatureExprValue if needed for some reason
+        //         * (creates IF(expr, 1, 0))
+        //         */
+        //        def toFeatureExprValue: FeatureExprValue =
+        //            FeatureExprFactory.createIf(this, FeatureExprFactory.createValue(1l), FeatureExprFactory.createValue(0l))
 
     }
 
@@ -121,6 +122,8 @@ trait AbstractFeatureExprModule {
     trait AbstractFeatureExprFactory extends FeatureExprTreeFactory {
         def createDefinedExternal(v: String): FeatureExpr
         def createDefinedMacro(name: String, macroTable: FeatureProvider): FeatureExpr
+
+        def createIf(expr: FeatureExpr, thenBr: FeatureExpr, elseBr: FeatureExpr): FeatureExpr = (expr and thenBr) or (expr.not and elseBr)
 
         def base: FeatureExpr
         def dead: FeatureExpr
