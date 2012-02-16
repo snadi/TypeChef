@@ -16,10 +16,10 @@ trait AbstractFeatureExprModule {
 
 
     //Define a (bounded) abstract type member
-    type FeatureExpr <: AbstractFeatureExpr
+    type FeatureExpr >: Null <: AbstractFeatureExpr
     val FeatureExpr: AbstractFeatureExprFactory
 
-    type FeatureModel <: AbstractFeatureModel
+    type FeatureModel >: Null <: AbstractFeatureModel
     val NoFeatureModel: FeatureModel
     val FeatureModelLoader: AbstractFeatureModelLoader
 
@@ -36,7 +36,7 @@ trait AbstractFeatureExprModule {
         def isSatisfiable(fm: FeatureModel): Boolean
         protected def calcSize: Int
         def toTextExpr: String //or other ToString variations for debugging etc
-        protected def collectDistinctFeatures: Set[String]
+        def collectDistinctFeatures: Set[String]
 
         def or(that: FeatureExpr): FeatureExpr
         def and(that: FeatureExpr): FeatureExpr

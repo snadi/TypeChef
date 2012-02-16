@@ -466,7 +466,7 @@ try {
      *
      * nonprivate only for test cases
      */
-    protected def joinOptLists[T](a: List[Opt[T]], b: List[Opt[T]], feature: FeatureExpr): List[Opt[T]] = {
+    protected def joinOptLists[T](a: List[Opt[T]], b: List[Opt[T]], feature: FeatureExpr =null): List[Opt[T]] = {
         if (!a.isEmpty && !b.isEmpty && a.head.entry == b.head.entry) {
             //== needed because the ASTs were constructed independently
             val lastEntry = Opt(a.head.feature or b.head.feature, a.head.entry)
@@ -617,7 +617,7 @@ try {
          *  XXX this probably conflicts with the greedy approach of skipping tokens already in next
          *  therefore this strategy might apply in significantly less cases than it could
          */
-        def applyStrategyA(in0: Input, ctx: ParserState): Option[(Opt[T], TokenReader[Elem, TypeContext])] = {
+        private def applyStrategyA(in0: Input, ctx: ParserState): Option[(Opt[T], TokenReader[Elem, TypeContext])] = {
             val firstFeature = in0.first.getFeature
             if (!featureSolverCache.implies(ctx, firstFeature) && !featureSolverCache.mutuallyExclusive(ctx, firstFeature)) {
                 val parseResult = p(in0, ctx.and(firstFeature))
@@ -855,7 +855,7 @@ try {
          *  XXX this probably conflicts with the greedy approach of skipping tokens already in next
          *  therefore this strategy might apply in significantly less cases than it could
          */
-        def applyStrategyA(in0: Input, ctx: ParserState): Option[(Opt[T], TokenReader[Elem, TypeContext])] = {
+        private def applyStrategyA(in0: Input, ctx: ParserState): Option[(Opt[T], TokenReader[Elem, TypeContext])] = {
             val firstFeature = in0.first.getFeature
             if (!featureSolverCache.implies(ctx, firstFeature) && !featureSolverCache.mutuallyExclusive(ctx, firstFeature)) {
                 val parseResult = p(in0, ctx.and(firstFeature))
@@ -969,7 +969,7 @@ try {
     private val next: MultiParser[(Input, Elem)] = new MultiParser[(Input, Elem)] {
 
         var cache_in: Input = null
-        var cache_ctx: FeatureExpr = null
+        private var cache_ctx: FeatureExpr = null
         var cache_value: MultiParseResult[(Input, Elem)] = null
 
         def apply(in: Input, context: FeatureExpr): MultiParseResult[(Input, Elem)] = {
@@ -982,7 +982,7 @@ try {
         }
 
         @tailrec
-        def getNext(in: Input, context: FeatureExpr): MultiParseResult[(Input, Elem)] = {
+        private def getNext(in: Input, context: FeatureExpr): MultiParseResult[(Input, Elem)] = {
             if (in.atEnd)
                 Failure(errorMsg("EOF", None, in.context), in, List())
             else {

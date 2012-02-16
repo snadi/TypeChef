@@ -2,6 +2,7 @@ package de.fosd.typechef.lexer.macrotable
 
 import java.io.PrintWriter
 import de.fosd.typechef.featureexpr._
+import de.fosd.typechef.featureexprUtil.FeatureProvider
 
 
 object MacroContext {

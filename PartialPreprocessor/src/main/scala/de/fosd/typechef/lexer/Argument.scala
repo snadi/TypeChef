@@ -27,8 +27,9 @@ package de.fosd.typechef.lexer
 import java.{util => jUtil, lang => jLang}
 import collection.JavaConversions._
 import collection.JavaConverters._
-import de.fosd.typechef.featureexpr.{FeatureModel, FeatureExprTree, FeatureExpr}
+import de.fosd.typechef.featureexpr.{FeatureModel,  FeatureExpr}
 import de.fosd.typechef.lexer.macrotable.MacroExpansion
+import de.fosd.typechef.featureexprUtil.FeatureExprTree
 
 /**
  * A macro argument.
