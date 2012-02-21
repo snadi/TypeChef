@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 class State {
-    List<AbstractFeatureExprModule.AbstractFeatureExpr> localFeatures = new ArrayList<FeatureExpr>();
+    List<AbstractFeatureExprModule.AbstractFeatureExpr> localFeatures = new ArrayList<AbstractFeatureExprModule.AbstractFeatureExpr>();
     final State parent;
 
     boolean sawElse;
