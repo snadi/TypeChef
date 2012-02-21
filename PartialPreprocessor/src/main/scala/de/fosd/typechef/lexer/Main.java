@@ -43,7 +43,7 @@ public class Main {
         (new Main()).run(args, false, true, null);
     }
 
-    public List<Token> run(String[] args, boolean returnTokenList, boolean printToStdOutput, FeatureModel featureModel) throws Exception {
+    public List<Token> run(String[] args, boolean returnTokenList, boolean printToStdOutput, AbstractFeatureExprModule.AbstractFeatureModel featureModel) throws Exception {
         LexerOptions options = new LexerOptions();
         options.setFeatureModel(featureModel);
         options.setPrintToStdOutput(printToStdOutput);

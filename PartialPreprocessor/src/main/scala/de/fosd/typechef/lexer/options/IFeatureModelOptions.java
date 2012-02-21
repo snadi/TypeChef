@@ -5,9 +5,9 @@ import de.fosd.typechef.featureexprImpl.bdd.FeatureModel;
 
 public interface IFeatureModelOptions {
 
-    FeatureModel getFeatureModel();
+    AbstractFeatureExprModule.AbstractFeatureModel getFeatureModel();
 
-    FeatureModel getFeatureModelTypeSystem();
+    AbstractFeatureExprModule.AbstractFeatureModel getFeatureModelTypeSystem();
 
     PartialConfiguration getPartialConfiguration();
 }

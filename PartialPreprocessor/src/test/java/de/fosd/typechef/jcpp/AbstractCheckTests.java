@@ -131,7 +131,7 @@ public class AbstractCheckTests {
                         .indexOf(" with ") + 6);
                 expectedName = expectedName.substring(0, expectedName
                         .indexOf(" with "));
-                FeatureExpr expectedExpr = parseFeatureExpr(expectedFeature);
+                AbstractFeatureExprModule.AbstractFeatureExpr expectedExpr = parseFeatureExpr(expectedFeature);
                 boolean foundToken = false;
 
                 for (Token t : tokenStream) {
@@ -164,7 +164,7 @@ public class AbstractCheckTests {
         return containsErrorCheck;
     }
 
-    private FeatureExpr parseFeatureExpr(String expectedFeature) {
+    private AbstractFeatureExprModule.AbstractFeatureExpr parseFeatureExpr(String expectedFeature) {
         try {
             return new Preprocessor(new StringLexerSource(expectedFeature
                     + "\n"), null).parse_featureExpr();

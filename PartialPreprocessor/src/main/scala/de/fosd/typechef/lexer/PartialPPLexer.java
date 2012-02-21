@@ -18,12 +18,12 @@ public class PartialPPLexer {
 
     public boolean debug = false;
 
-    public List<Token> parse(String code, String folderPath, FeatureModel featureModel) throws LexerException,
+    public List<Token> parse(String code, String folderPath, AbstractFeatureExprModule.AbstractFeatureModel featureModel) throws LexerException,
             IOException {
         return parse(new StringLexerSource(code, true), folderPath, featureModel);
     }
 
-    public List<Token> parseFile(String fileName, String folderPath, FeatureModel featureModel)
+    public List<Token> parseFile(String fileName, String folderPath, AbstractFeatureExprModule.AbstractFeatureModel featureModel)
             throws LexerException, IOException {
         return parse(new FileLexerSource(new File(fileName)), folderPath, featureModel);
     }
@@ -36,12 +36,12 @@ public class PartialPPLexer {
      * @throws LexerException
      * @throws IOException
      */
-    public List<Token> parseStream(InputStream stream, String filePath, String folderPath, FeatureModel featureModel)
+    public List<Token> parseStream(InputStream stream, String filePath, String folderPath, AbstractFeatureExprModule.AbstractFeatureModel featureModel)
             throws LexerException, IOException {
         return parse(new FileLexerSource(stream, filePath), folderPath, featureModel);
     }
 
-    public List<Token> parse(Source source, String folderPath, FeatureModel featureModel)
+    public List<Token> parse(Source source, String folderPath, AbstractFeatureExprModule.AbstractFeatureModel featureModel)
             throws LexerException, IOException {
         Preprocessor pp = new Preprocessor(featureModel);
         pp.addFeature(Feature.DIGRAPHS);

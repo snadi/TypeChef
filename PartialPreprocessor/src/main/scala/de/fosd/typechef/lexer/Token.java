@@ -74,9 +74,9 @@ public abstract class Token {
      */
     public abstract Object getValue();
 
-    public abstract FeatureExpr getFeature();
+    public abstract AbstractFeatureExprModule.AbstractFeatureExpr getFeature();
 
-    public abstract void setFeature(FeatureExpr expr);
+    public abstract void setFeature(AbstractFeatureExprModule.AbstractFeatureExpr expr);
 
     /**
      * Returns a description of this token, for debugging purposes.

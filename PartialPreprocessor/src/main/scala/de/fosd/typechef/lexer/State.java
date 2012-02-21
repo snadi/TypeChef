@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 class State {
-    List<FeatureExpr> localFeatures = new ArrayList<FeatureExpr>();
+    List<AbstractFeatureExprModule.AbstractFeatureExpr> localFeatures = new ArrayList<FeatureExpr>();
     final State parent;
 
     boolean sawElse;
@@ -45,7 +45,7 @@ class State {
      * @param feature
      * @param macroTable
      */
-    public void putLocalFeature(FeatureExpr feature, FeatureProvider macroTable) {
+    public void putLocalFeature(AbstractFeatureExprModule.AbstractFeatureExpr feature, FeatureProvider macroTable) {
         clearCache();
         localFeatures.add(feature);
     }
@@ -60,13 +60,13 @@ class State {
      *
      * @return
      */
-    public FeatureExpr getLocalFeatureExpr() {
+    public AbstractFeatureExprModule.AbstractFeatureExpr getLocalFeatureExpr() {
         if (sawElse())
             assert !localFeatures.isEmpty() : "else before #if?";
 
         if (localFeatures.isEmpty())
             return FeatureExprLib.base();
-        FeatureExpr result = localFeatures.get(localFeatures.size() - 1);
+        AbstractFeatureExprModule.AbstractFeatureExpr result = localFeatures.get(localFeatures.size() - 1);
         /*
            * if (sawElse) result = result.not();
            */
@@ -77,7 +77,7 @@ class State {
         return result;
     }
 
-    private FeatureExpr cache_fullPresenceCondition = null;
+    private AbstractFeatureExprModule.AbstractFeatureExpr cache_fullPresenceCondition = null;
     private Boolean cache_isActive = null;
 
     /**
@@ -86,9 +86,9 @@ class State {
      *
      * @return
      */
-    public FeatureExpr getFullPresenceCondition() {
+    public AbstractFeatureExprModule.AbstractFeatureExpr getFullPresenceCondition() {
         if (cache_fullPresenceCondition == null) {
-            FeatureExpr result = getLocalFeatureExpr();
+            AbstractFeatureExprModule.AbstractFeatureExpr result = getLocalFeatureExpr();
             if (parent != null)
                 result = result.and(parent.getFullPresenceCondition());
             cache_fullPresenceCondition = result;
@@ -106,13 +106,13 @@ class State {
      * @param context
      * @return
      */
-    public boolean isActive(FeatureModel featureModel) {
+    public boolean isActive(AbstractFeatureExprModule.AbstractFeatureModel featureModel) {
         // check with cache and parent before using SAT solver
         if (cache_isActive != null)
             return cache_isActive.booleanValue();
         if (parent != null && parent.isCachedInactive())
             return false;
-        FeatureExpr condition = getFullPresenceCondition();
+        AbstractFeatureExprModule.AbstractFeatureExpr condition = getFullPresenceCondition();
         cache_isActive = new Boolean(condition.isSatisfiable(featureModel));
         return cache_isActive.booleanValue();
     }

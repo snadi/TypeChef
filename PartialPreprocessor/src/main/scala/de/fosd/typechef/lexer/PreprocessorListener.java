@@ -85,7 +85,7 @@ public class PreprocessorListener {
      * @param featureExpr
      */
     public void handleError(Source source, int line, int column, String msg,
-                            FeatureExpr featureExpr) throws LexerException {
+                            AbstractFeatureExprModule.AbstractFeatureExpr featureExpr) throws LexerException {
         errors++;
         print(source.getName() + ":" + line + ":" + column + ": error: " + msg
                 + "; condition: " + featureExpr, Level.SEVERE);

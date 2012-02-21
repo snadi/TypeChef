@@ -32,7 +32,7 @@ import de.fosd.typechef.featureexpr.FeatureExpr;
  */
 @SuppressWarnings("all")
 public class LexerException extends Exception {
-    private FeatureExpr presenceCondition;
+    private AbstractFeatureExprModule.AbstractFeatureExpr presenceCondition;
 
     public LexerException(String msg) {
         super(msg);
@@ -42,7 +42,7 @@ public class LexerException extends Exception {
         super(cause);
     }
 
-    public LexerException(String msg, FeatureExpr fullPresenceCondition) {
+    public LexerException(String msg, AbstractFeatureExprModule.AbstractFeatureExpr fullPresenceCondition) {
         this(msg + "\nPresence Condition: " + fullPresenceCondition.toString());
         presenceCondition = fullPresenceCondition;
     }

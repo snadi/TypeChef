@@ -6,10 +6,10 @@ public class MacroConstraint {
 
     final String name;
     final MacroConstraintKind kind;
-    final FeatureExpr expr;
+    final AbstractFeatureExprModule.AbstractFeatureExpr expr;
 
     public MacroConstraint(String macroName, MacroConstraintKind kind,
-                           FeatureExpr featureExpression) {
+                           AbstractFeatureExprModule.AbstractFeatureExpr featureExpression) {
         this.name = macroName;
         this.kind = kind;
         this.expr = featureExpression;

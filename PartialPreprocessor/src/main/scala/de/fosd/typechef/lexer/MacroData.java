@@ -182,11 +182,11 @@ public class MacroData {
     }
 
     //
-    // public void setFeature(FeatureExpr feature) {
+    // public void setFeature(AbstractFeatureExprModule.AbstractFeatureExpr feature) {
     // this.feature = feature;
     // }
     //
-    // public FeatureExpr getFeature() {
+    // public AbstractFeatureExprModule.AbstractFeatureExpr getFeature() {
     // return feature;
     // }
 

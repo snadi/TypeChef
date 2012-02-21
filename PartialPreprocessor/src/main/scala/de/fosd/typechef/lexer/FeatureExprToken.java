@@ -15,9 +15,9 @@ import java.io.PrintWriter;
  * @author kaestner
  */
 public class FeatureExprToken extends SimpleToken {
-    private FeatureExpr expr;
+    private AbstractFeatureExprModule.AbstractFeatureExpr expr;
 
-    FeatureExprToken(FeatureExpr expr, Source source) {
+    FeatureExprToken(AbstractFeatureExprModule.AbstractFeatureExpr expr, Source source) {
         super(P_FEATUREEXPR, null/* initial text */, source);
         this.expr = expr;
         this.text = null;
@@ -31,7 +31,7 @@ public class FeatureExprToken extends SimpleToken {
         throw new IllegalArgumentException("getText not supported on FeatureExprToken");
     }
 
-    public FeatureExpr getExpr() {
+    public AbstractFeatureExprModule.AbstractFeatureExpr getExpr() {
         return expr;
     }
 

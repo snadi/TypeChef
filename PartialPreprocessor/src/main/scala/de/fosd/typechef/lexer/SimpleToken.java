@@ -41,7 +41,7 @@ public class SimpleToken extends Token {
     private Object value;
     protected String text;
     protected Source source;// for debugging purposes only
-    private FeatureExpr presenceCondition = FeatureExprLib.base();
+    private AbstractFeatureExprModule.AbstractFeatureExpr presenceCondition = FeatureExprLib.base();
 
     public SimpleToken(int type, int line, int column, String text,
                        Object value, Source source) {
@@ -126,11 +126,11 @@ public class SimpleToken extends Token {
         return value;
     }
 
-    public FeatureExpr getFeature() {
+    public AbstractFeatureExprModule.AbstractFeatureExpr getFeature() {
         return presenceCondition;
     }
 
-    public void setFeature(FeatureExpr expr) {
+    public void setFeature(AbstractFeatureExprModule.AbstractFeatureExpr expr) {
         presenceCondition = expr;
     }
 

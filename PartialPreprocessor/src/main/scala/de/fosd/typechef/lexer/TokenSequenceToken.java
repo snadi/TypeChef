@@ -106,12 +106,12 @@ class TokenSequenceToken extends Token {
     }
 
     @Override
-    public FeatureExpr getFeature() {
+    public AbstractFeatureExprModule.AbstractFeatureExpr getFeature() {
         return firstToken().getFeature();
     }
 
     @Override
-    public void setFeature(FeatureExpr expr) {
+    public void setFeature(AbstractFeatureExprModule.AbstractFeatureExpr expr) {
         for (Token t : internalTokens)
             t.setFeature(expr);
     }
