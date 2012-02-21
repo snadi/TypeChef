@@ -24,8 +24,9 @@
 package de.fosd.typechef.lexer;
 
 
-import de.fosd.typechef.featureexpr.FeatureExpr;
-
+import de.fosd.typechef.featureexprJava.*;
+import de.fosd.typechef.featureexprInterface.*;
+import de.fosd.typechef.featureexprUtil.*;
 /**
  * A Preprocessor token.
  *

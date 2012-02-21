@@ -23,7 +23,9 @@
 
 package de.fosd.typechef.lexer;
 
-import de.fosd.typechef.featureexprImpl.bdd.FeatureModel;
+import de.fosd.typechef.featureexprJava.*;
+import de.fosd.typechef.featureexprInterface.*;
+import de.fosd.typechef.featureexprUtil.*;
 import de.fosd.typechef.lexer.macrotable.MacroContext$;
 import de.fosd.typechef.lexer.options.ILexerOptions;
 import de.fosd.typechef.lexer.options.LexerOptions;
