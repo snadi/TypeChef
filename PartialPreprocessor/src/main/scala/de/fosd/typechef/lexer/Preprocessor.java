@@ -23,9 +23,10 @@
 
 package de.fosd.typechef.lexer;
 
-import de.fosd.typechef.featureexpr.FeatureExpr;
-import de.fosd.typechef.featureexpr.FeatureExprTree;
-import de.fosd.typechef.featureexprImpl.bdd.FeatureModel;
+import de.fosd.typechef.featureexprJava.*;
+import de.fosd.typechef.featureexprInterface.*;
+import de.fosd.typechef.featureexprUtil.*;
+
 import de.fosd.typechef.lexer.MacroConstraint.MacroConstraintKind;
 import de.fosd.typechef.lexer.macrotable.MacroContext;
 import de.fosd.typechef.lexer.macrotable.MacroExpansion;
@@ -129,7 +130,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
 
     SourceManager sourceManager = new SourceManager(this);
 
-    private final FeatureModel featureModel;
+    private final AbstractFeatureExprModule.AbstractFeatureModel featureModel;
     /* The fundamental engine. */
     private MacroContext<MacroData> macros;
     State state;
@@ -152,7 +153,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
 
     private List<MacroConstraint> macroConstraints = new ArrayList<MacroConstraint>();
 
-    public Preprocessor(FeatureModel fm) {
+    public Preprocessor(AbstractFeatureExprModule.AbstractFeatureModel fm) {
         this.featureModel = fm;
         macros = new MacroContext<MacroData>(featureModel);
         for (String name : new String[]{
@@ -178,7 +179,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
         this(null);
     }
 
-    public Preprocessor(Source initial, FeatureModel fm) {
+    public Preprocessor(Source initial, AbstractFeatureExprModule.AbstractFeatureModel fm) {
         this(fm);
         addInput(initial);
     }
@@ -186,7 +187,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
     /**
      * Equivalent to 'new Preprocessor(new {@link FileLexerSource}(file))'
      */
-    public Preprocessor(File file, FeatureModel fm) throws IOException {
+    public Preprocessor(File file, AbstractFeatureExprModule.AbstractFeatureModel fm) throws IOException {
         this(new FileLexerSource(file), fm);
     }
 
@@ -374,7 +375,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
      * @param feature
      * @param name
      */
-    public void addMacro(String name, FeatureExpr feature, MacroData m)
+    public void addMacro(String name, AbstractFeatureExprModule.AbstractFeatureExpr feature, MacroData m)
             throws LexerException {
         // System.out.println("Macro " + m);
         /* Already handled as a source error in macro(). */
@@ -384,7 +385,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
         macros = macros.define(name, feature, m);
     }
 
-    public void removeMacro(String name, FeatureExpr feature) {
+    public void removeMacro(String name, AbstractFeatureExprModule.AbstractFeatureExpr feature) {
         macros = macros.undefine(name, feature);
     }
 
@@ -394,7 +395,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
      * The String value is lexed into a token stream, which is used as the macro
      * expansion.
      */
-    public void addMacro(String name, FeatureExpr feature, String value)
+    public void addMacro(String name, AbstractFeatureExprModule.AbstractFeatureExpr feature, String value)
             throws LexerException {
         try {
             MacroData m = new MacroData(null);
@@ -417,7 +418,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
      * This is a convenience method, and is equivalent to
      * <code>addMacro(name, "1")</code>.
      */
-    public void addMacro(String name, FeatureExpr feature)
+    public void addMacro(String name, AbstractFeatureExprModule.AbstractFeatureExpr feature)
             throws LexerException {
         addMacro(name, feature, "1");
     }
@@ -521,7 +522,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
         private Stack<IfdefBlock> stack = new Stack<IfdefBlock>();
 
         public Token startIf(Token tok, boolean parentActive, State state) {
-            FeatureExpr localCondition = state.getLocalFeatureExpr();
+            AbstractFeatureExprModule.AbstractFeatureExpr localCondition = state.getLocalFeatureExpr();
             boolean visible = isIfVisible(parentActive, state);
 
             stack.push(new IfdefBlock(visible));
@@ -534,9 +535,9 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
 
         // skip output of ifdef 0 and ifdef 1
         private boolean isIfVisible(boolean parentActive, State state) {
-            FeatureExpr expr = state.getLocalFeatureExpr();
-            FeatureExpr fullPresenceCondition = state.getFullPresenceCondition();
-            FeatureExpr parentPc = state.parent.getFullPresenceCondition();
+            AbstractFeatureExprModule.AbstractFeatureExpr expr = state.getLocalFeatureExpr();
+            AbstractFeatureExprModule.AbstractFeatureExpr fullPresenceCondition = state.getFullPresenceCondition();
+            AbstractFeatureExprModule.AbstractFeatureExpr parentPc = state.parent.getFullPresenceCondition();
             boolean visible = parentActive;
             if (visible &&
                     (expr.isContradiction(featureModel) ||
@@ -558,7 +559,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
 
         public Token startElIf(Token tok, boolean parentActive,
                                State state) {
-            FeatureExpr localCondition = state.getLocalFeatureExpr();
+            AbstractFeatureExprModule.AbstractFeatureExpr localCondition = state.getLocalFeatureExpr();
 
             boolean wasVisible = stack.pop().visible;
             boolean isVisible = isIfVisible(parentActive, state);
@@ -586,15 +587,15 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
             return new SimpleToken(P_LINE, line, 0, buf.toString(), null);
         }
 
-        static List<Token> elif_tokenStr(FeatureExpr featureExpr) {
+        static List<Token> elif_tokenStr(AbstractFeatureExprModule.AbstractFeatureExpr featureExpr) {
             return ifelif_tokenStr(featureExpr, true);
         }
 
-        static List<Token> if_tokenStr(FeatureExpr featureExpr) {
+        static List<Token> if_tokenStr(AbstractFeatureExprModule.AbstractFeatureExpr featureExpr) {
             return ifelif_tokenStr(featureExpr, false);
         }
 
-        private static List<Token> ifelif_tokenStr(FeatureExpr featureExpr,
+        private static List<Token> ifelif_tokenStr(AbstractFeatureExprModule.AbstractFeatureExpr featureExpr,
                                                    boolean isElif) {
             // #elif featureexpr
             List<Token> result = new ArrayList<Token>(5);
@@ -609,7 +610,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
             return result;
         }
 
-        static List<Token> inlineIf_tokenStr(FeatureExpr featureExpr) {
+        static List<Token> inlineIf_tokenStr(AbstractFeatureExprModule.AbstractFeatureExpr featureExpr) {
             // "__IF__(" + feature.print() + ","
             List<Token> result = new ArrayList<Token>(5);
             result.add(new SimpleToken(Token.IDENTIFIER, "__IF__", null));
@@ -649,12 +650,12 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
             return result;
         }
 
-        static TokenSequenceToken if_token(int line, FeatureExpr featureExpr) {
+        static TokenSequenceToken if_token(int line, AbstractFeatureExprModule.AbstractFeatureExpr featureExpr) {
             return new TokenSequenceToken(P_IF, line, 0,
                     if_tokenStr(featureExpr), null);
         }
 
-        static TokenSequenceToken elif_token(int line, FeatureExpr featureExpr,
+        static TokenSequenceToken elif_token(int line, AbstractFeatureExprModule.AbstractFeatureExpr featureExpr,
                                              boolean printEnd, boolean printIf) {
 
             List<Token> result = new ArrayList<Token>(5);
@@ -735,7 +736,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
      * @param inlineCppExpression if false alternatives are replaced by #ifdef-#elif statements
      *                            in different lines. if true, alternatives are replaced by
      *                            expressions inside a line in the form
-     *                            "__if__(FeatureExpr,thenClause,elseClause)". such __if__
+     *                            "__if__(AbstractFeatureExprModule.AbstractFeatureExpr,thenClause,elseClause)". such __if__
      *                            statements can be nested
      * @return whether something was expanded or not
      */
@@ -856,7 +857,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
             // macro
             // is not replaced
             // currentstate => (alt1 || alt2|| alt3)
-            FeatureExpr commonCondition = getCommonCondition(macroExpansions);
+            AbstractFeatureExprModule.AbstractFeatureExpr commonCondition = getCommonCondition(macroExpansions);
             try {
                 if (macroExpansions.length == 1 && isExaustive(commonCondition)) {
                     sourceManager.push_source(createMacroTokenSource(macroName,
@@ -900,9 +901,9 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
     // return null;
     // }
     //
-    // private FeatureExpr getCombinedMacroCondition(
+    // private AbstractFeatureExprModule.AbstractFeatureExpr getCombinedMacroCondition(
     // MacroExpansion<MacroData>[] macroExpansions) {
-    // FeatureExpr commonCondition = state.getFullPresenceCondition().not();
+    // AbstractFeatureExprModule.AbstractFeatureExpr commonCondition = state.getFullPresenceCondition().not();
     // for (int i = 0; i < macroExpansions.length; i++)
     // commonCondition = commonCondition.or(macroExpansions[i]
     // .getFeature());
@@ -1112,13 +1113,13 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
 
     private void macro_expandAlternatives(String macroName,
                                           MacroExpansion<MacroData>[] macroExpansions, List<Argument> args,
-                                          Token origInvokeTok, List<Token> origArgTokens, FeatureExpr commonCondition)
+                                          Token origInvokeTok, List<Token> origArgTokens, AbstractFeatureExprModule.AbstractFeatureExpr commonCondition)
             throws IOException, LexerException, ParseParamException {
         boolean alternativesExaustive = isExaustive(commonCondition);
 
         List<Source> resultList = new ArrayList<Source>();
         for (int i = macroExpansions.length - 1; i >= 0; i--) {
-            FeatureExpr feature = macroExpansions[i].getFeature();
+            AbstractFeatureExprModule.AbstractFeatureExpr feature = macroExpansions[i].getFeature();
             MacroData macroData = macroExpansions[i].getExpansion();
 
             if (i == macroExpansions.length - 1)
@@ -1165,7 +1166,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
     }
 
     /**
-     * uses __if__(FeatureExpr,a,b) to express alternative conditions
+     * uses __if__(AbstractFeatureExprModule.AbstractFeatureExpr,a,b) to express alternative conditions
      * <p/>
      * __if__(exp3,macro3,__if__(exp2,macro2,__if__(exp1,macro1,originalTokens))
      * ) )
@@ -1184,7 +1185,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
      */
     private void macro_expandAlternativesInline(final String macroName,
                                                 MacroExpansion<MacroData>[] macroExpansions, List<Argument> args,
-                                                Token origInvokeTok, List<Token> origArgTokens, FeatureExpr commonCondition)
+                                                Token origInvokeTok, List<Token> origArgTokens, AbstractFeatureExprModule.AbstractFeatureExpr commonCondition)
             throws IOException, LexerException, ParseParamException {
         boolean alternativesExaustive = isExaustive(commonCondition);
         if (!alternativesExaustive)
@@ -1193,7 +1194,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
 
         List<Source> resultList = new ArrayList<Source>();
         for (int i = macroExpansions.length - 1; i >= 0; i--) {
-            FeatureExpr feature = macroExpansions[i].getFeature();
+            AbstractFeatureExprModule.AbstractFeatureExpr feature = macroExpansions[i].getFeature();
             MacroData macroData = macroExpansions[i].getExpansion();
 
             if (i > 0 || !alternativesExaustive)
@@ -1223,7 +1224,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
         sourceManager.push_sources(resultList, true);
     }
 
-    private boolean isExaustive(FeatureExpr commonCondition) {
+    private boolean isExaustive(AbstractFeatureExprModule.AbstractFeatureExpr commonCondition) {
         //commonCondition is already an implication (see
         //getCommonCondition), therefore this is correct: it checks
         //whether the alternative expansions are correct in the context
@@ -1231,8 +1232,8 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
         return commonCondition.isTautology(featureModel);
     }
 
-    private FeatureExpr getCommonCondition(MacroExpansion<MacroData>[] macroExpansions) {
-        FeatureExpr commonCondition = macroExpansions[0].getFeature();
+    private AbstractFeatureExprModule.AbstractFeatureExpr getCommonCondition(MacroExpansion<MacroData>[] macroExpansions) {
+        AbstractFeatureExprModule.AbstractFeatureExpr commonCondition = macroExpansions[0].getFeature();
         for (int i = macroExpansions.length - 1; i >= 1; i--)
             commonCondition = commonCondition.or(macroExpansions[i]
                     .getFeature());
@@ -1924,21 +1925,21 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
     /**
      * accessible for test suite as well
      */
-    public FeatureExpr parse_featureExpr() throws IOException,
+    public AbstractFeatureExprModule.AbstractFeatureExpr parse_featureExpr() throws IOException,
             LexerException {
         return parse_featureExprOrValue(0, true).assumeExpression(expr_token);
     }
 
     private class ExprOrValue {
-        final FeatureExpr expr;
+        final AbstractFeatureExprModule.AbstractFeatureExpr expr;
         final FeatureExprTree<Object> value;
 
-        ExprOrValue(FeatureExpr expr, FeatureExprTree<Object> value) {
+        ExprOrValue(AbstractFeatureExprModule.AbstractFeatureExpr expr, FeatureExprTree<Object> value) {
             this.expr = expr;
             this.value = value;
         }
 
-        ExprOrValue(FeatureExpr expr) {
+        ExprOrValue(AbstractFeatureExprModule.AbstractFeatureExpr expr) {
             this(expr, null);
         }
 
@@ -1954,7 +1955,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                 return value;
         }
 
-        public FeatureExpr assumeExpression(Token tok) throws LexerException {
+        public AbstractFeatureExprModule.AbstractFeatureExpr assumeExpression(Token tok) throws LexerException {
             if (expr == null) {
 //                warning(tok, "interpreting value " + value + " as expression " + value.toFeatureExpr());
 //                System.out.println("interpreting value " + value + " as expression " + FeatureExprLib.toFeatureExpr(value));
@@ -2181,9 +2182,9 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                 FeatureExprLib.l().createDefinedExternal(flag).not()).isContradiction(featureModel);
     }
 
-    private FeatureExpr parse_definedExpr(boolean referToExternalDefinitionsOnly)
+    private AbstractFeatureExprModule.AbstractFeatureExpr parse_definedExpr(boolean referToExternalDefinitionsOnly)
             throws IOException, LexerException {
-        FeatureExpr lhs;
+        AbstractFeatureExprModule.AbstractFeatureExpr lhs;
         Token la = source_token_nonwhite();
         boolean paren = false;
         if (la.getType() == '(') {
@@ -2239,7 +2240,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
      * @throws IOException
      * @throws LexerException
      */
-    private ExprOrValue parse_qifExpr(FeatureExpr condition, Token tok) throws IOException, LexerException {
+    private ExprOrValue parse_qifExpr(AbstractFeatureExprModule.AbstractFeatureExpr condition, Token tok) throws IOException, LexerException {
         ExprOrValue thenBranch = parse_featureExprOrValue(0, false);
         consumeToken(':', true);
         ExprOrValue elseBranch = parse_featureExprOrValue(0, false);
@@ -2512,7 +2513,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                             push_state();
                             expr_token = null;
                             if (isParentActive()) {
-                                FeatureExpr localFeatureExpr = parse_featureExpr();
+                                AbstractFeatureExprModule.AbstractFeatureExpr localFeatureExpr = parse_featureExpr();
                                 state.putLocalFeature(localFeatureExpr, macros);
                                 tok = expr_token(true); /* unget */
                                 if (tok.getType() != NL)
@@ -2536,7 +2537,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                                 // parse with parents state to allow macro expansion
                                 State oldState = state;
                                 state = state.parent;
-                                FeatureExpr localFeaturExpr = parse_featureExpr();
+                                AbstractFeatureExprModule.AbstractFeatureExpr localFeaturExpr = parse_featureExpr();
                                 state = oldState;
                                 state.processElIf();
                                 state.putLocalFeature(
@@ -2574,7 +2575,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                                 error(tok, "Expected identifier, not " + tok.getText());
                                 return source_skipline(false);
                             } else {
-                                FeatureExpr localFeatureExpr2 = parse_ifdefExpr(tok
+                                AbstractFeatureExprModule.AbstractFeatureExpr localFeatureExpr2 = parse_ifdefExpr(tok
                                         .getText());
                                 state.putLocalFeature(
                                         isParentActive() ? localFeatureExpr2
@@ -2596,7 +2597,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                                 error(tok, "Expected identifier, not " + tok.getText());
                                 return source_skipline(false);
                             } else {
-                                FeatureExpr localFeatureExpr3 = parse_ifndefExpr(tok
+                                AbstractFeatureExprModule.AbstractFeatureExpr localFeatureExpr3 = parse_ifndefExpr(tok
                                         .getText());
                                 state.putLocalFeature(
                                         isParentActive() ? localFeatureExpr3
@@ -2646,11 +2647,11 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
         }
     }
 
-    private FeatureExpr parse_ifndefExpr(String feature) {
+    private AbstractFeatureExprModule.AbstractFeatureExpr parse_ifndefExpr(String feature) {
         return parse_ifdefExpr(feature).not();
     }
 
-    private FeatureExpr parse_ifdefExpr(String feature) {
+    private AbstractFeatureExprModule.AbstractFeatureExpr parse_ifdefExpr(String feature) {
         return FeatureExprLib.l().createDefinedMacro(feature, macros);
     }
 
