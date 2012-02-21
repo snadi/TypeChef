@@ -14,12 +14,13 @@ import de.fosd.typechef.featureexprUtil.*;
 public class PartialConfiguration {
     private String[] def;
     private String[] undef;
-    private FeatureExpr fexpr;
+    private AbstractFeatureExprModule.AbstractFeatureExpr fexpr;
+
 
     public PartialConfiguration(
             String[] definedFeatures,
             String[] undefinedFeatures,
-            FeatureExpr fexpr) {
+	    AbstractFeatureExprModule.AbstractFeatureExpr fexpr) {
         this.def = definedFeatures;
         this.undef = undefinedFeatures;
         this.fexpr = fexpr;
@@ -33,7 +34,7 @@ public class PartialConfiguration {
         return undef;
     }
 
-    public FeatureExpr getFeatureExpr() {
+    public AbstractFeatureExprModule.AbstractFeatureExpr getFeatureExpr() {
         return fexpr;
     }
 }
