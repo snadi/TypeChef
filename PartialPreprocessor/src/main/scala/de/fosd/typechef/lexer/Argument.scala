@@ -27,7 +27,7 @@ package de.fosd.typechef.lexer
 import java.{util => jUtil, lang => jLang}
 import collection.JavaConversions._
 import collection.JavaConverters._
-import de.fosd.typechef.featureexpr.{FeatureModel,  FeatureExpr}
+import de.fosd.typechef.featureexpr.{FeatureModel, FeatureExpr => FE}
 import de.fosd.typechef.lexer.macrotable.MacroExpansion
 import de.fosd.typechef.featureexprUtil.FeatureExprTree
 
@@ -48,7 +48,7 @@ object MacroExpander {
     //TODO: finish and test, only compiled.
     def expandAlternatives(pp: Preprocessor, macroName: String,
                            macroExpansions: Array[MacroExpansion[MacroData]], args: List[Argument],
-                           origInvokeTok: Token, origArgTokens: List[Token], commonCondition: FeatureExpr, inline: Boolean,
+                           origInvokeTok: Token, origArgTokens: List[Token], commonCondition: FE, inline: Boolean,
                            featureModel: FeatureModel) = {
         val alternativesExhaustive: Boolean = commonCondition.isTautology(featureModel)
         val fallbackAlternative =
@@ -57,10 +57,10 @@ object MacroExpander {
             else //if (inline)
                 Seq[Source]() //XXX: Should be the unexpanded code, or 0, depending on inline. Ask it to the caller!
 
-        macroExpansions.map(expansion => FeatureExpr.createValue[Seq[Source]](
+        macroExpansions.map(expansion => FE.createValue[Seq[Source]](
             pp.macro_expandAlternative(macroName, expansion, args, origInvokeTok, origArgTokens, inline))).zip(
-            macroExpansions.map(_.getFeature)).foldRight[FeatureExprTree[Seq[Source]]](FeatureExpr.createValue(fallbackAlternative)) {
-            case ((expanded, feature), tree) => FeatureExpr.createIf(feature, expanded, tree)
+            macroExpansions.map(_.getFeature)).foldRight[FeatureExprTree[Seq[Source]]](FE.createValue(fallbackAlternative)) {
+            case ((expanded, feature), tree) => FE.createIf(feature, expanded, tree)
         }
     }
 }
