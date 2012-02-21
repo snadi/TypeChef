@@ -3,7 +3,7 @@ package de.fosd.typechef.lexer.options;
 import de.fosd.typechef.featureexprInterface.*;
 import de.fosd.typechef.featureexprUtil.FeatureExprParser;
 import de.fosd.typechef.featureexprUtil.FeatureModelFactory;
-import de.fosd.typechef.featureexpr.NoFeatureModel$;
+import de.fosd.typechef.lexer.FeatureExprLib;
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
 
@@ -17,24 +17,24 @@ import java.util.List;
  * To change this template use File | Settings | File Templates.
  */
 public class FeatureModelOptions extends Options implements IFeatureModelOptions {
-    protected FeatureModel featureModel = null;
-    protected FeatureModel featureModel_typeSystem = null;
+    protected AbstractFeatureExprModule.AbstractFeatureModel featureModel = null;
+    protected AbstractFeatureExprModule.AbstractFeatureModel featureModel_typeSystem = null;
     protected PartialConfiguration partialConfig = null;
 
 
     @Override
-    public FeatureModel getFeatureModel() {
+    public AbstractFeatureExprModule.AbstractFeatureModel getFeatureModel() {
         if (featureModel == null)
-            return NoFeatureModel$.MODULE$;
+            return FeatureExprLib.NoFeatureModel();
         return featureModel;
     }
 
     @Override
-    public FeatureModel getFeatureModelTypeSystem() {
+    public AbstractFeatureExprModule.AbstractFeatureModel getFeatureModelTypeSystem() {
         if (featureModel_typeSystem != null)
             return featureModel_typeSystem;
         if (featureModel == null)
-            return NoFeatureModel$.MODULE$;
+            return FeatureExprLib.NoFeatureModel();
         return featureModel;
     }
 
@@ -71,12 +71,12 @@ public class FeatureModelOptions extends Options implements IFeatureModelOptions
             if (featureModel != null)
                 throw new OptionException("cannot load feature model from dimacs file. feature model already exists.");
             checkFileExists(g.getOptarg());
-            featureModel = FeatureModel.createFromDimacsFile_2Var(g.getOptarg());
+            featureModel = FeatureExprLib.ml().createFromDimacsFile_2Var(g.getOptarg());
         } else if (c == FM_FEXPR) {     //--featureModelFExpr
             checkFileExists(g.getOptarg());
-            FeatureExpr f = new FeatureExprParser().parseFile(g.getOptarg());
+            AbstractFeatureExprModule.AbstractFeatureExpr f = new FeatureExprParser().parseFile(g.getOptarg());
             if (featureModel == null)
-                featureModel = de.fosd.typechef.featureexpr.FeatureModel.create(f);
+                featureModel = FeatureExprLib.ml().create(f);
             else featureModel = featureModel.and(f);
         } else if (c == FM_CLASS) {//--featureModelClass
             try {
@@ -87,15 +87,15 @@ public class FeatureModelOptions extends Options implements IFeatureModelOptions
             }
         } else if (c == FM_TSDIMACS) {
             checkFileExists(g.getOptarg());
-            featureModel_typeSystem = FeatureModel.createFromDimacsFile_2Var(g.getOptarg());
+            featureModel_typeSystem = FeatureExprLib.ml().createFromDimacsFile_2Var(g.getOptarg());
         } else if (c == FM_PARTIALCONFIG) {
             checkFileExists(g.getOptarg());
             if (partialConfig != null)
                 throw new OptionException("cannot load a second partial configuration");
             partialConfig = PartialConfigurationParser$.MODULE$.load(g.getOptarg());
-            FeatureExpr f = partialConfig.getFeatureExpr();
+            AbstractFeatureExprModule.AbstractFeatureExpr f = partialConfig.getFeatureExpr();
             if (featureModel == null)
-                featureModel = de.fosd.typechef.featureexpr.FeatureModel.create(f);
+                featureModel = FeatureExprLib.ml().create(f);
             else featureModel = featureModel.and(f);
             if (featureModel_typeSystem != null)
                 featureModel_typeSystem = featureModel_typeSystem.and(partialConfig.getFeatureExpr());
@@ -105,7 +105,7 @@ public class FeatureModelOptions extends Options implements IFeatureModelOptions
     }
 
 
-    public void setFeatureModel(FeatureModel fm) {
+    public void setFeatureModel(AbstractFeatureExprModule.AbstractFeatureModel fm) {
         featureModel = fm;
     }
 
