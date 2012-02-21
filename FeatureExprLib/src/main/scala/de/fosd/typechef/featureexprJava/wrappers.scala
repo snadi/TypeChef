@@ -13,6 +13,8 @@ object FeatureExprLibScala {
     val base = featureexpr.FeatureExpr.base
     val dead = featureexpr.FeatureExpr.dead
 
+    val NoFeatureModel = featureexpr.NoFeatureModel
+    val ml = featureexpr.FeatureModelLoader
     val l = featureexpr.FeatureExpr
     def zero = l.createInteger(0)
     //TODO: for some reason FeatureExprTree<Long> does no longer work since

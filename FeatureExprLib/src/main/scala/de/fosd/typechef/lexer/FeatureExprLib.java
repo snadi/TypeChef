@@ -16,6 +16,10 @@ public class FeatureExprLib {
 	return FeatureExprLibScala.l();
     }
 
+    public static AbstractFeatureExprModule.AbstractFeatureModelLoader ml() {
+	return FeatureExprLibScala.ml();
+    }
+
     public static AbstractFeatureExprModule.AbstractFeatureExpr base() {
 	return FeatureExprLibScala.base();
     }
@@ -33,6 +37,10 @@ public class FeatureExprLib {
 
     public static AbstractFeatureExprModule.AbstractFeatureExpr toFeatureExpr(FeatureExprTree<Object> v) {
 	return FeatureExprLibScala.toFeatureExpr(v);
+    }
+
+    public static AbstractFeatureExprModule.AbstractFeatureModel NoFeatureModel() {
+	return FeatureExprLibScala.NoFeatureModel();
     }
 }
 
