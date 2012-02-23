@@ -5,7 +5,7 @@ import de.fosd.typechef.parser.c.AST
 
 trait ConditionalNavigation extends CASTEnv {
   def parentOpt(e: Any, env: ASTEnv): Opt[_] = {
-    val eparent = env.get(e)._2
+    val eparent = env.parent(e)
     eparent match {
       case o: Opt[_] => o
       case c: Conditional[_] => Conditional.toOptList(c).head
@@ -15,7 +15,7 @@ trait ConditionalNavigation extends CASTEnv {
   }
 
   def prevOpt(e: Opt[_], env: ASTEnv): Opt[_] = {
-    val eprev = env.get(e)._3
+    val eprev = env.previous(e)
     eprev match {
       case o: Opt[_] => o
       case _ => null
@@ -23,7 +23,7 @@ trait ConditionalNavigation extends CASTEnv {
   }
 
   def nextOpt(e: Opt[_], env: ASTEnv): Opt[_] = {
-    val enext = env.get(e)._4
+    val enext = env.next(e)
     enext match {
       case o: Opt[_] => o
       case _ => null
@@ -31,7 +31,6 @@ trait ConditionalNavigation extends CASTEnv {
   }
 
   def isVariable(e: Any, env: ASTEnv): Boolean = {
-    val efexp = env.get(e)._1.reduce(_ and _)
-    efexp.not.isContradiction()
+    env.featureExpr(e).not.isContradiction()
   }
 }

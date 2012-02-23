@@ -2,6 +2,7 @@ package de.fosd.typechef.crewrite
 
 import de.fosd.typechef.parser.c.AST
 import de.fosd.typechef.conditional._
+import de.fosd.typechef.featureexpr.FeatureExpr
 
 // simplified navigation support
 // reimplements basic navigation between AST nodes not affected by Opt and Choice nodes
@@ -85,12 +86,21 @@ trait ASTNavigation extends CASTEnv {
     }
   }
 
-  // http://goo.gl/QcUOy
   def filterASTElems[T <: AST](a: Any)(implicit m: ClassManifest[T]): List[T] = {
     a match {
       case x if (m.erasure.isInstance(x)) => List(x.asInstanceOf[T])
       case l: List[_] => l.flatMap(filterASTElems[T](_))
       case x: Product => x.productIterator.toList.flatMap(filterASTElems[T](_))
+      case _ => List()
+    }
+  }
+
+  // http://goo.gl/QcUOy
+  def filterASTElemsFExpr[T <: AST](a: Any, env: ASTEnv, fexp: FeatureExpr)(implicit m: ClassManifest[T]): List[T] = {
+    a match {
+      case x if (m.erasure.isInstance(x)) && (fexp implies env.featureExpr(x) isTautology()) => List(x.asInstanceOf[T])
+      case l: List[_] => l.flatMap(filterASTElemsFExpr(_, env, fexp))
+      case x: Product => x.productIterator.toList.flatMap(filterASTElems[T](_, env, fexp))
       case _ => List()
     }
   }

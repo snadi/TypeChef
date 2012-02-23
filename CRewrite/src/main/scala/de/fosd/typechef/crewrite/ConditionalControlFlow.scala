@@ -41,7 +41,7 @@ class CCFGCache {
   }
 }
 
-trait ConditionalControlFlow extends CASTEnv with ASTNavigation {
+trait ConditionalControlFlow extends CASTEnv with ASTNavigation with ConditionalNavigation {
 
   private implicit def optList2ASTList(l: List[Opt[AST]]) = l.map(_.entry)
 
@@ -117,7 +117,7 @@ trait ConditionalControlFlow extends CASTEnv with ASTNavigation {
     }
   }
 
-  def succ(a: Any, env: ASTEnv): List[AST] = {
+  def succ(a: Any, env: ASTEnv) = {
     succCCFGCache.lookup(a) match {
       case Some(v) => v
       case None => {
@@ -152,7 +152,7 @@ trait ConditionalControlFlow extends CASTEnv with ASTNavigation {
     }
   }
 
-  private def succHelper(a: Any, env: ASTEnv): List[AST] = {
+  private def succHelper(a: Any, env: ASTEnv): Conditional[List[AST]] = {
     a match {
       // ENTRY element
       case f@FunctionDef(_, _, _, stmt) => succHelper(stmt, env)
@@ -160,8 +160,8 @@ trait ConditionalControlFlow extends CASTEnv with ASTNavigation {
       // EXIT element
       case t@ReturnStatement(_) => {
         findPriorASTElem[FunctionDef](t, env) match {
-          case None => assert(false, "return statement should always occur within a function statement"); List()
-          case Some(f) => List(f)
+          case None => assert(false, "return statement should always occur within a function statement"); One(List())
+          case Some(f) => One(List(f))
         }
       }
 
@@ -172,17 +172,17 @@ trait ConditionalControlFlow extends CASTEnv with ASTNavigation {
 
       // loop statements
       case t@ForStatement(expr1, expr2, expr3, s) => {
-        if (expr1.isDefined) List(expr1.get)
-        else if (expr2.isDefined) List(expr2.get)
+        if (expr1.isDefined) One(List(expr1.get))
+        else if (expr2.isDefined) One(List(expr2.get))
         else simpleOrCompoundStatementSucc(t, childAST(s), env)
       }
-      case WhileStatement(expr, _) => List(expr)
+      case WhileStatement(expr, _) => One(List(expr))
       case t@DoStatement(_, s) => simpleOrCompoundStatementSucc(t, childAST(s), env)
 
       // conditional statements
-      case t@IfStatement(condition, _, _, _) => List(condition)
-      case t@ElifStatement(c, _) => List(c)
-      case SwitchStatement(c, _) => List(c)
+      case t@IfStatement(condition, _, _, _) => One(List(condition))
+      case t@ElifStatement(c, _) => One(List(c))
+      case SwitchStatement(c, _) => One(List(c))
 
       case t@BreakStatement() => {
         val e2b = findPriorASTElem2BreakStatement(t, env)
@@ -194,22 +194,23 @@ trait ConditionalControlFlow extends CASTEnv with ASTNavigation {
         assert(e2c.isDefined, "continue statement should always occur within a for, do-while, or while statement")
         e2c.get match {
           case t@ForStatement(_, break, inc, b) => {
-            if (inc.isDefined) List(inc.get)
-            else if (break.isDefined) List(break.get)
+            if (inc.isDefined) One(List(inc.get))
+            else if (break.isDefined) One(List(break.get))
             else simpleOrCompoundStatementSucc(t, b, env)
           }
-          case WhileStatement(c, _) => List(c)
-          case DoStatement(c, _) => List(c)
-          case _ => List()
+          case WhileStatement(c, _) => One(List(c))
+          case DoStatement(c, _) => One(List(c))
+          case _ => One(List())
         }
       }
       case t@GotoStatement(Id(l)) => {
         findPriorASTElem[FunctionDef](t, env) match {
-          case None => assert(false, "goto statement should always occur within a function definition"); List()
+          case None => assert(false, "goto statement should always occur within a function definition"); One(List())
           case Some(f) => {
             val l_list = labelLookup(f, l, env)
             if (l_list.isEmpty) getSuccSameLevel(t, env)
-            else l_list
+            else assert(checkOptElemsForMutualExclusion(l_list.map(parentOpt(_, env))),
+              "label elements are not mutual exclusive"); One(l_list)
           }
         }
       }
@@ -218,11 +219,11 @@ trait ConditionalControlFlow extends CASTEnv with ASTNavigation {
       // so fetch the function statement and filter for all label statements
       case t@GotoStatement(PointerDerefExpr(_)) => {
         findPriorASTElem[FunctionDef](t, env) match {
-          case None => assert(false, "goto statement should always occur within a function definition"); List()
+          case None => assert(false, "goto statement should always occur within a function definition"); One(List())
           case Some(f) => {
             val l_list = filterASTElems[LabelStatement](f)
             if (l_list.isEmpty) getSuccSameLevel(t, env)
-            else l_list
+            else One(l_list) //
           }
         }
       }
@@ -230,6 +231,16 @@ trait ConditionalControlFlow extends CASTEnv with ASTNavigation {
       case t: Statement => getSuccSameLevel(t, env)
       case t => nestedSucc(t, env)
     }
+  }
+
+  private def checkOptElemsForMutualExclusion(l: List[Opt[_]]): Boolean = {
+    val optpairs = for (o1 <- l; o2 <- l; o1.feature.hashCode() != o2.feature.hashCode()) yield (o1, o2)
+    for ((Opt(f1, _), Opt(f2, _)) <- optpairs) {
+      if (f1 and f2 isSatisfiable())
+        return false
+    }
+
+    return true
   }
 
   private def iterateChildren(a: Any, l: String, env: ASTEnv, op: (Any, String, ASTEnv) => List[AST]): List[AST] = {
@@ -293,7 +304,7 @@ trait ConditionalControlFlow extends CASTEnv with ASTNavigation {
 
   // handling of successor determination of nested structures, such as for, while, ... and next element in a list
   // of statements
-  private def nestedSucc(nested_ast_elem: Any, env: ASTEnv): List[AST] = {
+  private def nestedSucc(nested_ast_elem: Any, env: ASTEnv): Conditional[List[AST]] = {
     val surrounding_parent = parentAST(nested_ast_elem, env)
     surrounding_parent match {
       case t@ForStatement(Some(expr1), expr2, _, s) if expr1.eq(nested_ast_elem.asInstanceOf[AnyRef]) =>
