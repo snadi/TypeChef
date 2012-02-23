@@ -26,6 +26,7 @@ package de.fosd.typechef.lexer;
 import de.fosd.typechef.featureexprJava.*;
 import de.fosd.typechef.featureexprInterface.*;
 import de.fosd.typechef.featureexprUtil.*;
+import de.fosd.typechef.featureexprInterface.AbstractFeatureExprModule;
 
 import java.io.PrintWriter;
 
@@ -302,6 +303,7 @@ public abstract class Token {
 
     private static final String[] names = new String[_TOKENS];
     protected static final String[] texts = new String[_TOKENS];
+
     static {
         for (int i = 0; i < 255; i++) {
             texts[i] = String.valueOf(new char[]{(char) i});

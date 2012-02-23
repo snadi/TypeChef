@@ -13,34 +13,34 @@ public class FeatureExprLib {
     //public static interface FeatureExpr extends AbstractFeatureExprModule.AbstractFeatureExpr {}
     //interface FeatureExpr extends foo.AbstractFeatureExpr {}
     public static AbstractFeatureExprModule.AbstractFeatureExprFactory l() {
-	return FeatureExprLibScala.l();
+        return FeatureExprLibScala.l();
     }
 
     public static AbstractFeatureExprModule.AbstractFeatureModelLoader ml() {
-	return FeatureExprLibScala.ml();
+        return FeatureExprLibScala.ml();
     }
 
     public static AbstractFeatureExprModule.AbstractFeatureExpr base() {
-	return FeatureExprLibScala.base();
+        return FeatureExprLibScala.base();
     }
 
     public static AbstractFeatureExprModule.AbstractFeatureExpr dead() {
-	return FeatureExprLibScala.dead();
+        return FeatureExprLibScala.dead();
     }
 
     //TODO: for some reason FeatureExprTree<Long> does no longer work since
     //scala 2.9. We use FeatureExprTree<Object>, which seems unproblematic since
     //the result is not constructed or inspected in Java code anyway, but only passed around
     public static FeatureExprTree<Object> zero() {
-	return FeatureExprLibScala.zero();
+        return FeatureExprLibScala.zero();
     }
 
     public static AbstractFeatureExprModule.AbstractFeatureExpr toFeatureExpr(FeatureExprTree<Object> v) {
-	return FeatureExprLibScala.toFeatureExpr(v);
+        return FeatureExprLibScala.toFeatureExpr(v);
     }
 
     public static AbstractFeatureExprModule.AbstractFeatureModel NoFeatureModel() {
-	return FeatureExprLibScala.NoFeatureModel();
+        return FeatureExprLibScala.NoFeatureModel();
     }
 }
 

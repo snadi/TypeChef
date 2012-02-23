@@ -6,7 +6,9 @@ import de.fosd.typechef.featureexpr._
  * FeatureExprTree is the root class for non-propositional nodes in feature
  * expressions, i.e., Integer and If nodes, which cannot be checked for satisfiability.
  */
-sealed trait FeatureExprTree[T]
+sealed trait FeatureExprTree[T] {
+    def asObject(): FeatureExprTree[Object] = this.asInstanceOf[FeatureExprTree[Object]]
+}
 
 trait FeatureExprValueOps {
     implicit def long2value(x: Long): FeatureExprValue = FeatureExprTreeBuilder.createValue(x)

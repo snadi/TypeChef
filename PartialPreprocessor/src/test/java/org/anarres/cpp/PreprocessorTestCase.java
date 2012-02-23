@@ -7,7 +7,9 @@ import de.fosd.typechef.lexer.Token;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import de.fosd.typechef.featureexpr.*;
+import de.fosd.typechef.featureexprJava.*;
+import de.fosd.typechef.featureexprInterface.*;
+import de.fosd.typechef.featureexprUtil.*;
 
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;

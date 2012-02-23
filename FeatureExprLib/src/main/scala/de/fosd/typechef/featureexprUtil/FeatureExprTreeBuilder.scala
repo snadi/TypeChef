@@ -36,7 +36,7 @@ trait FeatureExprTreeFactory extends FeatureExprValueOps {
  * Central builder class, responsible for simplification of expressions during creation
  * and for extensive caching.
  */
-private[featureexprUtil] object FeatureExprTreeBuilder {
+private[typechef] object FeatureExprTreeBuilder {
 
     private def propagateError[T](left: FeatureExprTree[T], right: FeatureExprTree[T]): Option[ErrorValue[T]] = {
         (left, right) match {

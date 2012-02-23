@@ -3,7 +3,7 @@ package de.fosd.typechef.featureexprInterface
 import java.io.Writer
 import org.sat4j.specs.IVecInt
 import org.sat4j.core.{VecInt, Vec}
-import de.fosd.typechef.featureexprUtil.{FeatureProvider, FeatureExprTreeFactory}
+import de.fosd.typechef.featureexprUtil.{FeatureExprTree, FeatureProvider, FeatureExprTreeFactory, FeatureExprTreeBuilder}
 
 
 /**
@@ -26,6 +26,7 @@ trait AbstractFeatureExprModule {
     def ErrorFeature(msg: String): FeatureExpr
 
     trait AbstractFeatureExpr {
+        this: FeatureExpr =>
         //Use the abstract FeatureExpr here. Note that when FeatureExpr is refined, the accepted type here is refined as
         //well - covariantly. See Programming in Scala, Sec. 20.6. The same applies within AbstractFEFactory below.
 
@@ -121,8 +122,10 @@ trait AbstractFeatureExprModule {
         //         * simple translation into a FeatureExprValue if needed for some reason
         //         * (creates IF(expr, 1, 0))
         //         */
-        //        def toFeatureExprValue: FeatureExprValue =
-        //            FeatureExprFactory.createIf(this, FeatureExprFactory.createValue(1l), FeatureExprFactory.createValue(0l))
+        //        def toFeatureExprValue: FeatureExprTree[Long] =
+        //            FeatureExpr.createIf(this, FeatureExpr.createValue(1l), FeatureExpr.createValue(0l))
+
+        //        protected def thisFeatureExpr : FeatureExpr
 
     }
 

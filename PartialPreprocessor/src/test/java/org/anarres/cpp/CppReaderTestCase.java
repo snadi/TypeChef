@@ -3,7 +3,9 @@ package org.anarres.cpp;
 import de.fosd.typechef.lexer.CppReader;
 import de.fosd.typechef.lexer.Feature;
 import org.junit.Test;
-import de.fosd.typechef.featureexpr.*;
+import de.fosd.typechef.featureexprJava.*;
+import de.fosd.typechef.featureexprInterface.*;
+import de.fosd.typechef.featureexprUtil.*;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -37,5 +39,6 @@ public class CppReaderTestCase {
     }
 
     @Test
-    public void testNone() {}
+    public void testNone() {
+    }
 }
