@@ -117,18 +117,18 @@ trait ConditionalControlFlow extends CASTEnv with ASTNavigation with Conditional
     }
   }
 
-  def succ(a: Any, env: ASTEnv) = {
+  def succ(a: Any, env: ASTEnv): Conditional[List[AST]] = {
     succCCFGCache.lookup(a) match {
-      case Some(v) => v
+      case Some(v) => One(v)
       case None => {
-        var oldres: List[AST] = List()
-        var newres: List[AST] = succHelper(a, env)
+        var oldres: Conditional[List[AST]] = One(List())
+        var newres: Conditional[List[AST]] = succHelper(a, env)
         var changed = true
 
         while (changed) {
           changed = false
           oldres = newres
-          newres = List()
+          newres = null
           for (oldelem <- oldres) {
             var add2newres: List[AST] = List()
             oldelem match {
@@ -142,8 +142,11 @@ trait ConditionalControlFlow extends CASTEnv with ASTNavigation with Conditional
 
             // add only elements that are not in newres so far
             // add them add the end to keep the order of the elements
-            for (addnew <- add2newres)
-              if (newres.map(_.eq(addnew)).foldLeft(false)(_ || _).unary_!) newres = newres ++ List(addnew)
+            for (addnew <- add2newres) {
+              val addnewfexp = env.featureExpr(addnew)
+              val subtree = ConditionalLib.findSubtree(addnewfexp, newres)
+              if (subtree.map(_.eq(addnew)).foldLeft(false)(_ || _).unary_!) newres = ConditionalLib.insert(newres, addnewfexp, List(addnew))
+            }
           }
         }
         succCCFGCache.update(a, newres)
