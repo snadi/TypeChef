@@ -52,6 +52,19 @@ object ConditionalLib {
             else Choice(feature, aa, bb)
     }
 
+    def insert[T](tree: Conditional[T], context: FeatureExpr, elem: T): Conditional[T] = {
+      tree match {
+        case null => One(elem)
+        case o@One(_) => Choice(context, One(elem), o)
+        case c@Choice(feature, a, b) => {
+          lazy val aa = insert(a, context, elem)
+          lazy val bb = insert(b, context, elem)
+          if (context andNot feature isContradiction()) Choice(feature, aa, b)
+          else if (context and feature isContradiction()) Choice(feature, a, bb)
+          else Choice(feature, aa, bb)
+        }
+      }
+    }
 
     /**
      * returns the last element (which may differ in different contexts)

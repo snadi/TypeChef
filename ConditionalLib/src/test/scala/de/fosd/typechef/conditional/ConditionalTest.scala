@@ -10,6 +10,7 @@ class ConditionalTest {
 
     val fa = createDefinedExternal("a")
     val fb = createDefinedExternal("b")
+    val fc = createDefinedExternal("c")
 
     @Test
     def testMap {
@@ -183,6 +184,23 @@ class ConditionalTest {
 
         a = a.+("a", fb, 5)
         assertEquals(Choice(fb, One(5), v2), a.getOrElse("a", -1))
+    }
+
+    @Test
+    def testInsert {
+      val a = Choice(fa, One(2), One(3))
+      val b = insert(a, fa.not.and(fb), One(4))
+      println(b)
+
+      val l = List(
+        (fa, "a"),
+        (fa.not.and(fb), "b"),
+        (fa.not.and(fb.not).and(fc), "c")
+      )
+
+      var r: Conditional[_] = null
+      for ((c, e) <- l) r = insert(r, c, e)
+      println(r)
     }
 
 }
