@@ -4,6 +4,7 @@ import de.fosd.typechef.parser.c._
 import de.fosd.typechef.featureexpr._
 import de.fosd.typechef.conditional._
 import linker.CInferInterface
+import statistics.CStatistics
 
 /**
  * checks an AST (from CParser) for type errors (especially dangling references)
@@ -14,7 +15,7 @@ import linker.CInferInterface
  *
  */
 
-class CTypeSystemFrontend(iast: TranslationUnit, featureModel: FeatureModel = NoFeatureModel) extends CTypeSystem with CInferInterface {
+class CTypeSystemFrontend(iast: TranslationUnit, featureModel: FeatureModel = NoFeatureModel) extends CTypeSystem with CInferInterface with CStatistics {
 
     class TypeError(severity: Severity.Severity, condition: FeatureExpr, msg: String, where: AST) {
         override def toString =
