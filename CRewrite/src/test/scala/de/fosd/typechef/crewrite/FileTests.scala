@@ -81,7 +81,7 @@ class FileTests extends TestHelper with EnforceTreeHelper with CASTEnv with Cond
     res
   }
 
-//  private def check(filename: String, featureExpr: FeatureModel = NoFeatureModel) = {
+//  private def check(filename: String, sourceFExpr: FeatureModel = NoFeatureModel) = {
 //    println("analysis " + filename)
 //    var inputStream: InputStream = getClass.getResourceAsStream("/" + folder + filename)
 //

@@ -58,7 +58,7 @@ trait CEnv {
 
     //    possible changes:
     //      case e: Declaration => outerVarEnv(e) ++ declType(e)
-    //        case fun: FunctionDef => outerVarEnv(fun) + (fun.getName, fun -> featureExpr, ctype(fun))
+    //        case fun: FunctionDef => outerVarEnv(fun) + (fun.getName, fun -> sourceFExpr, ctype(fun))
     //        case e@DeclarationStatement(decl) => outerVarEnv(e) ++ declType(decl)
     //        //parameters in the body of functions
     //        case c@CompoundStatement(_) => c -> parentAST match {                     TODO
@@ -66,7 +66,7 @@ trait CEnv {
     //            case NestedFunctionDef(_, _, decl, _, _) => outerVarEnv(c) ++ parameterTypes(decl)
     //            case _ => outerVarEnv(c)
     //        }
-    //        TODO case nfun: NestedFunctionDef => outerVarEnv(nfun) + (nfun.getName, nfun -> featureExpr, ctype(nfun))
+    //        TODO case nfun: NestedFunctionDef => outerVarEnv(nfun) + (nfun.getName, nfun -> sourceFExpr, ctype(nfun))
 
 
     /**
