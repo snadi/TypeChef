@@ -30,7 +30,7 @@ class TypeSystemTest extends FunSuite with ShouldMatchers with TestHelper {
             check("void bar(){foo();}")
         }
     }
-    ignore("detect redefinitions") {
+    test("detect redefinitions") {
         expect(false) {
             check("void foo(){} void foo(){}")
         }
@@ -461,4 +461,260 @@ return 1;
         }
     }
 
+    test("top level inline assembler") {
+        expect(true) {
+            check("""
+                    int a;
+                    __asm__("whatever");
+                    int b;
+                        """)
+        }
+    }
+
+    test("int pointer compatibility") {
+        expect(true) {
+            check("""
+                void foo(){
+                    unsigned int a;
+                    signed int b;
+                    a=b;
+                }
+                    """)
+        }
+        expect(false) {
+            check("""
+                void foo(){
+                    unsigned int *a;
+                    signed int *b;
+                    a=&b;
+                }
+                    """)
+        }
+        //last two should not yield an error or warning if -Wno-pointer-sign is set (default in linux)
+        expect(true) {
+            check("""
+                void foo(){
+                    unsigned int *a;
+                    signed int *b;
+                    a=b;
+                }
+                    """)
+        }
+        expect(true) {
+            check("""
+                void foo(){
+                    char *a;
+                    unsigned char *b;
+                    a=b;
+                }
+                    """)
+        }
+        expect(true) {
+            check("""
+                         void f(int *x) {}
+                         void g() {
+                                unsigned int y=3;
+                                f(&y);
+                        }
+                            """)
+        }
+    }
+
+
+    test("cast pointer to long") {
+        expect(true) {
+            check("""
+                extern void f();
+                void foo(){
+                    long a;
+                    a=(long) f;
+                }
+                    """)
+        }
+
+    }
+
+
+    test("range expression ") {
+        expect(true) {
+            check("""
+                    void foo(){
+                    int c;
+                      switch (c) {
+                                         default:
+                                                            break;
+                                         case 7 ... 9:
+                                                            break;
+                        }
+                    }
+                        """)
+        }
+
+    }
+
+    test("pointer arithmetics") {
+        //don't ask. pointer-pointer yields an int, + a pointer is a pointer
+        expect(true) {
+            check("""
+                    void foo(){
+                        char *a, *b, *c, *d;
+                        d=a-b+c;
+                    }
+                        """)
+        }
+
+    }
+
+    test("asm statement") {
+        expect(true) {
+            check("""
+                         void arch_kgdb_breakpoint(void)
+                        {
+                                asm("   int $3");
+                        }
+                            """)
+        }
+    }
+
+    //TODO ignore for now, forward declarations not yet properly supported
+    ignore("typedef and __typeof__ as struct forward declaration") {
+        //typeof works like a synonym to a typedef
+        //as such also works as forward declaration
+        //see http://gcc.gnu.org/onlinedocs/gcc/Typeof.html
+        expect(false) {
+            check("""
+                     typedef struct x Sx;
+
+                     Sx y;
+                """)
+        }
+
+        expect(false) {
+            check("""
+                 __typeof__(struct x) y;
+                    """)
+        }
+        expect(false) {
+            check("""
+                 struct x y;
+                    """)
+        }
+        expect(true) {
+            check("""
+                 struct x Sx;
+
+                 static Sx y;
+
+                 struct x {
+                  int a;
+                 };   """)
+        }
+
+        expect(true) {
+            check("""
+                     __typeof__(struct x) y;
+
+                     struct x {
+                      int a;
+                     };   """)
+        }
+
+        expect(true) {
+            check("""
+                             struct x y;
+
+                             struct x {
+                              int a;
+                             };   """)
+        }
+    }
+    test("enum type is unsigned int") {
+        expect(true) {
+            check("""enum x {a};
+                           enum x f(void);
+                           unsigned int f() { return 0; }
+                   """)
+        }
+        expect(false) {
+            check("""enum x {a};
+                           enum x f(void);
+                           signed int f() { return 0; }
+                   """)
+        }
+        expect(false) {
+            check("""enum x {a};
+                           enum x f(void);
+                           int f() { return 0; }
+                   """)
+        }
+    }
+    test("field decrement") {
+        expect(true) {
+            check("""struct x { int i; } ;
+                         void test(void *data) {
+                            struct x *v=data;
+                            if (v->i > 0)
+                                v->i--;
+                         }
+                       """)
+        }
+    }
+
+    test("detect variable redefinitions") {
+        expect(false) {
+            check("float x; int x;")
+        }
+        expect(true) {
+            check("int x; int x;")
+        }
+        expect(false) {
+            check("int x=1; int x=1;")
+        }
+        expect(false) {
+            check("int x=1; \n" +
+                "#ifdef A\n" +
+                "int x=1;\n" +
+                "#endif\n")
+        }
+        expect(true) {
+            check("#ifndef A\n" +
+                "float x=1; \n" +
+                "#endif\n" +
+                "#ifdef A\n" +
+                "int x=1;\n" +
+                "#endif\n")
+        }
+        expect(false) {
+            check("enum x {a,b}; int a=3;")
+        }
+        expect(false) {
+            check("enum x {a,b}; int a;")
+        }
+        expect(false) {
+            check("enum x {a,b}; enum y {a,c};")
+        }
+        //TODO not implemented yet:
+        //        expect(false) {
+        //            check("int foo(int a, int a) {}")
+        //        }
+        expect(false) {
+            check("int foo(int a) {int a; a++;}")
+        }
+        expect(false) {
+            check("int foo() {int a; int a;}")
+        }
+        expect(false) {
+            check("int foo() {int a; int a=1;}")
+        }
+        expect(false) {
+            check("int foo() {int a=2; int a=1;}")
+        }
+        expect(true) {
+            check("typedef struct s { int a;} s_t;" +
+                "extern s_t x;" +
+                "s_t x = (s_t) {0};")
+        }
+    }
+
 }
+

@@ -112,7 +112,9 @@ case class CZero() extends CType {
     def toXML = <zero/>
 }
 
-case class CSigned(b: CBasicType) extends CType {
+abstract class CSignSpecifier(val basicType: CBasicType) extends CType
+
+case class CSigned(b: CBasicType) extends CSignSpecifier(b) {
     override def <(that: CType) = that match {
         case CSigned(thatb) => b < thatb
         case _ => false
@@ -123,7 +125,7 @@ case class CSigned(b: CBasicType) extends CType {
     </signed>
 }
 
-case class CUnsigned(b: CBasicType) extends CType {
+case class CUnsigned(b: CBasicType) extends CSignSpecifier(b) {
     override def <(that: CType) = that match {
         case CUnsigned(thatb) => b < thatb
         case _ => false
@@ -134,7 +136,7 @@ case class CUnsigned(b: CBasicType) extends CType {
     </unsigned>
 }
 
-case class CSignUnspecified(b: CBasicType) extends CType {
+case class CSignUnspecified(b: CBasicType) extends CSignSpecifier(b) {
     override def <(that: CType) = that match {
         case CSignUnspecified(thatb) => b < thatb
         case _ => false
@@ -312,22 +314,22 @@ object CType {
  * maintains a map from names to types
  * a name may be mapped to alternative types with different feature expressions
  *
- * internally storing Type, wheather its a function definition, and the current scope idx
+ * internally storing Type, whether its a definition (as opposed to a declaration), and the current scope idx
  */
 class ConditionalTypeMap(m: ConditionalMap[String, Conditional[CType]]) extends ConditionalCMap[CType](m) {
-    def this() = this (new ConditionalMap())
+    def this() = this(new ConditionalMap())
     def apply(name: String): Conditional[CType] = getOrElse(name, CUnknown(name))
     def ++(that: ConditionalTypeMap) = if (that.isEmpty) this else new ConditionalTypeMap(this.m ++ that.m)
     def ++(l: Seq[(String, FeatureExpr, Conditional[CType])]) = if (l.isEmpty) this else new ConditionalTypeMap(m ++ l)
     def +(name: String, f: FeatureExpr, t: Conditional[CType]) = new ConditionalTypeMap(m.+(name, f, t))
 }
 
-class ConditionalVarEnv(m: ConditionalMap[String, Conditional[(CType, Boolean, Int)]]) extends ConditionalCMap[(CType, Boolean, Int)](m) {
-    def this() = this (new ConditionalMap())
+class ConditionalVarEnv(m: ConditionalMap[String, Conditional[(CType, DeclarationKind, Int)]]) extends ConditionalCMap[(CType, DeclarationKind, Int)](m) {
+    def this() = this(new ConditionalMap())
     def apply(name: String): Conditional[CType] = lookup(name).map(_._1)
-    def lookup(name: String): Conditional[(CType, Boolean, Int)] = getOrElse(name, (CUnknown(name), false, -1))
-    def +(name: String, f: FeatureExpr, t: Conditional[CType], isFunctionDef: Boolean, scope: Int) = new ConditionalVarEnv(m.+(name, f, t.map(x => (x, isFunctionDef, scope))))
-    def ++(v: Seq[(String, FeatureExpr, Conditional[CType], Boolean, Int)]) =
+    def lookup(name: String): Conditional[(CType, DeclarationKind, Int)] = getOrElse(name, (CUnknown(name), KDeclaration, -1))
+    def +(name: String, f: FeatureExpr, t: Conditional[CType], kind: DeclarationKind, scope: Int) = new ConditionalVarEnv(m.+(name, f, t.map(x => (x, kind, scope))))
+    def ++(v: Seq[(String, FeatureExpr, Conditional[CType], DeclarationKind, Int)]) =
         v.foldLeft(this)((c, x) => c.+(x._1, x._2, x._3, x._4, x._5))
 }
 
@@ -356,7 +358,7 @@ abstract class ConditionalCMap[T](protected val m: ConditionalMap[String, Condit
 /**
  * helper functions
  */
-trait CTypes {
+trait CTypes extends COptionProvider {
     type PtrEnv = Set[String]
 
 
@@ -422,11 +424,13 @@ trait CTypes {
         if ((expectedType.toValue == CPointer(CVoid())) || (foundType.toValue == CPointer(CVoid()))) return true;
         ((t1, t2) match {
             //void pointer are compatible to all other pointers and to functions (or only pointers to functions??)
-            case (CPointer(a), CPointer(b)) => if (a == CVoid() || b == CVoid() || a == CIgnore() || b == CIgnore()) return true
+            case (CPointer(a), CPointer(b)) if (a == CVoid() || b == CVoid() || a == CIgnore() || b == CIgnore()) => return true
+            case (CPointer(a: CSignSpecifier), CPointer(b: CSignSpecifier)) if (!opts.warning_pointer_sign && (a.basicType == b.basicType)) => return true
             //CCompound can be assigned to arrays and structs
             case (CPointer(_) /*incl array*/ , CCompound()) => return true
             case (CStruct(_, _), CCompound()) => return true
             case (CAnonymousStruct(_, _), CCompound()) => return true
+            case (a, CCompound()) if (isScalar(a)) => return true //works for literals as well
             case _ =>
         })
 
@@ -519,4 +523,23 @@ trait CTypes {
     }
 
 
+}
+
+
+sealed trait DeclarationKind
+
+object KDeclaration extends DeclarationKind {
+    override def toString = "declaration"
+}
+
+object KDefinition extends DeclarationKind {
+    override def toString = "definition"
+}
+
+object KEnumVar extends DeclarationKind {
+    override def toString = "enumerate"
+}
+
+object KParameter extends DeclarationKind {
+    override def toString = "parameter"
 }

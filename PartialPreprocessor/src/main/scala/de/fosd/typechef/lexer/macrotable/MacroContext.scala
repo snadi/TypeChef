@@ -45,8 +45,12 @@ import FeatureExpr.createDefinedExternal
  * by construction, all alternatives are mutually exclusive (but do not necessarily add to BASE)
  */
 class MacroContext[T](knownMacros: Map[String, Macro[T]], featureModel: FeatureModel) extends FeatureProvider {
-    def this(fm: FeatureModel) = {this (Map(), fm)}
-    def this() = {this (null)}
+    def this(fm: FeatureModel) = {
+        this(Map(), fm)
+    }
+    def this() = {
+        this(null)
+    }
     def define(name: String, infeature: FeatureExpr, other: T): MacroContext[T] = {
         val feature = infeature //.resolveToExternal()
         val newMC = new MacroContext(
@@ -72,9 +76,12 @@ class MacroContext[T](knownMacros: Map[String, Macro[T]], featureModel: FeatureM
         new MacroContext(
             knownMacros.get(name) match {
                 case Some(macro) => knownMacros.updated(name, macro.andNot(feature))
-                //XXX: why is flagFilter() not checked? The condition associated
-                //with the definition would become false.
-                case None => knownMacros + ((name, new Macro[T](name, feature.not().and(createDefinedExternal(name)), List())))
+                case None =>
+                    val initialFeatureExpr = if (MacroContext.flagFilter(name))
+                        createDefinedExternal(name)
+                    else
+                        FeatureExpr.dead
+                    knownMacros + ((name, new Macro[T](name, initialFeatureExpr andNot feature, List())))
             }, featureModel)
     }
 
@@ -102,7 +109,9 @@ class MacroContext[T](knownMacros: Map[String, Macro[T]], featureModel: FeatureM
     def getApplicableMacroExpansions(identifier: String, currentPresenceCondition: FeatureExpr): Array[MacroExpansion[T]] =
         getMacroExpansions(identifier).filter(m => !currentPresenceCondition.and(m.getFeature()).isContradiction(featureModel));
 
-    override def toString() = {knownMacros.values.mkString("\n\n\n") + printStatistics}
+    override def toString() = {
+        knownMacros.values.mkString("\n\n\n") + printStatistics
+    }
     def debugPrint(writer: PrintWriter) {
         knownMacros.values.foreach(x => {
             writer print x;
@@ -112,12 +121,12 @@ class MacroContext[T](knownMacros: Map[String, Macro[T]], featureModel: FeatureM
     }
     def printStatistics =
         "\n\n\nStatistics (macros,macros with >1 alternative expansions,>2,>3,>4,non-trivial presence conditions):\n" +
-                knownMacros.size + ";" +
-                knownMacros.values.filter(_.numberOfExpansions > 1).size + ";" +
-                knownMacros.values.filter(_.numberOfExpansions > 2).size + ";" +
-                knownMacros.values.filter(_.numberOfExpansions > 3).size + ";" +
-                knownMacros.values.filter(_.numberOfExpansions > 4).size + ";" +
-                knownMacros.values.filter(!_.getFeature.isTautology(featureModel)).size + "\n"
+            knownMacros.size + ";" +
+            knownMacros.values.filter(_.numberOfExpansions > 1).size + ";" +
+            knownMacros.values.filter(_.numberOfExpansions > 2).size + ";" +
+            knownMacros.values.filter(_.numberOfExpansions > 3).size + ";" +
+            knownMacros.values.filter(_.numberOfExpansions > 4).size + ";" +
+            knownMacros.values.filter(!_.getFeature.isTautology(featureModel)).size + "\n"
     //,number of distinct configuration flags
     //    	+getNumberOfDistinctFlagsStatistic+"\n";
     //    private def getNumberOfDistinctFlagsStatistic = {

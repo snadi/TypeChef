@@ -47,13 +47,14 @@ class CParser(featureModel: FeatureModel = null, debugOutput: Boolean = false) e
         (lookahead(textToken("typedef")) ~! declaration ^^ {
             case _ ~ r => r
         } |
-            declaration |
-            functionDef | typelessDeclaration | asm_expr | pragma | expectType | expectNotType | (SEMI ^^ {
+            asm_expr | declaration |
+            functionDef | typelessDeclaration | pragma | expectType | expectNotType | (SEMI ^^ {
             x => EmptyExternalDef()
         })) !
 
+    //parse with LPAREN instead of LCURLY in antlr grammar. seems to be the correct gnuc impl according to gcc
     def asm_expr: MultiParser[AsmExpr] =
-        asm ~! opt(volatile) ~ LCURLY ~ expr ~ RCURLY ~ rep1(SEMI) ^^ {
+        asm ~! opt(volatile) ~ LPAREN ~ expr ~ RPAREN ~ rep1(SEMI) ^^ {
             case _ ~ v ~ _ ~ e ~ _ ~ _ => AsmExpr(v.isDefined, e)
         }
 
@@ -779,11 +780,15 @@ class CParser(featureModel: FeatureModel = null, debugOutput: Boolean = false) e
 
     def alignof = textToken("__alignof__") | textToken("__alignof")
 
+    def ignoreAttributes(s: Specifier): Boolean = s match {
+        case x: AttributeSpecifier => false
+        case _ => true
+    }
     def specList(otherSpecifiers: MultiParser[Specifier]): MultiParser[List[Opt[Specifier]]] =
         alwaysNonEmpty(repOpt(otherSpecifiers) ~~ opt(typedefName) ~~ repOpt(otherSpecifiers | typeSpecifier) ^^ {
             case list1 ~ Some(typedefn) ~ list2 => list1 ++ List(Opt(base, typedefn)) ++ list2
             case list1 ~ None ~ list2 => list1 ++ list2
-        })
+        }, ignoreAttributes)
 
     //XXX: CK: only for debugging purposes, not part of the C grammar
     def expectType = textToken("__expectType") ~ LBRACKET ~ COLON ~!> typedefName <~ COLON <~ RBRACKET ^^ {

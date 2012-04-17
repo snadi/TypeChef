@@ -4,6 +4,7 @@ import org.sat4j.core.{VecInt, Vec}
 import org.sat4j.specs.{IVec, IVecInt}
 import BDDFeatureExprLibrary._
 import de.fosd.typechef.featureexprUtil.SATBasedFeatureModel
+import java.net.URI
 
 /**
  * the feature model is a special container for a single feature expression
@@ -15,24 +16,63 @@ import de.fosd.typechef.featureexprUtil.SATBasedFeatureModel
  *
  * it can load an expression from a FeatureExpr or from a file in CNF
  * format
+ *
+ * extra constraints contain arbitrary formulas that are used in every query. may be expensive to calculate each time.
+ *
+ * assumedFalse and assumedTrue can hold sets of feature names that are known to be true or false (typically from
+ * partial configurations). Those are cheap to pass to the SAT solver.
+ *
  */
-class BDDFeatureModel(val variables: Map[String, Int], val clauses: IVec[IVecInt], val lastVarId: Int, val extraConstraints: FeatureExpr) extends AbstractFeatureModel with SATBasedFeatureModel {
+class FeatureModel(val variables: Map[String, Int], val clauses: IVec[IVecInt], val lastVarId: Int,
+                   val extraConstraints: FeatureExpr,
+                   val assumedFalse: Set[String], val assumedTrue: Set[String]) {
     /**
      * make the feature model stricter by a formula
      */
-    def and(expr: FeatureExpr /*CNF*/): FeatureModel =
-        new BDDFeatureModel(variables, clauses, lastVarId, extraConstraints and expr)
+    def and(expr: FeatureExpr /*CNF*/) =
+        new FeatureModel(variables, clauses, lastVarId, extraConstraints and expr, assumedFalse, assumedTrue)
+    //    def and(expr: FeatureExpr /*CNF*/) = if (expr == FeatureExpr.base) this
+    //    else {
+    //        val cnf = expr.toCNF
+    //        try {
+    //            assert(!expr.isContradiction(null))
+    //            val (newVariables, newLastVarId) = FeatureModel.getVariables(cnf, lastVarId, variables)
+    //            val newClauses = FeatureModel.addClauses(cnf, newVariables, clauses)
+    //            new FeatureModel(newVariables, newClauses, newLastVarId)
+    //        } catch {
+    //            case e: Exception => println("FeatureModel.and: Exception: " + e + " with expr: " + expr + " and cnf: " + cnf); throw e
+    //        }
+    //    }
+
+    def assumeTrue(featurename: String) =
+        new FeatureModel(variables, clauses, lastVarId, extraConstraints, assumedFalse, assumedTrue + featurename)
+    def assumeFalse(featurename: String) =
+        new FeatureModel(variables, clauses, lastVarId, extraConstraints, assumedFalse + featurename, assumedTrue)
+
+    /**helper function*/
+    def assumptions: FeatureExpr =
+        assumedTrue.map(FeatureExpr.createDefinedExternal(_)).fold(FeatureExpr.base)(_ and _) and
+            assumedFalse.map(FeatureExpr.createDefinedExternal(_).not).fold(FeatureExpr.base)(_ and _)
 }
 
 /**
  * empty feature model
  */
-object BDDNoFeatureModel extends BDDFeatureModel(Map(), new Vec(), 0, FeatureExpr.base)
+object NoFeatureModel extends FeatureModel(Map(), new Vec(), 0, FeatureExpr.base, Set(), Set())
 
 /**
  * companion object to create feature models
  */
-object BDDFeatureModelLoader extends AbstractFeatureModelLoader {
+object FeatureModel {
+    /**
+     * create an empty feature model
+     */
+    def empty: FeatureModel = NoFeatureModel
+
+    /**
+     * create a feature model from a feature expression
+     */
+    def create(expr: FeatureExpr) = NoFeatureModel.and(expr)
 
     /**
      * create a feature model by loading a CNF file
@@ -55,7 +95,7 @@ object BDDFeatureModelLoader extends AbstractFeatureModelLoader {
             }
 
         }
-        new FeatureModel(variables, clauses, varIdx, FeatureExpr.base)
+        new FeatureModel(variables, clauses, varIdx, FeatureExpr.base, Set(), Set())
     }
 
     /**
@@ -87,17 +127,20 @@ object BDDFeatureModelLoader extends AbstractFeatureModelLoader {
 
         }
         assert(maxId == variables.size)
-        new FeatureModel(variables, clauses, maxId, FeatureExpr.base)
+        new FeatureModel(variables, clauses, maxId, FeatureExpr.base, Set(), Set())
     }
     /**
      * special reader for the -2var model used by the LinuxAnalysis tools from waterloo
      */
-    def createFromDimacsFile_2Var(file: String) = {
+    def createFromDimacsFile_2Var(file: String) = loadDimacsFile_2Var(scala.io.Source.fromFile(file))
+    def createFromDimacsFile_2Var(file: URI) = loadDimacsFile_2Var(scala.io.Source.fromFile(file))
+
+    private def loadDimacsFile_2Var(source: scala.io.Source) = {
         var variables: Map[String, Int] = Map()
         val clauses = new Vec[IVecInt]()
         var maxId = 0
 
-        for (line <- scala.io.Source.fromFile(file).getLines) {
+        for (line <- source.getLines) {
             if (line startsWith "c ") {
                 val entries = line.substring(2).split(" ")
                 val id = if (entries(0) endsWith "$")
@@ -121,7 +164,7 @@ object BDDFeatureModelLoader extends AbstractFeatureModelLoader {
 
         }
         assert(maxId == variables.size)
-        new FeatureModel(variables, clauses, maxId, FeatureExpr.base)
+        new FeatureModel(variables, clauses, maxId, FeatureExpr.base, Set(), Set())
     }
 
     private def lookupLiteral(literal: String, variables: Map[String, Int]) =

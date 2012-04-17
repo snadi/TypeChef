@@ -434,8 +434,8 @@ class CParserTest {
     }
 
     @Test def testAsmExpr {
-        assertParseable("asm { 3+3};", p.asm_expr)
-        assertParseable("asm volatile { 3+3};", p.asm_expr)
+        assertParseable("asm ( 3+3);", p.asm_expr)
+        assertParseable("asm volatile ( 3+3);", p.asm_expr)
     }
 
     @Test def testFunctionDef {
@@ -456,6 +456,24 @@ class CParserTest {
         				|void x(){}""", p.translationUnit)
         assertParseable("main(){}", p.functionDef)
         assertParseable("main(){int T=100, a=(T)+1;}", p.functionDef)
+        assertParseable("""
+        int
+main (int argc, char **argv)
+{
+  int size = 10;
+
+  typedef struct {
+    char val[size];
+  } block;
+  block retframe_block()
+    {
+      return *(block*)0;
+    }
+
+  return 0;
+}
+        """, p.functionDef)
+
     }
 
     @Test def testTypedefName {
@@ -518,6 +536,21 @@ class CParserTest {
         #endif
         ,4}""", p.initializer)
 
+
+    @Test def testAsm {
+        assertParseableAST("asm (\"A\");", p.externalDef) match {
+            case Some(One(AsmExpr(false, _))) =>
+            case e => Assert.fail(e.toString)
+        }
+        assertParseableAST("int asm (\"A\") a;", p.externalDef) match {
+            case Some(One(x: Declaration)) =>
+            case e => Assert.fail(e.toString)
+        }
+        assertParseableAST("asm (\"A\") int a;", p.externalDef) match {
+            case Some(One(x: Declaration)) => println("done")
+            case e => Assert.fail(e.toString)
+        }
+    }
 
     @Test def testMisc0 {
         assertParseable("{__label__ hey, now;}", p.compoundStatement)
@@ -1070,6 +1103,13 @@ void bar() {
                     #endif
                     int x;
                 """, p.translationUnit)
+    }
+
+    @Test
+    def test_bug03 {
+        assertParseableAST("""
+      a(){int**b[]={&&c};c:;}
+      """, p.translationUnit)
     }
 
     private def assertNoDeadNodes(ast: Product) {
