@@ -15,7 +15,7 @@ import statistics.CStatistics
  *
  */
 
-class CTypeSystemFrontend(iast: TranslationUnit, featureModel: FeatureModel = NoFeatureModel) extends CTypeSystem with CInferInterface with CStatistics {
+class CTypeSystemFrontend(iast: TranslationUnit, featureModel: FeatureModel = FeatureExprFactory.default.featureModelFactory.empty) extends CTypeSystem with CInferInterface with CStatistics {
 
     class TypeError(severity: Severity.Severity, condition: FeatureExpr, msg: String, where: AST) {
         override def toString =
