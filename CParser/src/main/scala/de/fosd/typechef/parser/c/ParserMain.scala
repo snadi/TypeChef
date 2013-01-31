@@ -63,8 +63,10 @@ class ParserMain(p: CParser) {
         //        val result = p.translationUnit(in, FeatureExprFactory.True)
         val endTime = System.currentTimeMillis
 
-        if (parserOptions.printParserResult)
+        if (parserOptions.printParserResult)   {
             println(printParseResult(result, FeatureExprFactory.True))
+          renderParseResult(result, True, parserOptions.renderParserError)
+        }
 
         if (parserOptions.printParserStatistics) {
             val distinctFeatures = getDistinctFeatures(in.tokens) //expensive to calculate with bdds (at least the current implementation)
@@ -77,8 +79,8 @@ class ParserMain(p: CParser) {
                 //                "  Repeated Distribution: " + ProfilingTokenHelper.repeatedDistribution(in) + "\n" +
                 "  Conditional Tokens: " + countConditionalTokens(in.tokens) + "\n" +
                 "  Distinct Features#: " + distinctFeatures.size + "\n" +
-                "  Distinct Features: " + distinctFeatures.toList.sorted.mkString(";") + "\n" +
-                "  Distinct Feature Expressions: " + countFeatureExpr(in.tokens) + "\n" +
+             //   "  Distinct Features: " + distinctFeatures.toList.sorted.mkString(";") + "\n" +
+                "  Distinct Feature Expressions #: " + countFeatureExpr(in.tokens) + "\n" +
                 "  Choice Nodes: " + countChoiceNodes(result) + "\n")
         }
 
