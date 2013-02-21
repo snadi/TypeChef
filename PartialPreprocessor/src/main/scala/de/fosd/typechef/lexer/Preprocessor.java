@@ -23,17 +23,12 @@
 
 package de.fosd.typechef.lexer;
 
-import de.fosd.typechef.featureexpr.FeatureExpr;
-import de.fosd.typechef.featureexpr.FeatureExprTree;
-import de.fosd.typechef.featureexpr.FeatureExprValue$;
-import de.fosd.typechef.featureexpr.FeatureModel;
+import de.fosd.typechef.featureexpr.*;
 import de.fosd.typechef.lexer.MacroConstraint.MacroConstraintKind;
 import de.fosd.typechef.lexer.macrotable.MacroContext;
 import de.fosd.typechef.lexer.macrotable.MacroExpansion;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 import static de.fosd.typechef.lexer.Token.*;
@@ -150,8 +145,15 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
     private Set<Warning> warnings;
     private VirtualFileSystem filesystem;
     PreprocessorListener listener;
+    PrintWriter errorDirWriter;
 
     private List<MacroConstraint> macroConstraints = new ArrayList<MacroConstraint>();
+
+    public Preprocessor(FeatureModel fm, PrintWriter errorDirWriter) {
+        this(fm);
+        this.errorDirWriter = errorDirWriter;
+
+    }
 
     public Preprocessor(FeatureModel fm) {
         this.featureModel = fm;
@@ -2515,11 +2517,17 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                          */
                         case PP_WARNING:
                         case PP_ERROR:
-                            if (!isActive())
+                            //write out the condition under which the #error occurred
+                            if (errorDirWriter != null) {
+                                FeatureExpr filepc = getFilePc(getSource().getName());
+                                errorDirWriter.println(filepc.implies(state.getFullPresenceCondition().not()));
+                            }
+                            if (!isActive()) {
                                 return source_skipline(false);
-                            else
+                            } else {
                                 // cppError(tok, ppcmd == PP_ERROR);
                                 return parseErrorToken(tok, ppcmd == PP_ERROR);
+                            }
 
                         case PP_IF:
                             push_state();
@@ -2656,6 +2664,44 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                     throw new InternalException("Bad token, type: " + tok.getType() + ", token: " + tok + ", source: " + tok.getSource());
                     // break;
             }
+        }
+    }
+
+
+    private String getBaseName(String fileName) {
+
+        if (fileName.endsWith(".c"))
+            return fileName.substring(0, fileName.indexOf(".c"));
+        else if (fileName.endsWith(".h"))
+            return fileName.substring(0, fileName.indexOf(".h"));
+        else if (fileName.endsWith(".S"))
+            return fileName.substring(0, fileName.indexOf(".S"));
+        else
+            return fileName;
+    }
+
+    private FeatureExpr getFilePc(String fileName) {
+        FeatureExpr pcCondition = FeatureExprFactory.True();
+        try {
+
+            String pcName = getBaseName(fileName) + ".pc";
+
+            File file = new File(pcName);
+            if (file.exists()) {
+                BufferedReader br = new BufferedReader(new FileReader(pcName));
+
+                String line;
+
+                while ((line = br.readLine()) != null) {
+                    pcCondition = new FeatureExprParser(FeatureExprFactory.dflt()).parse(line);
+                }
+            }
+
+            return pcCondition;
+
+        } catch (IOException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            return pcCondition;
         }
     }
 

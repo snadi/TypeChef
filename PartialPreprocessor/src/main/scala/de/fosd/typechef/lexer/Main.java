@@ -57,8 +57,10 @@ public class Main {
             return new ArrayList<Token>();
         }
 
+        //create file to dump conditions from #error directives in it
+        PrintWriter   errorDirWriter = new PrintWriter( new FileWriter("output/errorDirectives.txt",true));
 
-        Preprocessor pp = new Preprocessor(options.getFeatureModel());
+        Preprocessor pp = new Preprocessor(options.getFeatureModel(), errorDirWriter);
 
         pp.getWarnings().clear();
         pp.addWarnings(options.getWarnings());
@@ -166,6 +168,8 @@ public class Main {
             if (output != null && !options.isLexPrintToStdout())
                 output.close();
         }
+
+        errorDirWriter.close();
         return resultTokenList;
     }
 
