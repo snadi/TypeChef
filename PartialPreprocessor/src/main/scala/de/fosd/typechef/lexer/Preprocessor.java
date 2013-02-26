@@ -146,13 +146,14 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
     private VirtualFileSystem filesystem;
     PreprocessorListener listener;
     PrintWriter errorDirWriter;
+    PrintWriter nestedIfDefWriter;
 
     private List<MacroConstraint> macroConstraints = new ArrayList<MacroConstraint>();
 
-    public Preprocessor(FeatureModel fm, PrintWriter errorDirWriter) {
+    public Preprocessor(FeatureModel fm, PrintWriter errorDirWriter, PrintWriter nestedIfDefWriter) {
         this(fm);
         this.errorDirWriter = errorDirWriter;
-
+        this.nestedIfDefWriter = nestedIfDefWriter;
     }
 
     public Preprocessor(FeatureModel fm) {
@@ -2310,7 +2311,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
     }
 
     protected final Token parse_main() throws IOException, LexerException {
-
         for (; ; ) {
             Token tok;
             if (!isActive()) {
@@ -2323,6 +2323,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                     if (sourceManager.getSource() != null)
                         sourceManager.getSource().setActive(true);
                 }
+
                 switch (tok.getType()) {
                     case HASH:
                     case NL:
@@ -2349,6 +2350,8 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
             } else {
                 tok = retrieveTokenFromSource();
             }
+
+            FeatureExpr filepc = getFilePc();
 
             LEX:
             switch (tok.getType()) {
@@ -2519,7 +2522,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                         case PP_ERROR:
                             //write out the condition under which the #error occurred
                             if (errorDirWriter != null) {
-                                FeatureExpr filepc = getFilePc(getSource().getName());
                                 errorDirWriter.println(filepc.implies(state.getFullPresenceCondition().not()));
                             }
                             if (!isActive()) {
@@ -2532,9 +2534,11 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                         case PP_IF:
                             push_state();
                             expr_token = null;
+
                             if (isParentActive()) {
                                 FeatureExpr localFeatureExpr = parse_featureExpr();
                                 state.putLocalFeature(localFeatureExpr, macros);
+                                printNestedIfDef(state.getFullPresenceCondition(),filepc);
                                 tok = expr_token(true); /* unget */
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
@@ -2568,6 +2572,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
 
+                                printNestedIfDef(state.getFullPresenceCondition(),filepc);
                                 return ifdefPrinter.startElIf(tok, isParentActive(),
                                         state);
 
@@ -2582,6 +2587,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                                 state.setSawElse();
                                 source_skipline(warnings.contains(Warning.ENDIF_LABELS));
 
+                                printNestedIfDef(state.getFullPresenceCondition(),filepc);
                                 return ifdefPrinter.startElIf(tok, isParentActive(),
                                         state);
                             }
@@ -2605,6 +2611,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
 
+                                printNestedIfDef(state.getFullPresenceCondition(),filepc);
                                 return ifdefPrinter.startIf(tok, isParentActive(),
                                         state);
                             }
@@ -2625,6 +2632,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
 
+                                printNestedIfDef(state.getFullPresenceCondition(),filepc);
                                 return ifdefPrinter.startIf(tok, isParentActive(),
                                         state);
 
@@ -2667,6 +2675,12 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
         }
     }
 
+    private void printNestedIfDef(FeatureExpr featureExpr, FeatureExpr filePc) {
+        if  (!(featureExpr.implies(filePc)).equivalentTo(FeatureExprFactory.True())){
+            nestedIfDefWriter.println(featureExpr + " -> " + filePc);
+        }
+    }
+
 
     private String getBaseName(String fileName) {
 
@@ -2680,22 +2694,30 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
             return fileName;
     }
 
-    private FeatureExpr getFilePc(String fileName) {
+    private FeatureExpr getFilePc() {
         FeatureExpr pcCondition = FeatureExprFactory.True();
         try {
 
-            String pcName = getBaseName(fileName) + ".pc";
+            if (getSource() != null) {
+                String pcName = getBaseName(getSource().getName()) + ".pc";
 
-            File file = new File(pcName);
-            if (file.exists()) {
-                BufferedReader br = new BufferedReader(new FileReader(pcName));
+                File file = new File(pcName);
+                if (file.exists()) {
+                    BufferedReader br = new BufferedReader(new FileReader(pcName));
 
-                String line;
+                    String line;
 
-                while ((line = br.readLine()) != null) {
-                    pcCondition = new FeatureExprParser(FeatureExprFactory.dflt()).parse(line);
+                    while ((line = br.readLine()) != null) {
+                        pcCondition = new FeatureExprParser(FeatureExprFactory.dflt()).parse(line);
+                    }
+
+                    br.close();
                 }
+
+
             }
+
+
 
             return pcCondition;
 
