@@ -2537,8 +2537,9 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
 
                             if (isParentActive()) {
                                 FeatureExpr localFeatureExpr = parse_featureExpr();
+                                FeatureExpr parentExpr = state.getFullPresenceCondition();
                                 state.putLocalFeature(localFeatureExpr, macros);
-                                printNestedIfDef(state.getFullPresenceCondition(),filepc);
+                                printNestedIfDef(localFeatureExpr, parentExpr.and(filepc));
                                 tok = expr_token(true); /* unget */
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
@@ -2552,6 +2553,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
 
                         // break;
 
+                        //nested if def here may not be very accurate
                         case PP_ELIF:
                             if (state.sawElse()) {
                                 error(tok, "#elif after #" + "else");
@@ -2603,6 +2605,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                             } else {
                                 FeatureExpr localFeatureExpr2 = parse_ifdefExpr(tok
                                         .getText());
+                                FeatureExpr parentExpr = state.getFullPresenceCondition();
                                 state.putLocalFeature(
                                         isParentActive() ? localFeatureExpr2
                                                 : FeatureExprLib.False(), macros);
@@ -2611,7 +2614,10 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
 
-                                printNestedIfDef(state.getFullPresenceCondition(),filepc);
+
+                                //if its a nested ifdef, then inner expression implies outer expression and filepc
+                                //else if this is a first level ifdef then it directly implies the filepc (parentExpr will be True)
+                                printNestedIfDef(localFeatureExpr2, parentExpr.and(filepc));
                                 return ifdefPrinter.startIf(tok, isParentActive(),
                                         state);
                             }
@@ -2626,13 +2632,15 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                             } else {
                                 FeatureExpr localFeatureExpr3 = parse_ifndefExpr(tok
                                         .getText());
+                                FeatureExpr parentExpr = state.getFullPresenceCondition();
+
                                 state.putLocalFeature(
                                         isParentActive() ? localFeatureExpr3
                                                 : FeatureExprLib.False(), macros);
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
 
-                                printNestedIfDef(state.getFullPresenceCondition(),filepc);
+                                printNestedIfDef(localFeatureExpr3, parentExpr.and(filepc));
                                 return ifdefPrinter.startIf(tok, isParentActive(),
                                         state);
 
@@ -2675,9 +2683,9 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
         }
     }
 
-    private void printNestedIfDef(FeatureExpr featureExpr, FeatureExpr filePc) {
-        if  (!(featureExpr.implies(filePc)).equivalentTo(FeatureExprFactory.True())){
-            nestedIfDefWriter.println(featureExpr + " -> " + filePc);
+    private void printNestedIfDef(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
+        if  (!(featureExpr1.implies(featureExpr2)).equivalentTo(FeatureExprFactory.True())){
+            nestedIfDefWriter.println(featureExpr1 + " -> " + featureExpr2);
         }
     }
 
