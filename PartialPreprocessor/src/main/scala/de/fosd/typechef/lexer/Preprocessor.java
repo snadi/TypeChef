@@ -2537,9 +2537,9 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
 
                             if (isParentActive()) {
                                 FeatureExpr localFeatureExpr = parse_featureExpr();
-                                FeatureExpr parentExpr = state.getFullPresenceCondition();
                                 state.putLocalFeature(localFeatureExpr, macros);
-                                printNestedIfDef(localFeatureExpr, parentExpr.and(filepc));
+
+                                printNestedIfDef(state.getFullPresenceCondition(),filepc);
                                 tok = expr_token(true); /* unget */
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
@@ -2598,14 +2598,15 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                         case PP_IFDEF:
                             push_state();
                             tok = source_token_nonwhite();
-                            // System.out.println("ifdef " + tok);
                             if (tok.getType() != IDENTIFIER) {
                                 error(tok, "Expected identifier, not " + tok.getText());
                                 return source_skipline(false);
                             } else {
                                 FeatureExpr localFeatureExpr2 = parse_ifdefExpr(tok
                                         .getText());
+
                                 FeatureExpr parentExpr = state.getFullPresenceCondition();
+
                                 state.putLocalFeature(
                                         isParentActive() ? localFeatureExpr2
                                                 : FeatureExprLib.False(), macros);
@@ -2640,7 +2641,10 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
 
-                                printNestedIfDef(localFeatureExpr3, parentExpr.and(filepc));
+                                //only print if state is not false (i.e., this cannot happen
+                                if(!state.getFullPresenceCondition().equivalentTo(FeatureExprFactory.False()))
+                                    printNestedIfDef(localFeatureExpr3, parentExpr.and(filepc));
+
                                 return ifdefPrinter.startIf(tok, isParentActive(),
                                         state);
 
@@ -2684,7 +2688,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
     }
 
     private void printNestedIfDef(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
-        if  (!(featureExpr1.implies(featureExpr2)).equivalentTo(FeatureExprFactory.True())){
+        if  (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False())){
             nestedIfDefWriter.println(featureExpr1 + " -> " + featureExpr2);
         }
     }
@@ -2703,6 +2707,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
     }
 
     private FeatureExpr getFilePc() {
+
         FeatureExpr pcCondition = FeatureExprFactory.True();
         try {
 

@@ -58,10 +58,10 @@ public class Main {
         }
 
         //create file to dump conditions from #error directives in it
-        PrintWriter   errorDirWriter = new PrintWriter( new FileWriter("output/errorDirectives.txt",true));
+        PrintWriter   errorDirWriter = new PrintWriter( new FileWriter("output/Errors/errorDirectives.txt",true));
 
         //create file to dump implications from nested ifdefs in
-        PrintWriter   nestedIfDefWriter = new PrintWriter( new FileWriter("output/nestedIfDefImpls.txt",true));
+        PrintWriter   nestedIfDefWriter = new PrintWriter( new FileWriter("output/NestedIfdefs/nestedIfDefImpls.txt",true));
 
         Preprocessor pp = new Preprocessor(options.getFeatureModel(), errorDirWriter, nestedIfDefWriter);
 
