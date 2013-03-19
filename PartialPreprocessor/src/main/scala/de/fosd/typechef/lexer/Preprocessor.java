@@ -2536,10 +2536,12 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
                             expr_token = null;
 
                             if (isParentActive()) {
+                                FeatureExpr parentExpr = state.getFullPresenceCondition();
+
                                 FeatureExpr localFeatureExpr = parse_featureExpr();
                                 state.putLocalFeature(localFeatureExpr, macros);
 
-                                printNestedIfDef(state.getFullPresenceCondition(),filepc);
+                                printNestedIfDef(localFeatureExpr, parentExpr.and(filepc));
                                 tok = expr_token(true); /* unget */
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
@@ -2689,7 +2691,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable {
 
     private void printNestedIfDef(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
         if  (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False())){
-            nestedIfDefWriter.println(featureExpr1 + " -> " + featureExpr2);
+            nestedIfDefWriter.println(featureExpr1 + " => " + featureExpr2);
         }
     }
 
