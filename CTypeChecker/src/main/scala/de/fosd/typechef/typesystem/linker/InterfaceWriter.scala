@@ -21,6 +21,12 @@ trait InterfaceWriter {
         stream.close()
     }
 
+  def printBlacklist(interface: CInterface, file: File){
+    val stream = new FileWriter(file)
+    stream.write(interface.printImports)
+    stream.close()
+  }
+
     def readInterface(file: File): CInterface = {
         val loadnode = xml.XML.loadFile(file)
         interfaceFromXML(loadnode)

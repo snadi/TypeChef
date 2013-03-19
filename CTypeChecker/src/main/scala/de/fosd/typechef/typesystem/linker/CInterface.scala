@@ -26,6 +26,9 @@ case class CInterface(
             "\nimports (" + imports.size + ")\n" + imports.map("\t" + _.toString).sorted.mkString("\n") +
             "\nexports (" + exports.size + ")\n" + exports.map("\t" + _.toString).sorted.mkString("\n") + "\n"
 
+   def printImports =
+      "\nimports (" + imports.size + ")\n" + imports.map("\t" + _.toSimpleString).sorted.mkString("\n")
+
     lazy val importsByName = imports.groupBy(_.name)
     lazy val exportsByName = exports.groupBy(_.name)
 
