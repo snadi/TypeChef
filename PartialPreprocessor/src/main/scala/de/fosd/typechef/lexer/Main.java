@@ -23,10 +23,13 @@
 
 package de.fosd.typechef.lexer;
 
+import de.fosd.typechef.LexerToken;
+import de.fosd.typechef.VALexer;
 import de.fosd.typechef.featureexpr.FeatureModel;
-import de.fosd.typechef.lexer.macrotable.MacroContext$;
+import de.fosd.typechef.lexer.macrotable.MacroContext;
 import de.fosd.typechef.lexer.options.ILexerOptions;
 import de.fosd.typechef.lexer.options.LexerOptions;
+import de.fosd.typechef.xtclexer.XtcPreprocessor;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -54,10 +57,10 @@ public class Main {
     public List<LexerToken> run(final ILexerOptions options, boolean returnTokenList) throws Exception {
         return run(new VALexer.LexerFactory() {
             @Override
-            public VALexer create(FeatureModel featureModel) {
+            public VALexer create(FeatureModel featureModel, PrintWriter errorWriter, PrintWriter nestedIfDefWriter) {
                 if (options.useXtcLexer())
                     return new XtcPreprocessor(options.getMacroFilter(), featureModel);
-                return new Preprocessor(options.getMacroFilter(), featureModel);
+                return new Preprocessor(options.getMacroFilter(), featureModel, errorWriter, nestedIfDefWriter);
             }
         }, options, returnTokenList);
     }
@@ -68,8 +71,15 @@ public class Main {
             return new ArrayList<LexerToken>();
         }
 
+        //create file to dump conditions from #error directives in it
+        PrintWriter   errorDirWriter = new PrintWriter( new FileWriter("output/Errors/errorDirectives.txt",true));
 
-        VALexer pp = lexerFactory.create(options.getFeatureModel());
+        //create file to dump implications from nested ifdefs in
+        PrintWriter   nestedIfDefWriter = new PrintWriter( new FileWriter("output/NestedIfdefs/nestedIfDefImpls.txt",true));
+
+
+
+        VALexer pp = lexerFactory.create(options.getFeatureModel(), errorDirWriter, nestedIfDefWriter);
 
         for (Warning w : options.getWarnings())
             pp.addWarning(w);
@@ -102,21 +112,6 @@ public class Main {
         for (String quoInclPath : options.getQuoteIncludePath())
             pp.addQuoteIncludePath(quoInclPath);
 
-        for (String filter : options.getMacroFilter())
-            switch (filter.charAt(0)) {
-                case 'p':
-                    MacroContext$.MODULE$.setPrefixFilter(filter.substring(2));
-                    break;
-                case 'P':
-                    MacroContext$.MODULE$.setPostfixFilter(filter.substring(2));
-                    break;
-                case 'x':
-                    MacroContext$.MODULE$.setPrefixOnlyFilter(filter.substring(2));
-                    break;
-                case '4':
-                    MacroContext$.MODULE$.setListFilter(filter.substring(2));
-                    break;
-            }
 
         for (String include : options.getIncludedHeaders())
             pp.addInput(new VALexer.FileSource(new File(include)));

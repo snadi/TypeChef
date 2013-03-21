@@ -7,10 +7,7 @@ import de.fosd.typechef.lexer.LexerException;
 import de.fosd.typechef.lexer.PreprocessorListener;
 import de.fosd.typechef.lexer.Warning;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.List;
 
 /**
@@ -24,7 +21,7 @@ public interface VALexer {
 
 
     public static interface LexerFactory {
-        public VALexer create(FeatureModel featureModel);
+        public VALexer create(FeatureModel featureModel, PrintWriter ErrorWriter, PrintWriter nestedIfDefWriter);
     }
 
     public static interface LexerInput {

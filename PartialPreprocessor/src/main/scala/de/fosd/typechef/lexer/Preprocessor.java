@@ -24,20 +24,17 @@
 package de.fosd.typechef.lexer;
 
 import de.fosd.typechef.VALexer;
-import de.fosd.typechef.featureexpr.FeatureExpr;
-import de.fosd.typechef.featureexpr.FeatureExprTree;
-import de.fosd.typechef.featureexpr.FeatureExprValue$;
-import de.fosd.typechef.featureexpr.FeatureModel;
+import de.fosd.typechef.featureexpr.*;
 import de.fosd.typechef.lexer.MacroConstraint.MacroConstraintKind;
 import de.fosd.typechef.lexer.macrotable.MacroContext;
 import de.fosd.typechef.lexer.macrotable.MacroExpansion;
+import de.fosd.typechef.lexer.macrotable.MacroFilter;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 import static de.fosd.typechef.lexer.Token.*;
+
 
 /**
  * modified C preprocessor with the following changes
@@ -151,8 +148,16 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     private Set<Warning> warnings;
     private VirtualFileSystem filesystem;
     PreprocessorListener listener;
+    PrintWriter errorDirWriter;
+    PrintWriter nestedIfDefWriter;
 
     private List<MacroConstraint> macroConstraints = new ArrayList<MacroConstraint>();
+
+    public Preprocessor(MacroFilter macroFilter, FeatureModel fm, PrintWriter errorDirWriter, PrintWriter nestedIfDefWriter) {
+        this(macroFilter, fm);
+        this.errorDirWriter = errorDirWriter;
+        this.nestedIfDefWriter = nestedIfDefWriter;
+    }
 
     public Preprocessor(MacroFilter macroFilter, FeatureModel fm) {
         this.featureModel = fm;
@@ -424,6 +429,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
             throws LexerException {
         addMacro(name, feature, "1");
     }
+
 
     /**
      * Sets the user include path used by this Preprocessor.
@@ -1791,6 +1797,11 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
             }
             tok = retrieveTokenFromSource();
         }
+        if (is_error)
+            error(pptok, buf.toString());
+        else
+            warning(pptok, buf.toString());
+
         return new SimpleToken(P_LINE, pptok.getLine(), pptok.getColumn(), buf
                 .toString(), null);
     }
@@ -2350,6 +2361,8 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                 tok = retrieveTokenFromSource();
             }
 
+            FeatureExpr filepc = getFilePc();
+
             LEX:
             switch (tok.getType()) {
                 case EOF:
@@ -2517,6 +2530,10 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                          */
                         case PP_WARNING:
                         case PP_ERROR:
+                            //write out the condition under which the #error occurred
+                            if (errorDirWriter != null) {
+                                errorDirWriter.println(filepc.implies(state.getFullPresenceCondition().not()));
+                            }
                             if (!isActive())
                                 return source_skipline(false);
                             else
@@ -2526,9 +2543,14 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                         case PP_IF:
                             push_state();
                             expr_token = null;
+
                             if (isParentActive()) {
+                                FeatureExpr parentExpr = state.getFullPresenceCondition();
+
                                 FeatureExpr localFeatureExpr = parse_featureExpr();
                                 state.putLocalFeature(localFeatureExpr, macros);
+
+                                printNestedIfDef(localFeatureExpr, parentExpr.and(filepc));
                                 tok = expr_token(true); /* unget */
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
@@ -2542,6 +2564,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
                         // break;
 
+                        //nested if def here may not be very accurate
                         case PP_ELIF:
                             if (state.sawElse()) {
                                 error(tok, "#elif after #" + "else");
@@ -2562,6 +2585,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
 
+                                printNestedIfDef(state.getFullPresenceCondition(),filepc);
                                 return ifdefPrinter.startElIf(tok, isParentActive(),
                                         state);
 
@@ -2576,6 +2600,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                 state.setSawElse();
                                 source_skipline(warnings.contains(Warning.ENDIF_LABELS));
 
+                                printNestedIfDef(state.getFullPresenceCondition(),filepc);
                                 return ifdefPrinter.startElIf(tok, isParentActive(),
                                         state);
                             }
@@ -2591,6 +2616,9 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                             } else {
                                 FeatureExpr localFeatureExpr2 = parse_ifdefExpr(tok
                                         .getText());
+
+                                FeatureExpr parentExpr = state.getFullPresenceCondition();
+
                                 state.putLocalFeature(
                                         isParentActive() ? localFeatureExpr2
                                                 : FeatureExprLib.False(), macros);
@@ -2599,6 +2627,10 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
 
+
+                                //if its a nested ifdef, then inner expression implies outer expression and filepc
+                                //else if this is a first level ifdef then it directly implies the filepc (parentExpr will be True)
+                                printNestedIfDef(localFeatureExpr2, parentExpr.and(filepc));
                                 return ifdefPrinter.startIf(tok, isParentActive(),
                                         state);
                             }
@@ -2613,11 +2645,17 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                             } else {
                                 FeatureExpr localFeatureExpr3 = parse_ifndefExpr(tok
                                         .getText());
+                                FeatureExpr parentExpr = state.getFullPresenceCondition();
+
                                 state.putLocalFeature(
                                         isParentActive() ? localFeatureExpr3
                                                 : FeatureExprLib.False(), macros);
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
+
+                                //only print if state is not false (i.e., this cannot happen
+                                if(!state.getFullPresenceCondition().equivalentTo(FeatureExprFactory.False()))
+                                    printNestedIfDef(localFeatureExpr3, parentExpr.and(filepc));
 
                                 return ifdefPrinter.startIf(tok, isParentActive(),
                                         state);
@@ -2658,6 +2696,59 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                     throw new InternalException("Bad token, type: " + tok.getType() + ", token: " + tok + ", source: " + tok.getSourceName());
                     // break;
             }
+        }
+    }
+
+    private void printNestedIfDef(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
+        if  (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False())){
+            nestedIfDefWriter.println(featureExpr1 + " => " + featureExpr2);
+        }
+    }
+
+
+    private String getBaseName(String fileName) {
+
+        if (fileName.endsWith(".c"))
+            return fileName.substring(0, fileName.indexOf(".c"));
+        else if (fileName.endsWith(".h"))
+            return fileName.substring(0, fileName.indexOf(".h"));
+        else if (fileName.endsWith(".S"))
+            return fileName.substring(0, fileName.indexOf(".S"));
+        else
+            return fileName;
+    }
+
+    private FeatureExpr getFilePc() {
+
+        FeatureExpr pcCondition = FeatureExprFactory.True();
+        try {
+
+            if (getSource() != null) {
+                String pcName = getBaseName(getSource().getName()) + ".pc";
+
+                File file = new File(pcName);
+                if (file.exists()) {
+                    BufferedReader br = new BufferedReader(new FileReader(pcName));
+
+                    String line;
+
+                    while ((line = br.readLine()) != null) {
+                        pcCondition = new FeatureExprParser(FeatureExprFactory.dflt()).parse(line);
+                    }
+
+                    br.close();
+                }
+
+
+            }
+
+
+
+            return pcCondition;
+
+        } catch (IOException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            return pcCondition;
         }
     }
 
@@ -2791,4 +2882,54 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
             return tok.getText();
         }
     }
+
+
+    /**
+     * for compatibility with the VALexer interface
+     *
+     * @param folder
+     */
+    @Override
+    public void addSystemIncludePath(String folder) {
+        getSystemIncludePath().add(folder);
+    }
+
+    /**
+     * for compatibility with the VALexer interface
+     *
+     * @param folder
+     */
+    @Override
+    public void addQuoteIncludePath(String folder) {
+        getQuoteIncludePath().add(folder);
+    }
+
+
+    /**
+     * * for compatibility with the VALexer interface
+     *
+     * @param source
+     */
+    @Override
+    public void addInput(LexerInput source) throws IOException {
+        //ugly but will do for now
+        if (source instanceof FileSource)
+            addInput(new FileLexerSource(((FileSource) source).file));
+        else if (source instanceof StreamSource)
+            addInput(new FileLexerSource(((StreamSource) source).inputStream, ((StreamSource) source).filename));
+        else if (source instanceof TextSource)
+            addInput(new StringLexerSource(((TextSource) source).code, true));
+        else
+            throw new RuntimeException("unexpected input");
+    }
+
+    @Override
+    public void printSourceStack(PrintStream stream) {
+        Source s = getSource();
+        while (s != null) {
+            stream.println(" -> " + s);
+            s = s.getParent();
+        }
+    }
+
 }
