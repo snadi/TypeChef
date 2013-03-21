@@ -8,4 +8,4 @@ addCompilerPlugin("org.scala-tools.sxr" % "sxr_2.9.0" % "0.2.7")
 
 resolvers += Resolver.url("sbt-plugin-releases", new URL("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases/"))(Resolver.ivyStylePatterns)
 
-publishTo := Some(Resolver.file("file",  new File(Path.userHome+"/.ivy2/repository")))
+addSbtPlugin("com.typesafe.sbt" % "sbt-pgp" % "0.8")
