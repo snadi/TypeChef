@@ -91,7 +91,9 @@ class SATFeatureModel(val variables: Map[String, Int], val clauses: IVec[IVecInt
 
     writeToFile(fileName, res)
   }
-    def writeToDimacsFile(file : File) {
+
+  def writeToDimacsFile(file : File) {
+    println("writing to dimacs")
         var fw : FileWriter = null
         try {
             fw = new FileWriter(file);

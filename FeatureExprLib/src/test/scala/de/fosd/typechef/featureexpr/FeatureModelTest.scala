@@ -2,6 +2,8 @@ package de.fosd.typechef.featureexpr
 
 import junit.framework.TestCase
 import org.junit.{Assert, Test}
+import sat.SATFeatureModel
+import java.io.File
 
 
 /**
