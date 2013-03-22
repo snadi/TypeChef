@@ -150,13 +150,15 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     PreprocessorListener listener;
     PrintWriter errorDirWriter;
     PrintWriter nestedIfDefWriter;
+    FeatureExpr filepc;
 
     private List<MacroConstraint> macroConstraints = new ArrayList<MacroConstraint>();
 
-    public Preprocessor(MacroFilter macroFilter, FeatureModel fm, PrintWriter errorDirWriter, PrintWriter nestedIfDefWriter) {
+    public Preprocessor(MacroFilter macroFilter, FeatureModel fm, PrintWriter errorDirWriter, PrintWriter nestedIfDefWriter, FeatureExpr filePc) {
         this(macroFilter, fm);
         this.errorDirWriter = errorDirWriter;
         this.nestedIfDefWriter = nestedIfDefWriter;
+        this.filepc = filePc;
     }
 
     public Preprocessor(MacroFilter macroFilter, FeatureModel fm) {
@@ -1776,7 +1778,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     // error(pptok, buf.toString());
     // else
     // warning(pptok, buf.toString());
-    // } /* For #error and #warning. */
+    // } /* For #error and #warnreturn ing. */
     //
     private Token parseErrorToken(Token pptok, boolean is_error)
             throws IOException, LexerException {
@@ -1797,10 +1799,10 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
             }
             tok = retrieveTokenFromSource();
         }
-        if (is_error)
+        /*if (is_error)
             error(pptok, buf.toString());
         else
-            warning(pptok, buf.toString());
+            warning(pptok, buf.toString());         */
 
         return new SimpleToken(P_LINE, pptok.getLine(), pptok.getColumn(), buf
                 .toString(), null);
@@ -2361,8 +2363,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                 tok = retrieveTokenFromSource();
             }
 
-            FeatureExpr filepc = getFilePc();
-
             LEX:
             switch (tok.getType()) {
                 case EOF:
@@ -2532,7 +2532,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                         case PP_ERROR:
                             //write out the condition under which the #error occurred
                             if (errorDirWriter != null) {
-                                errorDirWriter.println(filepc.implies(state.getFullPresenceCondition().not()));
+                                printErrorConstraint(filepc, state.getFullPresenceCondition().not());
                             }
                             if (!isActive())
                                 return source_skipline(false);
@@ -2705,6 +2705,12 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         }
     }
 
+    private void printErrorConstraint(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
+        if  (!featureExpr1.implies(featureExpr2).equivalentTo(FeatureExprFactory.True())){
+            errorDirWriter.println(featureExpr1 + " => " + featureExpr2);
+        }
+    }
+
 
     private String getBaseName(String fileName) {
 
@@ -2727,6 +2733,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                 String pcName = getBaseName(getSource().getName()) + ".pc";
 
                 File file = new File(pcName);
+                System.out.println("file name: "+ pcName);
                 if (file.exists()) {
                     BufferedReader br = new BufferedReader(new FileReader(pcName));
 

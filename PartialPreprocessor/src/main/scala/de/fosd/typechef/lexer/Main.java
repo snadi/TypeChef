@@ -25,6 +25,7 @@ package de.fosd.typechef.lexer;
 
 import de.fosd.typechef.LexerToken;
 import de.fosd.typechef.VALexer;
+import de.fosd.typechef.featureexpr.FeatureExpr;
 import de.fosd.typechef.featureexpr.FeatureModel;
 import de.fosd.typechef.lexer.macrotable.MacroContext;
 import de.fosd.typechef.lexer.options.ILexerOptions;
@@ -51,16 +52,16 @@ public class Main {
         options.setFeatureModel(featureModel);
         options.setPrintToStdOutput(printToStdOutput);
         options.parseOptions(args);
-        return run(options, returnTokenList);
+        return run(options, returnTokenList, null);
     }
 
-    public List<LexerToken> run(final ILexerOptions options, boolean returnTokenList) throws Exception {
+    public List<LexerToken> run(final ILexerOptions options, boolean returnTokenList, final FeatureExpr filePc) throws Exception {
         return run(new VALexer.LexerFactory() {
             @Override
             public VALexer create(FeatureModel featureModel, PrintWriter errorWriter, PrintWriter nestedIfDefWriter) {
                 if (options.useXtcLexer())
-                    return new XtcPreprocessor(options.getMacroFilter(), featureModel);
-                return new Preprocessor(options.getMacroFilter(), featureModel, errorWriter, nestedIfDefWriter);
+                    return new XtcPreprocessor(options.getMacroFilter(), featureModel, errorWriter, nestedIfDefWriter);
+                return new Preprocessor(options.getMacroFilter(), featureModel, errorWriter, nestedIfDefWriter, filePc);
             }
         }, options, returnTokenList);
     }
@@ -172,6 +173,9 @@ public class Main {
             if (output != null && !options.isLexPrintToStdout())
                 output.close();
         }
+
+        errorDirWriter.close();
+        nestedIfDefWriter.close();
         return resultTokenList;
     }
 
