@@ -60,7 +60,7 @@ public class Main {
             @Override
             public VALexer create(FeatureModel featureModel, PrintWriter errorWriter, PrintWriter nestedIfDefWriter) {
                 if (options.useXtcLexer())
-                    return new XtcPreprocessor(options.getMacroFilter(), featureModel, errorWriter, nestedIfDefWriter);
+                    return new XtcPreprocessor(options.getMacroFilter(), featureModel);
                 return new Preprocessor(options.getMacroFilter(), featureModel, errorWriter, nestedIfDefWriter, filePc);
             }
         }, options, returnTokenList);
