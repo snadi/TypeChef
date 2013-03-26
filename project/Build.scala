@@ -10,7 +10,7 @@ object BuildSettings {
     import Dependencies._
 
     val buildOrganization = "de.fosd.typechef"
-    val buildVersion = "0.3.5"
+    val buildVersion = "0.35-SNAPSHOT"
     val buildScalaVersion = "2.10.1"
 
     val testEnvironment = Seq(junit, junitInterface, scalatest, scalacheck)
@@ -33,7 +33,7 @@ object BuildSettings {
         parallelExecution := false, //run into memory problems on hudson otherwise
 
         homepage := Some(url("https://github.com/ckaestne/TypeChef")),
-        licenses := Seq("GNU General Public License v3.0" -> url("http://www.gnu.org/licenses/gpl.txt"))        
+        licenses := Seq("GNU General Public License v3.0" -> url("http://www.gnu.org/licenses/gpl.txt"))
     )
 }
 
@@ -153,7 +153,7 @@ object TypeChef extends Build {
     lazy val cparser = Project(
         "CParser",
         file("CParser"),
-        settings = buildSettings ++ 
+        settings = buildSettings ++
           Seq(parallelExecution in Test := false,
             libraryDependencies <+= scalaVersion(kiamaDependency(_,true)))
     ) dependsOn(featureexpr, jcpp, parserexp, conditionallib)
