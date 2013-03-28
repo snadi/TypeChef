@@ -10,7 +10,7 @@ object BuildSettings {
     import Dependencies._
 
     val buildOrganization = "de.fosd.typechef"
-    val buildVersion = "0.35-SNAPSHOT"
+    val buildVersion = "0.3.3"
     val buildScalaVersion = "2.10.1"
 
     val testEnvironment = Seq(junit, junitInterface, scalatest, scalacheck)
@@ -33,7 +33,37 @@ object BuildSettings {
         parallelExecution := false, //run into memory problems on hudson otherwise
 
         homepage := Some(url("https://github.com/ckaestne/TypeChef")),
-        licenses := Seq("GNU General Public License v3.0" -> url("http://www.gnu.org/licenses/gpl.txt"))
+        licenses := Seq("GNU General Public License v3.0" -> url("http://www.gnu.org/licenses/gpl.txt")),
+
+        //maven
+        publishTo <<= version {
+            (v: String) =>
+                val nexus = "https://oss.sonatype.org/"
+                if (v.trim.endsWith("SNAPSHOT"))
+                    Some("snapshots" at nexus + "content/repositories/snapshots")
+                else
+                    Some("releases" at nexus + "service/local/staging/deploy/maven2")
+        },
+        publishMavenStyle := true,
+        publishArtifact in Test := false,
+        pomIncludeRepository := { _ => false },
+        pomExtra :=
+            <parent>
+                <groupId>org.sonatype.oss</groupId>
+                <artifactId>oss-parent</artifactId>
+                <version>7</version>
+            </parent> ++
+                <scm>
+                    <connection>scm:git:git@github.com:ckaestne/TypeChef.git</connection>
+                    <url>git@github.com:ckaestne/TypeChef.git</url>
+                </scm> ++
+                <developers>
+                    <developer>
+                        <id>ckaestne</id> <name>Christian Kaestner</name> <url>http://www.cs.cmu.edu/~ckaestne/</url>
+                    </developer>
+                </developers>,
+
+        credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
     )
 }
 
@@ -153,7 +183,7 @@ object TypeChef extends Build {
     lazy val cparser = Project(
         "CParser",
         file("CParser"),
-        settings = buildSettings ++
+        settings = buildSettings ++ 
           Seq(parallelExecution in Test := false,
             libraryDependencies <+= scalaVersion(kiamaDependency(_,true)))
     ) dependsOn(featureexpr, jcpp, parserexp, conditionallib)
