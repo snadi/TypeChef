@@ -87,7 +87,7 @@ Installation and Usage
 For simple experimentation, try our [online version](http://www.mathematik.uni-marburg.de/~kaestner/TypeChef/online/).
 
 Alternatively, you can download a .jar file including
-all necessary libraries [TypeChef.jar](http://ckaestne.github.com/TypeChef/deploy/TypeChef-0.3.4.jar). Run as usual
+all necessary libraries [TypeChef.jar](http://ckaestne.github.com/TypeChef/deploy/TypeChef-0.3.3.jar). Run as usual
 
     java -jar TypeChef.jar ...
 
@@ -95,7 +95,7 @@ TypeChef is also available as a [maven repository](http://search.maven.org/#sear
 With [sbt](http://code.google.com/p/simple-build-tool/) you can include TypeChef with the following line:
 
 ```scala
-libraryDependencies += "de.fosd.typechef" %% "frontend" % "0.3.4"
+libraryDependencies += "de.fosd.typechef" % "frontend_2.9.1" % "0.3.3"
 ```
 
 To build TypeChef from source, we use 
