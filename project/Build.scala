@@ -11,7 +11,7 @@ object BuildSettings {
 
     val buildOrganization = "de.fosd.typechef"
     val buildVersion = "0.3.4"
-    val buildScalaVersion = "2.10.1"
+    val buildScalaVersion = "2.9.1"
 
     val testEnvironment = Seq(junit, junitInterface, scalatest, scalacheck)
 
@@ -153,7 +153,7 @@ object TypeChef extends Build {
     lazy val cparser = Project(
         "CParser",
         file("CParser"),
-        settings = buildSettings ++ 
+        settings = buildSettings ++
           Seq(parallelExecution in Test := false,
             libraryDependencies <+= scalaVersion(kiamaDependency(_,true)))
     ) dependsOn(featureexpr, jcpp, parserexp, conditionallib)
