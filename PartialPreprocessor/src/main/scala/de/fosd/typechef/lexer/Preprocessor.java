@@ -2703,7 +2703,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     }
 
     private void printErrorConstraint(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
-        if  (!featureExpr1.implies(featureExpr2).equivalentTo(FeatureExprFactory.True())){
+        if  (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False()) && !featureExpr1.implies(featureExpr2).equivalentTo(FeatureExprFactory.True())){
             errorDirWriter.println(featureExpr1 + " => " + featureExpr2);
         }
     }
@@ -2724,6 +2724,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     private FeatureExpr getFilePc() {
 
         FeatureExpr pcCondition = FeatureExprFactory.True();
+
         try {
 
             if (getSource() != null) {
@@ -2741,8 +2742,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
                     br.close();
                 }
-
-
             }
 
 
