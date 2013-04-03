@@ -150,15 +150,13 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     PreprocessorListener listener;
     PrintWriter errorDirWriter;
     PrintWriter nestedIfDefWriter;
-    FeatureExpr filepc;
 
     private List<MacroConstraint> macroConstraints = new ArrayList<MacroConstraint>();
 
-    public Preprocessor(MacroFilter macroFilter, FeatureModel fm, PrintWriter errorDirWriter, PrintWriter nestedIfDefWriter, FeatureExpr filePc) {
+    public Preprocessor(MacroFilter macroFilter, FeatureModel fm, PrintWriter errorDirWriter, PrintWriter nestedIfDefWriter) {
         this(macroFilter, fm);
         this.errorDirWriter = errorDirWriter;
         this.nestedIfDefWriter = nestedIfDefWriter;
-        this.filepc = filePc;
     }
 
     public Preprocessor(MacroFilter macroFilter, FeatureModel fm) {
@@ -2363,6 +2361,8 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                 tok = retrieveTokenFromSource();
             }
 
+            FeatureExpr filepc = getFilePc();
+
             LEX:
             switch (tok.getType()) {
                 case EOF:
@@ -2549,7 +2549,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
                                 FeatureExpr localFeatureExpr = parse_featureExpr();
                                 state.putLocalFeature(localFeatureExpr, macros);
-
                                 printNestedIfDef(localFeatureExpr, parentExpr.and(filepc));
                                 tok = expr_token(true); /* unget */
                                 if (tok.getType() != NL)
@@ -2616,9 +2615,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                             } else {
                                 FeatureExpr localFeatureExpr2 = parse_ifdefExpr(tok
                                         .getText());
-
                                 FeatureExpr parentExpr = state.getFullPresenceCondition();
-
                                 state.putLocalFeature(
                                         isParentActive() ? localFeatureExpr2
                                                 : FeatureExprLib.False(), macros);
@@ -2733,7 +2730,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                 String pcName = getBaseName(getSource().getName()) + ".pc";
 
                 File file = new File(pcName);
-                System.out.println("file name: "+ pcName);
                 if (file.exists()) {
                     BufferedReader br = new BufferedReader(new FileReader(pcName));
 

@@ -52,16 +52,16 @@ public class Main {
         options.setFeatureModel(featureModel);
         options.setPrintToStdOutput(printToStdOutput);
         options.parseOptions(args);
-        return run(options, returnTokenList, null);
+        return run(options, returnTokenList);
     }
 
-    public List<LexerToken> run(final ILexerOptions options, boolean returnTokenList, final FeatureExpr filePc) throws Exception {
+    public List<LexerToken> run(final ILexerOptions options, boolean returnTokenList) throws Exception {
         return run(new VALexer.LexerFactory() {
             @Override
             public VALexer create(FeatureModel featureModel, PrintWriter errorWriter, PrintWriter nestedIfDefWriter) {
                 if (options.useXtcLexer())
                     return new XtcPreprocessor(options.getMacroFilter(), featureModel);
-                return new Preprocessor(options.getMacroFilter(), featureModel, errorWriter, nestedIfDefWriter, filePc);
+                return new Preprocessor(options.getMacroFilter(), featureModel, errorWriter, nestedIfDefWriter);
             }
         }, options, returnTokenList);
     }
