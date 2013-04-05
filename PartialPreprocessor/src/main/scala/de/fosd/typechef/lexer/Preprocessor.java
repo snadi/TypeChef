@@ -148,15 +148,20 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     private Set<Warning> warnings;
     private VirtualFileSystem filesystem;
     PreprocessorListener listener;
-    PrintWriter errorDirWriter;
-    PrintWriter nestedIfDefWriter;
+    private PrintWriter errorDirWriter;
+    private PrintWriter nestedIfDefWriter;
+    private int tokenCounter;
+    private Stack<Integer> tokenStart;
+    private FeatureExpr filepc;
+
 
     private List<MacroConstraint> macroConstraints = new ArrayList<MacroConstraint>();
 
-    public Preprocessor(MacroFilter macroFilter, FeatureModel fm, PrintWriter errorDirWriter, PrintWriter nestedIfDefWriter) {
+    public Preprocessor(MacroFilter macroFilter, FeatureModel fm, PrintWriter errorDirWriter, PrintWriter nestedIfDefWriter, FeatureExpr filePc) {
         this(macroFilter, fm);
         this.errorDirWriter = errorDirWriter;
         this.nestedIfDefWriter = nestedIfDefWriter;
+        this.filepc = filePc;
     }
 
     public Preprocessor(MacroFilter macroFilter, FeatureModel fm) {
@@ -171,6 +176,8 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         state = new State();
 
         this.counter = 0;
+        this.tokenCounter = 0;
+        this.tokenStart = new Stack<Integer>();
 
         this.quoteincludepath = new ArrayList<String>();
         this.sysincludepath = new ArrayList<String>();
@@ -2361,8 +2368,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                 tok = retrieveTokenFromSource();
             }
 
-            FeatureExpr filepc = getFilePc();
-
             LEX:
             switch (tok.getType()) {
                 case EOF:
@@ -2543,13 +2548,9 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                         case PP_IF:
                             push_state();
                             expr_token = null;
-
                             if (isParentActive()) {
-                                FeatureExpr parentExpr = state.getFullPresenceCondition();
-
                                 FeatureExpr localFeatureExpr = parse_featureExpr();
                                 state.putLocalFeature(localFeatureExpr, macros);
-                                printNestedIfDef(localFeatureExpr, parentExpr.and(filepc));
                                 tok = expr_token(true); /* unget */
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
@@ -2563,7 +2564,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
                         // break;
 
-                        //nested if def here may not be very accurate
                         case PP_ELIF:
                             if (state.sawElse()) {
                                 error(tok, "#elif after #" + "else");
@@ -2576,6 +2576,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                 FeatureExpr localFeaturExpr = parse_featureExpr();
                                 state = oldState;
                                 state.processElIf();
+                                state.setSawElif();
                                 state.putLocalFeature(
                                         isParentActive() ? localFeaturExpr
                                                 : FeatureExprLib.False(), macros);
@@ -2584,7 +2585,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
 
-                                printNestedIfDef(state.getFullPresenceCondition(),filepc);
                                 return ifdefPrinter.startElIf(tok, isParentActive(),
                                         state);
 
@@ -2599,7 +2599,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                 state.setSawElse();
                                 source_skipline(warnings.contains(Warning.ENDIF_LABELS));
 
-                                printNestedIfDef(state.getFullPresenceCondition(),filepc);
                                 return ifdefPrinter.startElIf(tok, isParentActive(),
                                         state);
                             }
@@ -2608,14 +2607,13 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                         case PP_IFDEF:
                             push_state();
                             tok = source_token_nonwhite();
-                            // System.out.println("ifdef " + tok);
+                            tokenStart.push(tokenCounter);
                             if (tok.getType() != IDENTIFIER) {
                                 error(tok, "Expected identifier, not " + tok.getText());
                                 return source_skipline(false);
                             } else {
                                 FeatureExpr localFeatureExpr2 = parse_ifdefExpr(tok
                                         .getText());
-                                FeatureExpr parentExpr = state.getFullPresenceCondition();
                                 state.putLocalFeature(
                                         isParentActive() ? localFeatureExpr2
                                                 : FeatureExprLib.False(), macros);
@@ -2624,10 +2622,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
 
-
-                                //if its a nested ifdef, then inner expression implies outer expression and filepc
-                                //else if this is a first level ifdef then it directly implies the filepc (parentExpr will be True)
-                                printNestedIfDef(localFeatureExpr2, parentExpr.and(filepc));
                                 return ifdefPrinter.startIf(tok, isParentActive(),
                                         state);
                             }
@@ -2642,17 +2636,11 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                             } else {
                                 FeatureExpr localFeatureExpr3 = parse_ifndefExpr(tok
                                         .getText());
-                                FeatureExpr parentExpr = state.getFullPresenceCondition();
-
                                 state.putLocalFeature(
                                         isParentActive() ? localFeatureExpr3
                                                 : FeatureExprLib.False(), macros);
                                 if (tok.getType() != NL)
                                     source_skipline(isParentActive());
-
-                                //only print if state is not false (i.e., this cannot happen
-                                if(!state.getFullPresenceCondition().equivalentTo(FeatureExprFactory.False()))
-                                    printNestedIfDef(localFeatureExpr3, parentExpr.and(filepc));
 
                                 return ifdefPrinter.startIf(tok, isParentActive(),
                                         state);
@@ -2661,7 +2649,35 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                             // break;
 
                         case PP_ENDIF:
+
+                            FeatureExpr localExpr = state.getLocalFeatureExpr();
+
+                            int start = tokenStart.pop();
+
+
+                            if (tokenCounter > start && state.sawElif()) {
+                                int counter = 0;
+                                for (FeatureExpr prevLocalExpr : state.localFeatures) {
+                                    if(counter != state.localFeatures.size()){
+                                        FeatureExpr parentExpr = FeatureExprFactory.True();
+                                        for(FeatureExpr prevFeature : state.localFeatures.subList(0, counter)){
+                                            parentExpr = parentExpr.and(prevFeature)   ;
+                                        }
+                                        printNestedIfDef(prevLocalExpr.not(), parentExpr.and(filepc));
+                                    }
+
+                                    counter++;
+                                }
+                            }
+
                             pop_state();
+
+
+                            FeatureExpr parentExpr = state.getFullPresenceCondition();
+
+                            if (tokenCounter > start) {
+                                printNestedIfDef(localExpr, parentExpr.and(filepc));
+                            }
 
                             Token l = source_skipline(warnings
                                     .contains(Warning.ENDIF_LABELS));
@@ -2697,13 +2713,13 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     }
 
     private void printNestedIfDef(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
-        if  (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False())){
+        if (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False())) {
             nestedIfDefWriter.println(featureExpr1 + " => " + featureExpr2);
         }
     }
 
     private void printErrorConstraint(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
-        if  (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False()) && !featureExpr1.implies(featureExpr2).equivalentTo(FeatureExprFactory.True())){
+        if (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False()) && !featureExpr1.implies(featureExpr2).equivalentTo(FeatureExprFactory.True())) {
             errorDirWriter.println(featureExpr1 + " => " + featureExpr2);
         }
     }
@@ -2719,39 +2735,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
             return fileName.substring(0, fileName.indexOf(".S"));
         else
             return fileName;
-    }
-
-    private FeatureExpr getFilePc() {
-
-        FeatureExpr pcCondition = FeatureExprFactory.True();
-
-        try {
-
-            if (getSource() != null) {
-                String pcName = getBaseName(getSource().getName()) + ".pc";
-
-                File file = new File(pcName);
-                if (file.exists()) {
-                    BufferedReader br = new BufferedReader(new FileReader(pcName));
-
-                    String line;
-
-                    while ((line = br.readLine()) != null) {
-                        pcCondition = new FeatureExprParser(FeatureExprFactory.dflt()).parse(line);
-                    }
-
-                    br.close();
-                }
-            }
-
-
-
-            return pcCondition;
-
-        } catch (IOException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            return pcCondition;
-        }
     }
 
     private FeatureExpr parse_ifndefExpr(String feature) {
@@ -2784,6 +2767,12 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
             tok.setFeature(state.getFullPresenceCondition());
             if (getFeature(Feature.DEBUG_VERBOSE))
                 System.err.println("pp: Returning " + tok);
+
+            //keep track of tokens to handle nested #ifdef conditions and avoid
+            //getting conditions from empty #ifdef blocks
+            if (tok.isLanguageToken()) {
+                tokenCounter++;
+            }
             return tok;
         } catch (de.fosd.typechef.featureexpr.FeatureException e) {
             throw new LexerException(e.getMessage());

@@ -12,6 +12,7 @@ class State {
     final State parent;
 
     boolean sawElse;
+    boolean sawElif;
 
     /* pp */State() {
         this(null);
@@ -29,13 +30,21 @@ class State {
         processElIf();
     }
 
+    /* pp */void setSawElif() {
+        sawElif= true;
+    }
+
     /* pp */boolean sawElse() {
+        return sawElse;
+    }
+
+    /* pp */boolean sawElif() {
         return sawElse;
     }
 
     public String toString() {
         return "State(localFeatureExpr = " + getLocalFeatureExpr() + ", currentpc=" + getFullPresenceCondition() + ", parent=" + parent
-                + ", active=" + localFeatures + ", sawelse=" + sawElse + ")";
+                + ", active=" + localFeatures + ", sawelse=" + sawElse + ", saw elif=" + sawElif +")";
     }
 
     /**

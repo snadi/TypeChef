@@ -100,6 +100,8 @@ public abstract class Token implements LexerToken {
      */
     @Override
     public boolean isLanguageToken() {
+        //put this check to avoid a strange null pointer exception which i still dont understand
+        if(getType() != Token.EOF)
         return getType() != Token.P_LINE
                 && getType() != Token.WHITESPACE
                 && !(getType() != Token.P_FEATUREEXPR
@@ -110,6 +112,8 @@ public abstract class Token implements LexerToken {
                 && getType() != Token.CPPCOMMENT
                 && getType() != Token.P_ENDIF
                 && getType() != Token.P_ELIF;
+        else
+            return false;
     }
 
 
