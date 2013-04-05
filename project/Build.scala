@@ -23,10 +23,8 @@ object BuildSettings {
 
         testListeners <<= target.map(t => Seq(new eu.henkelmann.sbt.JUnitXmlTestsListener(t.getAbsolutePath))),
 
-        javacOptions ++= Seq("-Xlint:unchecked"),
+        javacOptions ++= Seq("-source", "1.5", "-Xlint:unchecked"),
         scalacOptions ++= Seq("-deprecation", "-unchecked", "-optimise", "-explaintypes"),
-
-        crossScalaVersions := Seq("2.9.1", "2.9.2", "2.10.1"),
 
         libraryDependencies ++= testEnvironment,
 
@@ -65,12 +63,8 @@ object ShellPrompt {
 object Dependencies {
     val junit = "junit" % "junit" % "4.8.2" % "test"
     val junitInterface = "com.novocode" % "junit-interface" % "0.6" % "test"
-    val scalacheck = "org.scalacheck" %% "scalacheck" % "1.10.0" % "test"
-    val scalatest = "org.scalatest" %% "scalatest" % "1.8" % "test" cross CrossVersion.binaryMapped {
-        case "2.10" => "2.10.0" // useful if a%b was released with the old style
-        case "2.10.1" => "2.10.0" // useful if a%b was released with the old style
-        case x => x
-    }
+    val scalacheck = "org.scala-tools.testing" %% "scalacheck" % "1.9" % "test"
+    val scalatest = "org.scalatest" %% "scalatest" % "1.6.1" % "test"
 }
 
 object VersionGen {
