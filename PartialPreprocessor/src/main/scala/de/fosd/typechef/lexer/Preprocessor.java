@@ -2549,6 +2549,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                             push_state();
                             expr_token = null;
                             if (isParentActive()) {
+                                tokenStart.push(tokenCounter);
                                 FeatureExpr localFeatureExpr = parse_featureExpr();
                                 state.putLocalFeature(localFeatureExpr, macros);
                                 tok = expr_token(true); /* unget */
@@ -2570,6 +2571,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                 return source_skipline(false);
                             } else {
                                 expr_token = null;
+                                tokenStart.push(tokenCounter);
                                 // parse with parents state to allow macro expansion
                                 State oldState = state;
                                 state = state.parent;
@@ -2597,6 +2599,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                 return source_skipline(false);
                             } else {
                                 state.setSawElse();
+                                tokenStart.push(tokenCounter);
                                 source_skipline(warnings.contains(Warning.ENDIF_LABELS));
 
                                 return ifdefPrinter.startElIf(tok, isParentActive(),
@@ -2634,6 +2637,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                 error(tok, "Expected identifier, not " + tok.getText());
                                 return source_skipline(false);
                             } else {
+                                tokenStart.push(tokenCounter);
                                 FeatureExpr localFeatureExpr3 = parse_ifndefExpr(tok
                                         .getText());
                                 state.putLocalFeature(
@@ -2667,6 +2671,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                     }
 
                                     counter++;
+
                                 }
                             }
 
@@ -2722,19 +2727,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         if (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False()) && !featureExpr1.implies(featureExpr2).equivalentTo(FeatureExprFactory.True())) {
             errorDirWriter.println(featureExpr1 + " => " + featureExpr2);
         }
-    }
-
-
-    private String getBaseName(String fileName) {
-
-        if (fileName.endsWith(".c"))
-            return fileName.substring(0, fileName.indexOf(".c"));
-        else if (fileName.endsWith(".h"))
-            return fileName.substring(0, fileName.indexOf(".h"));
-        else if (fileName.endsWith(".S"))
-            return fileName.substring(0, fileName.indexOf(".S"));
-        else
-            return fileName;
     }
 
     private FeatureExpr parse_ifndefExpr(String feature) {
