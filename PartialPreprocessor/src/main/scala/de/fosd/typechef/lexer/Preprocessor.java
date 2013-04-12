@@ -2656,7 +2656,10 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
                             FeatureExpr localExpr = state.getLocalFeatureExpr();
 
-                            int start = tokenStart.pop();
+                            int start = Integer.MAX_VALUE;
+
+                            if(!tokenStart.isEmpty())
+                                start = tokenStart.pop();
 
 
                             if (tokenCounter > start && state.sawElif()) {
