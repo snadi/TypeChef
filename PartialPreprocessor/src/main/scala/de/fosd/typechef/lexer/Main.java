@@ -52,10 +52,10 @@ public class Main {
         options.setFeatureModel(featureModel);
         options.setPrintToStdOutput(printToStdOutput);
         options.parseOptions(args);
-        return run(options, returnTokenList, null);
+        return run(options, returnTokenList, null,null);
     }
 
-    public List<LexerToken> run(final ILexerOptions options, boolean returnTokenList, final FeatureExpr filePc) throws Exception {
+    public List<LexerToken> run(final ILexerOptions options, boolean returnTokenList, final FeatureExpr filePc, final String fileName) throws Exception {
         return run(new VALexer.LexerFactory() {
             @Override
             public VALexer create(FeatureModel featureModel, PrintWriter errorWriter, PrintWriter nestedIfDefWriter) {
@@ -63,20 +63,20 @@ public class Main {
                     return new XtcPreprocessor(options.getMacroFilter(), featureModel);
                 return new Preprocessor(options.getMacroFilter(), featureModel, errorWriter, nestedIfDefWriter, filePc);
             }
-        }, options, returnTokenList);
+        }, options, returnTokenList, fileName);
     }
 
-    public List<LexerToken> run(VALexer.LexerFactory lexerFactory, ILexerOptions options, boolean returnTokenList) throws Exception {
+    public List<LexerToken> run(VALexer.LexerFactory lexerFactory, ILexerOptions options, boolean returnTokenList, String fileName) throws Exception {
         if (options.isPrintVersion()) {
             version(System.out);
             return new ArrayList<LexerToken>();
         }
 
-        //create file to dump conditions from #error directives in it
-        PrintWriter   errorDirWriter = new PrintWriter( new FileWriter("output/Errors/errorDirectives.txt",true));
 
+        //create file to dump conditions from #error directives in it
+        PrintWriter   errorDirWriter = new PrintWriter( new FileWriter( fileName.replace(".c","") + ".hasherr"));
         //create file to dump implications from nested ifdefs in
-        PrintWriter   nestedIfDefWriter = new PrintWriter( new FileWriter("output/NestedIfdefs/nestedIfDefImpls.txt",true));
+        PrintWriter   nestedIfDefWriter = new PrintWriter( new FileWriter(fileName.replace(".c","") + ".nested"));
 
 
 

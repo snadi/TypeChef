@@ -149,7 +149,7 @@ object Frontend {
 
 
     def lex(opt: FrontendOptions): TokenReader[CToken, CTypeContext] = {
-        val tokens = new lexer.Main().run(opt, opt.parse, opt.getFilePresenceCondition)
+        val tokens = new lexer.Main().run(opt, opt.parse, opt.getFilePresenceCondition, opt.getFile)
         val in = CLexer.prepareTokens(tokens)
         in
     }

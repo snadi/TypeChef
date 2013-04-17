@@ -153,6 +153,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     private int tokenCounter;
     private Stack<Integer> tokenStart;
     private FeatureExpr filepc;
+    private HashSet<String> seenNestings;
 
 
     private List<MacroConstraint> macroConstraints = new ArrayList<MacroConstraint>();
@@ -162,6 +163,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         this.errorDirWriter = errorDirWriter;
         this.nestedIfDefWriter = nestedIfDefWriter;
         this.filepc = filePc;
+        this.seenNestings = new HashSet<String>();
     }
 
     public Preprocessor(MacroFilter macroFilter, FeatureModel fm) {
@@ -2658,17 +2660,17 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
                             int start = Integer.MAX_VALUE;
 
-                            if(!tokenStart.isEmpty())
+                            if (!tokenStart.isEmpty())
                                 start = tokenStart.pop();
 
 
                             if (tokenCounter > start && state.sawElif()) {
                                 int counter = 0;
                                 for (FeatureExpr prevLocalExpr : state.localFeatures) {
-                                    if(counter != state.localFeatures.size()){
+                                    if (counter != state.localFeatures.size()) {
                                         FeatureExpr parentExpr = FeatureExprFactory.True();
-                                        for(FeatureExpr prevFeature : state.localFeatures.subList(0, counter)){
-                                            parentExpr = parentExpr.and(prevFeature)   ;
+                                        for (FeatureExpr prevFeature : state.localFeatures.subList(0, counter)) {
+                                            parentExpr = parentExpr.and(prevFeature);
                                         }
                                         printNestedIfDef(prevLocalExpr.not(), parentExpr.and(filepc));
                                     }
@@ -2721,8 +2723,12 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     }
 
     private void printNestedIfDef(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
-        if (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False())) {
-            nestedIfDefWriter.println(featureExpr1 + " => " + featureExpr2);
+        String toPrint = featureExpr1 + " => " + featureExpr2;
+        if (!seenNestings.contains(toPrint)) {
+            seenNestings.add(toPrint);
+            if (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False())) {
+                nestedIfDefWriter.println(toPrint);
+            }
         }
     }
 
