@@ -31,9 +31,11 @@ import de.fosd.typechef.lexer.macrotable.MacroContext;
 import de.fosd.typechef.lexer.options.ILexerOptions;
 import de.fosd.typechef.lexer.options.LexerOptions;
 import de.fosd.typechef.xtclexer.XtcPreprocessor;
+import scala.collection.mutable.Set;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -58,10 +60,10 @@ public class Main {
     public List<LexerToken> run(final ILexerOptions options, boolean returnTokenList, final FeatureExpr filePc, final String fileName) throws Exception {
         return run(new VALexer.LexerFactory() {
             @Override
-            public VALexer create(FeatureModel featureModel, PrintWriter errorWriter, PrintWriter nestedIfDefWriter) {
+            public VALexer create(FeatureModel featureModel) {
                 if (options.useXtcLexer())
                     return new XtcPreprocessor(options.getMacroFilter(), featureModel);
-                return new Preprocessor(options.getMacroFilter(), featureModel, errorWriter, nestedIfDefWriter, filePc);
+                return new Preprocessor(options.getMacroFilter(), featureModel, filePc);
             }
         }, options, returnTokenList, fileName);
     }
@@ -72,15 +74,7 @@ public class Main {
             return new ArrayList<LexerToken>();
         }
 
-
-        //create file to dump conditions from #error directives in it
-        PrintWriter   errorDirWriter = new PrintWriter( new FileWriter( fileName.replace(".c","") + ".hasherr"));
-        //create file to dump implications from nested ifdefs in
-        PrintWriter   nestedIfDefWriter = new PrintWriter( new FileWriter(fileName.replace(".c","") + ".nested"));
-
-
-
-        VALexer pp = lexerFactory.create(options.getFeatureModel(), errorDirWriter, nestedIfDefWriter);
+        VALexer pp = lexerFactory.create(options.getFeatureModel());
 
         for (Warning w : options.getWarnings())
             pp.addWarning(w);
@@ -174,8 +168,30 @@ public class Main {
                 output.close();
         }
 
-        errorDirWriter.close();
-        nestedIfDefWriter.close();
+
+        //check for nested and hasherror constraints
+        HashSet<String> nestedConstraints = pp.getNestedConstraints();
+        HashSet<String> hashErrorConstraints = pp.getHashErrorConstraints();
+
+        if(nestedConstraints != null && !nestedConstraints.isEmpty()){
+            //create file to dump implications from nested ifdefs in
+            PrintWriter   nestedIfDefWriter = new PrintWriter( new FileWriter(fileName.replace(".c","") + ".nested"));
+            for( String constraint: nestedConstraints)
+                nestedIfDefWriter.println(constraint);
+
+            nestedIfDefWriter.close();
+        }
+
+        if(hashErrorConstraints != null && !hashErrorConstraints.isEmpty()){
+            //create file to dump conditions from #error directives in it
+            PrintWriter   errorDirWriter = new PrintWriter( new FileWriter( fileName.replace(".c","") + ".hasherr"));
+            for( String constraint: hashErrorConstraints)
+                errorDirWriter.println(constraint);
+
+            errorDirWriter.close();
+        }
+
+
         return resultTokenList;
     }
 

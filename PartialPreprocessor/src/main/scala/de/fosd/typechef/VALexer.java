@@ -8,7 +8,9 @@ import de.fosd.typechef.lexer.PreprocessorListener;
 import de.fosd.typechef.lexer.Warning;
 
 import java.io.*;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * interface to the variability-aware lexer (or partial preprocessor)
@@ -21,7 +23,7 @@ public interface VALexer {
 
 
     public static interface LexerFactory {
-        public VALexer create(FeatureModel featureModel, PrintWriter ErrorWriter, PrintWriter nestedIfDefWriter);
+        public VALexer create(FeatureModel featureModel);
     }
 
     public static interface LexerInput {
@@ -81,6 +83,10 @@ public interface VALexer {
     public List<String> getQuoteIncludePath();//readonly
 
     LexerToken getNextToken() throws IOException, LexerException;
+
+    public HashSet<String> getNestedConstraints();
+
+    public HashSet<String> getHashErrorConstraints();
 
     void setListener(PreprocessorListener preprocessorListener);
 

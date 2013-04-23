@@ -191,6 +191,16 @@ public class XtcPreprocessor implements VALexer {
     }
 
     @Override
+    public HashSet<String> getNestedConstraints() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public HashSet<String> getHashErrorConstraints() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
     public void setListener(PreprocessorListener preprocessorListener) {
         listener = preprocessorListener;
     }

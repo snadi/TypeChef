@@ -148,22 +148,20 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     private Set<Warning> warnings;
     private VirtualFileSystem filesystem;
     PreprocessorListener listener;
-    private PrintWriter errorDirWriter;
-    private PrintWriter nestedIfDefWriter;
     private int tokenCounter;
     private Stack<Integer> tokenStart;
     private FeatureExpr filepc;
-    private HashSet<String> seenNestings;
+    private HashSet<String> nestingConstraints;
+    private HashSet<String> hashErrorConstraints;
 
 
     private List<MacroConstraint> macroConstraints = new ArrayList<MacroConstraint>();
 
-    public Preprocessor(MacroFilter macroFilter, FeatureModel fm, PrintWriter errorDirWriter, PrintWriter nestedIfDefWriter, FeatureExpr filePc) {
+    public Preprocessor(MacroFilter macroFilter, FeatureModel fm, FeatureExpr filePc) {
         this(macroFilter, fm);
-        this.errorDirWriter = errorDirWriter;
-        this.nestedIfDefWriter = nestedIfDefWriter;
         this.filepc = filePc;
-        this.seenNestings = new HashSet<String>();
+        this.nestingConstraints = new HashSet<String>();
+        this.hashErrorConstraints = new HashSet<String>();
     }
 
     public Preprocessor(MacroFilter macroFilter, FeatureModel fm) {
@@ -2538,9 +2536,9 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                         case PP_WARNING:
                         case PP_ERROR:
                             //write out the condition under which the #error occurred
-                            if (errorDirWriter != null) {
-                                printErrorConstraint(filepc, state.getFullPresenceCondition().not());
-                            }
+
+                            addHashErrorConstraint(filepc, state.getFullPresenceCondition().not());
+
                             if (!isActive())
                                 return source_skipline(false);
                             else
@@ -2672,7 +2670,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                         for (FeatureExpr prevFeature : state.localFeatures.subList(0, counter)) {
                                             parentExpr = parentExpr.and(prevFeature);
                                         }
-                                        printNestedIfDef(prevLocalExpr.not(), parentExpr.and(filepc));
+                                        addNestedConstraint(prevLocalExpr.not(), parentExpr.and(filepc));
                                     }
 
                                     counter++;
@@ -2686,7 +2684,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                             FeatureExpr parentExpr = state.getFullPresenceCondition();
 
                             if (tokenCounter > start) {
-                                printNestedIfDef(localExpr, parentExpr.and(filepc));
+                                addNestedConstraint(localExpr, parentExpr.and(filepc));
                             }
 
                             Token l = source_skipline(warnings
@@ -2722,19 +2720,22 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         }
     }
 
-    private void printNestedIfDef(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
+    private void addNestedConstraint(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
         String toPrint = featureExpr1 + " => " + featureExpr2;
-        if (!seenNestings.contains(toPrint)) {
-            seenNestings.add(toPrint);
+        if (!nestingConstraints.contains(toPrint)) {
             if (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False())) {
-                nestedIfDefWriter.println(toPrint);
+                nestingConstraints.add(toPrint);
             }
         }
     }
 
-    private void printErrorConstraint(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
-        if (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False()) && !featureExpr1.implies(featureExpr2).equivalentTo(FeatureExprFactory.True())) {
-            errorDirWriter.println(featureExpr1 + " => " + featureExpr2);
+    private void addHashErrorConstraint(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
+        String toPrint = featureExpr1 + " => " + featureExpr2;
+
+        if (!hashErrorConstraints.contains(toPrint)) {
+            if (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False()) && !featureExpr1.implies(featureExpr2).equivalentTo(FeatureExprFactory.True())) {
+                hashErrorConstraints.add(toPrint);
+            }
         }
     }
 
@@ -2753,6 +2754,15 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         } while (tok.isWhite());
         return tok;
     }
+
+    public HashSet<String> getHashErrorConstraints(){
+        return hashErrorConstraints;
+    }
+
+    public HashSet<String> getNestedConstraints(){
+        return nestingConstraints;
+    }
+
 
     /**
      * Returns the next preprocessor token.
