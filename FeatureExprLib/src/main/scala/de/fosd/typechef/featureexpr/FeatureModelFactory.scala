@@ -19,7 +19,8 @@ trait FeatureModelFactory {
     /**
      * load a standard Dimacs file as feature model
      */
-    def createFromDimacsFile(file: String): FeatureModel
+    def createFromDimacsFile(file: String, prefix: String = "CONFIG_", suffix:String =""): FeatureModel
+
 
     /**
      * special reader for the -2var model used by the LinuxAnalysis tools from waterloo

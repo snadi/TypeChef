@@ -168,7 +168,7 @@ object SATFeatureModel extends FeatureModelFactory {
     /**
      * load a standard Dimacs file as feature model
      */
-    def createFromDimacsFile(file: String) = {
+    def createFromDimacsFile(file: String, prefix: String = "CONFIG_", suffix:String ="") = {
         var variables: Map[String, Int] = Map()
         val clauses = new Vec[IVecInt]()
         var maxId = 0
@@ -181,7 +181,7 @@ object SATFeatureModel extends FeatureModelFactory {
                 else
                     entries(0).toInt
                 maxId = scala.math.max(id, maxId)
-                variables = variables.updated("CONFIG_" + entries(1), id)
+                variables = variables.updated(prefix+ entries(1) + suffix, id)
             } else if ((line startsWith "p ") || (line.trim.size == 0)) {
                 //comment, do nothing
             } else {
