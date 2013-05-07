@@ -153,6 +153,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     private FeatureExpr filepc;
     private HashSet<String> nestingConstraints;
     private HashSet<String> hashErrorConstraints;
+    private HashSet<String> warningConstraints;
 
 
     private List<MacroConstraint> macroConstraints = new ArrayList<MacroConstraint>();
@@ -162,6 +163,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         this.filepc = filePc;
         this.nestingConstraints = new HashSet<String>();
         this.hashErrorConstraints = new HashSet<String>();
+        this.warningConstraints= new HashSet<String>() ;
     }
 
     public Preprocessor(MacroFilter macroFilter, FeatureModel fm) {
@@ -2533,10 +2535,19 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                          * error tokens are not processed by the jcpp but left for
                          * the type system
                          */
+                    //separate errors from warnings since warnings are not hard constraints
+                    //and sometimes just mark todos/fixes
                         case PP_WARNING:
+                            addWarningConstraint(filepc, state.getFullPresenceCondition().not());
+
+                            if (!isActive())
+                                return source_skipline(false);
+                            else
+                                // cppError(tok, ppcmd == PP_ERROR);
+                                return parseErrorToken(tok, ppcmd == PP_ERROR);
+
                         case PP_ERROR:
                             //write out the condition under which the #error occurred
-
                             addHashErrorConstraint(filepc, state.getFullPresenceCondition().not());
 
                             if (!isActive())
@@ -2739,6 +2750,16 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         }
     }
 
+    private void addWarningConstraint(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
+        String toPrint = featureExpr1 + " => " + featureExpr2;
+
+        if (!warningConstraints.contains(toPrint)) {
+            if (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False()) && !featureExpr1.implies(featureExpr2).equivalentTo(FeatureExprFactory.True())) {
+                warningConstraints.add(toPrint);
+            }
+        }
+    }
+
     private FeatureExpr parse_ifndefExpr(String feature) {
         return parse_ifdefExpr(feature).not();
     }
@@ -2761,6 +2782,10 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
     public HashSet<String> getNestedConstraints(){
         return nestingConstraints;
+    }
+
+    public HashSet<String> getHashWarningConstraints(){
+        return warningConstraints;
     }
 
 

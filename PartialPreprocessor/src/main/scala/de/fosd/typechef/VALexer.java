@@ -88,6 +88,8 @@ public interface VALexer {
 
     public HashSet<String> getHashErrorConstraints();
 
+    public HashSet<String> getHashWarningConstraints();
+
     void setListener(PreprocessorListener preprocessorListener);
 
 

@@ -169,9 +169,10 @@ public class Main {
         }
 
 
-        //check for nested and hasherror constraints
+        //check for nested and hasherror, and hashWarning constraints
         HashSet<String> nestedConstraints = pp.getNestedConstraints();
         HashSet<String> hashErrorConstraints = pp.getHashErrorConstraints();
+        HashSet<String> warningConstraints = pp.getHashWarningConstraints();
 
         if(nestedConstraints != null && !nestedConstraints.isEmpty()){
             //create file to dump implications from nested ifdefs in
@@ -189,6 +190,15 @@ public class Main {
                 errorDirWriter.println(constraint);
 
             errorDirWriter.close();
+        }
+
+        if(warningConstraints != null && !warningConstraints.isEmpty()){
+            //create file to dump conditions from #error directives in it
+            PrintWriter   warningConsWriter = new PrintWriter( new FileWriter( fileName.replace(".c","") + ".hashwarn"));
+            for( String constraint: warningConstraints)
+                warningConsWriter.println(constraint);
+
+            warningConsWriter.close();
         }
 
 
