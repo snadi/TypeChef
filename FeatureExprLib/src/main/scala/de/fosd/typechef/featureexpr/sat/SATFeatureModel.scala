@@ -29,7 +29,7 @@ class SATFeatureModel(val variables: Map[String, Int], val clauses: IVec[IVecInt
             assert(expr.isInstanceOf[SATFeatureExpr])
             val cnf = expr.asInstanceOf[SATFeatureExpr].toCNF
             try {
-                assert(!expr.isContradiction(null))
+                assert(!expr.isContradiction(null), "Expression is a contradiction")
                 val (newVariables, newLastVarId) = SATFeatureModel.getVariables(cnf, lastVarId, variables)
                 val newClauses = SATFeatureModel.addClauses(cnf, newVariables, clauses)
                 new SATFeatureModel(newVariables, newClauses, newLastVarId)
@@ -168,7 +168,7 @@ object SATFeatureModel extends FeatureModelFactory {
     /**
      * load a standard Dimacs file as feature model
      */
-    def createFromDimacsFile(file: String, prefix: String = "CONFIG_", suffix:String ="") = {
+    def createFromDimacsFile(file: String, prefix: String = "", suffix:String ="") = {
         var variables: Map[String, Int] = Map()
         val clauses = new Vec[IVecInt]()
         var maxId = 0
@@ -187,7 +187,7 @@ object SATFeatureModel extends FeatureModelFactory {
             } else {
                 val vec = new VecInt()
                 for (literal <- line.split(" "))
-                    if (literal != "0")
+                    if (literal != "1")
                         vec.push(literal.toInt)
                 clauses.push(vec)
             }
