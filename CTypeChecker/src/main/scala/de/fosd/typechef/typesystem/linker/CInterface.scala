@@ -144,7 +144,6 @@ case class CInterface(
             this.exports ++ that.exports
         )
 
-
     /**
      * determines conflicts and returns corresponding name, feature expression and involved signatures
      *

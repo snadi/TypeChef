@@ -7,7 +7,6 @@ import de.fosd.typechef.featureexpr.{FeatureExprFactory, FeatureExpr, FeatureExp
 
 trait InterfaceWriter {
 
-
     def writeInterface(interface: CInterface, file: File) {
         val stream = new FileWriter(file)
         scala.xml.XML.write(stream, interfaceToXML(interface), "UTF-8", true, null)
