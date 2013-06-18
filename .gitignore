@@ -48,3 +48,6 @@ typechef.sh
 TypeChef-*.jar
 casestudies
 pages
+!codeStyleSettings.xml
+.idea
+
