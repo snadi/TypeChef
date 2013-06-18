@@ -3,7 +3,7 @@ package de.fosd.typechef.lexer.macrotable
 import java.io.PrintWriter
 import de.fosd.typechef.featureexpr._
 import sat.LazyLib.Susp
-import sat.{CastHelper, SATFeatureExpr, LazyLib}
+import sat.{CastHelper, LazyLib}
 
 
 /**

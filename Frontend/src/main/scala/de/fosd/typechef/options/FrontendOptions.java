@@ -1,12 +1,9 @@
-package de.fosd.typechef;
+package de.fosd.typechef.options;
 
+import de.fosd.typechef.error.Position;
 import de.fosd.typechef.featureexpr.FeatureExpr;
 import de.fosd.typechef.featureexpr.FeatureExprFactory$;
-import de.fosd.typechef.featureexpr.FeatureExprParser;
-import de.fosd.typechef.lexer.options.LexerOptions;
-import de.fosd.typechef.lexer.options.OptionException;
-import de.fosd.typechef.lexer.options.Options;
-import de.fosd.typechef.parser.Position;
+import de.fosd.typechef.featureexpr.FeatureExprParserJava;
 import de.fosd.typechef.parser.c.ParserOptions;
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
@@ -16,12 +13,13 @@ import java.io.File;
 import java.util.List;
 
 
-public class FrontendOptions extends LexerOptions implements ParserOptions {
-    boolean parse = true,
+public class FrontendOptions extends CAnalysisOptions implements ParserOptions {
+    public boolean parse = true,
             typecheck = false,
             writeInterface = false,
             conditionalControlFlow = false,
             dataFlow = false,
+            reuseAST = false,
             serializeAST = false,
             writeDebugInterface = false,
             recordTiming = false,
@@ -40,6 +38,7 @@ public class FrontendOptions extends LexerOptions implements ParserOptions {
     private final static char F_DEBUGINTERFACE = Options.genOptionId();
     private final static char F_CONDITIONALCONTROLFLOW = Options.genOptionId();
     private final static char F_DATAFLOW = Options.genOptionId();
+    private final static char F_REUSEAST = Options.genOptionId();
     private final static char F_SERIALIZEAST = Options.genOptionId();
     private final static char F_RECORDTIMING = Options.genOptionId();
     private final static char F_FILEPC = Options.genOptionId();
@@ -51,7 +50,7 @@ public class FrontendOptions extends LexerOptions implements ParserOptions {
 
 
     @Override
-    protected List<Options.OptionGroup> getOptionGroups() {
+    public List<Options.OptionGroup> getOptionGroups() {
         List<OptionGroup> r = super.getOptionGroups();
 
         r.add(new OptionGroup("General processing options (lexing, parsing, type checking, interfaces; select only highest)", 10,
@@ -80,6 +79,10 @@ public class FrontendOptions extends LexerOptions implements ParserOptions {
 
                 new Option("serializeAST", LongOpt.NO_ARGUMENT, F_SERIALIZEAST, null,
                         "Write ast to .ast file after parsing."),
+
+                new Option("reuseAST", LongOpt.NO_ARGUMENT, F_REUSEAST, null,
+                        "Reuse serialized .ast instead of parsing, if availabe."),
+
                 new Option("recordTiming", LongOpt.NO_ARGUMENT, F_RECORDTIMING, null,
                         "Report times for all phases."),
 
@@ -104,7 +107,7 @@ public class FrontendOptions extends LexerOptions implements ParserOptions {
     }
 
     @Override
-    protected boolean interpretOption(int c, Getopt g) throws OptionException {
+    public boolean interpretOption(int c, Getopt g) throws OptionException {
         if (c == 'E') {       //--lex
             parse = typecheck = writeInterface = false;
             lexPrintToStdout = true;
@@ -122,6 +125,8 @@ public class FrontendOptions extends LexerOptions implements ParserOptions {
             parse = dataFlow = true;
         } else if (c == F_SERIALIZEAST) {
             serializeAST = true;
+        } else if (c == F_REUSEAST) {
+            reuseAST = true;
         } else if (c == F_RECORDTIMING) {
             recordTiming = true;
         } else if (c == F_DEBUGINTERFACE) {
@@ -166,15 +171,15 @@ public class FrontendOptions extends LexerOptions implements ParserOptions {
             lexOutputFile = outputStem + ".pi";
     }
 
-    String getFile() {
+    public String getFile() {
         return getFiles().iterator().next();
     }
 
-    String getInterfaceFilename() {
+    public String getInterfaceFilename() {
         return outputStem + ".interface";
     }
 
-    String getDebugInterfaceFilename() {
+    public String getDebugInterfaceFilename() {
         return outputStem + ".dbginterface";
     }
 
@@ -187,11 +192,11 @@ public class FrontendOptions extends LexerOptions implements ParserOptions {
 
     private FeatureExpr filePC = null;
 
-    FeatureExpr getFilePresenceCondition() {
+    public FeatureExpr getFilePresenceCondition() {
         if (filePC == null) {
             File pcFile = new File(getFilePresenceConditionFilename());
             if (pcFile.exists())
-                filePC = new FeatureExprParser(FeatureExprFactory$.MODULE$.dflt()).parseFile(pcFile);
+                filePC = new FeatureExprParserJava(FeatureExprFactory$.MODULE$.dflt()).parseFile(pcFile);
             else
                 filePC = FeatureExprFactory$.MODULE$.dflt().True();
         }
@@ -204,17 +209,17 @@ public class FrontendOptions extends LexerOptions implements ParserOptions {
 
     private FeatureExpr localFM = null;
 
-    FeatureExpr getLocalFeatureModel() {
+    public FeatureExpr getLocalFeatureModel() {
         if (localFM == null) {
             File file = new File(getLocalFeatureModelFilename());
             if (file.exists())
-                localFM = new FeatureExprParser(FeatureExprFactory$.MODULE$.dflt()).parseFile(file);
+                localFM = new FeatureExprParserJava(FeatureExprFactory$.MODULE$.dflt()).parseFile(file);
             else localFM = FeatureExprFactory$.MODULE$.dflt().True();
         }
         return localFM;
     }
 
-    String getSerializedASTFilename() {
+    public String getSerializedASTFilename() {
         return outputStem + ".ast";
     }
 

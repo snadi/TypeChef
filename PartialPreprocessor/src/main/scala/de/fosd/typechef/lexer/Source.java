@@ -217,7 +217,7 @@ public abstract class Source implements Iterable<Token>, Closeable {
      * @return the NL token.
      */
     public Token skipline(boolean white) throws IOException, LexerException {
-        for (; ;) {
+        for (; ; ) {
             Token tok = token();
             switch (tok.getType()) {
                 case EOF:

@@ -24,13 +24,19 @@
 package de.fosd.typechef.lexer;
 
 import de.fosd.typechef.VALexer;
-import de.fosd.typechef.featureexpr.*;
+import de.fosd.typechef.featureexpr.FeatureExpr;
+import de.fosd.typechef.featureexpr.FeatureExprFactory;
+import de.fosd.typechef.featureexpr.FeatureExprTree;
+import de.fosd.typechef.featureexpr.FeatureModel;
 import de.fosd.typechef.lexer.MacroConstraint.MacroConstraintKind;
 import de.fosd.typechef.lexer.macrotable.MacroContext;
 import de.fosd.typechef.lexer.macrotable.MacroExpansion;
 import de.fosd.typechef.lexer.macrotable.MacroFilter;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.*;
 
 import static de.fosd.typechef.lexer.Token.*;
@@ -163,7 +169,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         this.filepc = filePc;
         this.nestingConstraints = new HashSet<String>();
         this.hashErrorConstraints = new HashSet<String>();
-        this.warningConstraints= new HashSet<String>() ;
+        this.warningConstraints = new HashSet<String>();
     }
 
     public Preprocessor(MacroFilter macroFilter, FeatureModel fm) {
@@ -1953,7 +1959,12 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
      */
     public FeatureExpr parse_featureExpr() throws IOException,
             LexerException {
-        return parse_featureExprOrValue(0, true).assumeExpression(expr_token);
+        try {
+            return parse_featureExprOrValue(0, true).assumeExpression(expr_token);
+        } catch (ArithmeticException e) {
+            System.err.println("ArithmeticException in " + expr_token.getSourceName() + " line " + expr_token.getLine());
+            throw e;
+        }
     }
 
     private class ExprOrValue {
@@ -2535,8 +2546,8 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                          * error tokens are not processed by the jcpp but left for
                          * the type system
                          */
-                    //separate errors from warnings since warnings are not hard constraints
-                    //and sometimes just mark todos/fixes
+                        //separate errors from warnings since warnings are not hard constraints
+                        //and sometimes just mark todos/fixes
                         case PP_WARNING:
                             addWarningConstraint(filepc, state.getFullPresenceCondition().not());
 
@@ -2776,15 +2787,15 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         return tok;
     }
 
-    public HashSet<String> getHashErrorConstraints(){
+    public HashSet<String> getHashErrorConstraints() {
         return hashErrorConstraints;
     }
 
-    public HashSet<String> getNestedConstraints(){
+    public HashSet<String> getNestedConstraints() {
         return nestingConstraints;
     }
 
-    public HashSet<String> getHashWarningConstraints(){
+    public HashSet<String> getHashWarningConstraints() {
         return warningConstraints;
     }
 

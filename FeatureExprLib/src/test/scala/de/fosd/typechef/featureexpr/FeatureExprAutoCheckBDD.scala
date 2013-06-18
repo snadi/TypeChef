@@ -6,7 +6,6 @@ import Gen._
 import FeatureExprFactory.bdd._
 import Prop.propBoolean
 import java.io._
-import sat.SATFeatureModel
 
 object FeatureExprAutoCheckBDD extends Properties("FeatureExpr") {
     def feature(a: String) = createDefinedExternal(a)

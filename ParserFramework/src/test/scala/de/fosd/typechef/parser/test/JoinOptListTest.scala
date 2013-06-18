@@ -4,7 +4,6 @@ import org.junit._
 import org.junit.Assert._
 import de.fosd.typechef.parser._
 import de.fosd.typechef.featureexpr.FeatureExprFactory._
-import de.fosd.typechef.featureexpr.FeatureExpr
 import de.fosd.typechef.parser.test.parsers._
 import de.fosd.typechef.conditional._
 
@@ -22,7 +21,7 @@ class JoinOptListTest extends MultiFeatureParser {
         val o1 = Opt(fa, "OnlyA") :: o
 
         val j = joinOptLists(o1, o, fx)
-        assertEquals(Opt(fa and fx, "OnlyA")::o, j)
+        assertEquals(Opt(fa and fx, "OnlyA") :: o, j)
     }
     @Test def testJoinOptList2 {
         val o = Opt(fa, "CommonA") :: Opt(fb, "CommonB") :: Nil
@@ -39,16 +38,16 @@ class JoinOptListTest extends MultiFeatureParser {
         val o2 = Opt(fb, "Only") :: o
 
         val j = joinOptLists(o1, o2, fx)
-        assertEquals(Opt((fa and  fx) or  ( fb andNot fx), "Only") :: o, j)
+        assertEquals(Opt((fa and fx) or (fb andNot fx), "Only") :: o, j)
     }
 
-//    @Test def testJoinOptList3 {
-//        val o = Opt(fa, "CommonA") :: Opt(fb, "CommonB") :: Nil
-//        val o1 = Opt(fa, "OnlyA") :: o
-//        val o2 = Opt(fb, "OnlyB") :: o
-//
-//        assertEquals(o1 , joinOptLists(o1, o2, True))
-//        assertEquals(o2 , joinOptLists(o1, o2, False))
-//    }
+    //    @Test def testJoinOptList3 {
+    //        val o = Opt(fa, "CommonA") :: Opt(fb, "CommonB") :: Nil
+    //        val o1 = Opt(fa, "OnlyA") :: o
+    //        val o2 = Opt(fb, "OnlyB") :: o
+    //
+    //        assertEquals(o1 , joinOptLists(o1, o2, True))
+    //        assertEquals(o2 , joinOptLists(o1, o2, False))
+    //    }
 
 }

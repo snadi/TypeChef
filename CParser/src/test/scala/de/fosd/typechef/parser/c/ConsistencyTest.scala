@@ -2,12 +2,9 @@ package de.fosd.typechef.parser.c
 
 import junit.framework.Assert._
 import de.fosd.typechef.featureexpr._
-import org.kiama.rewriting.Rewriter._
-import org.junit.{Assert, Ignore, Test}
+import org.junit.{Assert, Test}
 import de.fosd.typechef.conditional.Opt
 import java.util
-import de.fosd.typechef.lexer.FeatureExprLib
-import java.io.InputStreamReader
 import util.Collections
 
 class ConsistencyTest {
@@ -16,7 +13,7 @@ class ConsistencyTest {
         assertNotNull("file not found " + fileName, inputStream)
         val p = new CParser(featureModel)
         val result = p.translationUnit(
-            CLexer.lexStream(inputStream, fileName,Collections.singletonList("testfiles/boa/"), featureModel), FeatureExprFactory.True)
+            CLexer.lexStream(inputStream, fileName, Collections.singletonList("testfiles/boa/"), featureModel), FeatureExprFactory.True)
 
         println("parsing done.")
 

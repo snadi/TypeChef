@@ -11,7 +11,6 @@ package de.fosd.typechef.featureexpr
 import org.junit._
 import org.junit.Assert._
 import org.sat4j.minisat.SolverFactory
-import java.net.URI
 
 
 abstract class AbstractLinuxFeatureModelTest {

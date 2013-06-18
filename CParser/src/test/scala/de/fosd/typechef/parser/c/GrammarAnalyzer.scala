@@ -59,9 +59,9 @@ object GrammarAnalyzer {
         if (c.isInstanceOf[p.SeqParser[_, _]]) {
             val aa = c.asInstanceOf[p.SeqParser[Any, Any]].a
             return first(aa, newknown, level + 1) ++
-                    (if (aa.isInstanceOf[p.RepParser[_]] || aa.isInstanceOf[p.OptParser[_]])
-                        first(c.asInstanceOf[p.SeqParser[Any, Any]].b, newknown, level + 1)
-                    else List())
+                (if (aa.isInstanceOf[p.RepParser[_]] || aa.isInstanceOf[p.OptParser[_]])
+                    first(c.asInstanceOf[p.SeqParser[Any, Any]].b, newknown, level + 1)
+                else List())
         }
         if (c.isInstanceOf[p.AltParser[_, _]]) {
             return first(c.asInstanceOf[p.AltParser[Any, Any]].a, newknown, level + 1) ++ first(c.asInstanceOf[p.AltParser[Any, Any]].b, newknown, level + 1)
@@ -75,8 +75,8 @@ object GrammarAnalyzer {
         if (c.isInstanceOf[p.OtherParser[_]]) {
             return first(c.asInstanceOf[p.OtherParser[Any]].a, newknown, level + 1)
         }
-        if (c.isInstanceOf[p.JoinParser[ _]]) {
-            return first(c.asInstanceOf[p.JoinParser[ Any]].a, newknown, level + 1)
+        if (c.isInstanceOf[p.JoinParser[_]]) {
+            return first(c.asInstanceOf[p.JoinParser[Any]].a, newknown, level + 1)
         }
         return List()
     }

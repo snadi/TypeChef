@@ -3,15 +3,15 @@ package de.fosd.typechef.featureexpr.sat
 /**
  * @author John Williams
  *
- * see http://www.scala-lang.org/node/49
+ *         see http://www.scala-lang.org/node/49
  */
 
 object LazyLib {
 
-    /**Delay the evaluation of an expression until it is needed. */
+    /** Delay the evaluation of an expression until it is needed. */
     def delay[A](value: => A): Susp[A] = new SuspImpl[A](value)
 
-    /**Get the value of a delayed expression. */
+    /** Get the value of a delayed expression. */
     implicit def force[A](s: Susp[A]): A = s()
 
     /**

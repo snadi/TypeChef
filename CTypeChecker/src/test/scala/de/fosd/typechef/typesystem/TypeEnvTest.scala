@@ -286,7 +286,7 @@ class TypeEnvTest extends FunSuite with ShouldMatchers with CTypeSystem with CEn
                                  |} a;
                                  |
                                  |int x;
-          """.stripMargin)
+                               """.stripMargin)
         val env = lookupEnv(ast.defs.last.entry).varEnv
         println(env)
         env("a") match {
@@ -299,26 +299,26 @@ class TypeEnvTest extends FunSuite with ShouldMatchers with CTypeSystem with CEn
         }
 
         val ast2 = compileCode( """struct xx {
-                                 |  int a;
-                                 |  union {
-                                 |    struct {
-                                 |      int b;
-                                 |    };
-                                 |    struct {
-                                 |      int c;
-                                 |      int d;
-                                 |    };
-                                 |  };
-                                 |} a;
-                                 |
-                                 |int x;
-                               """.stripMargin)
+                                  |  int a;
+                                  |  union {
+                                  |    struct {
+                                  |      int b;
+                                  |    };
+                                  |    struct {
+                                  |      int c;
+                                  |      int d;
+                                  |    };
+                                  |  };
+                                  |} a;
+                                  |
+                                  |int x;
+                                """.stripMargin)
         val env2 = lookupEnv(ast2.defs.last.entry).structEnv
         println(env2)
-        val fields=env2.getFieldsMerged("xx",false)
-        fields("a")               should be(_i)
-        fields("b")               should be(_i)
-        fields("c")               should be(_i)
+        val fields = env2.getFieldsMerged("xx", false)
+        fields("a") should be(_i)
+        fields("b") should be(_i)
+        fields("c") should be(_i)
     }
 
     test("anonymous union vs struct") {
@@ -339,9 +339,9 @@ class TypeEnvTest extends FunSuite with ShouldMatchers with CTypeSystem with CEn
                                 """.stripMargin)
         val env2 = lookupEnv(ast2.defs.last.entry).structEnv
         println(env2)
-        val fields=env2.getFieldsMerged("xx",false)
-        fields("a")               should be(_i)
-        fields("c")               should be(_i)
+        val fields = env2.getFieldsMerged("xx", false)
+        fields("a") should be(_i)
+        fields("c") should be(_i)
     }
 
     test("typedef environment") {

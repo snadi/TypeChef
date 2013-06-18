@@ -1,9 +1,17 @@
-package de.fosd.typechef.lexer.options;
+<<<<<<<HEAD:PartialPreprocessor/src/main/scala/de/fosd/typechef/lexer/options/LexerOptions.java
+        package de.fosd.typechef.lexer.options;
+=======
+        package de.fosd.typechef.options;
+>>>>>>>upstream/master:Frontend/src/main/scala/de/fosd/typechef/options/LexerOptions.java
 
-import de.fosd.typechef.lexer.Feature;
+        import de.fosd.typechef.lexer.Feature;
 import de.fosd.typechef.lexer.Warning;
 import de.fosd.typechef.lexer.macrotable.MacroFilter;
-import gnu.getopt.Getopt;
+<<<<<<<HEAD:PartialPreprocessor/src/main/scala/de/fosd/typechef/lexer/options/LexerOptions.java
+        =======
+        import de.fosd.typechef.lexer.options.ILexerOptions;
+>>>>>>>upstream/master:Frontend/src/main/scala/de/fosd/typechef/options/LexerOptions.java
+        import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
 
 import java.io.File;
@@ -17,19 +25,22 @@ import java.util.*;
  * Time: 22:13
  * To change this template use File | Settings | File Templates.
  */
-public class LexerOptions extends FeatureModelOptions implements ILexerOptions {
 
-    private static final char PP_INCLUDE = Options.genOptionId();
-    private static final char PP_IQUOTE = Options.genOptionId();
-    private static final char PP_LEXOUT = Options.genOptionId();
-    private static final char PP_OPENFEAT = Options.genOptionId();
-    private static final char PP_LEXDEBUG = Options.genOptionId();
-    private static final char PP_LEXENABLE = Options.genOptionId();
-    private static final char PP_LEXDISABLE = Options.genOptionId();
-    private static final char PP_NOSTDOUT = Options.genOptionId();
-    private static final char TY_VERSION = Options.genOptionId();
-    private static final char TY_HELP = Options.genOptionId();
-    private final static char PP_XTC = Options.genOptionId();
+public abstract class LexerOptions extends Options implements ILexerOptions {
+
+    private static final char PP_INCLUDE = genOptionId();
+    private static final char PP_IQUOTE = genOptionId();
+    private static final char PP_LEXOUT = genOptionId();
+    private static final char PP_OPENFEAT = genOptionId();
+    private static final char PP_LEXDEBUG = genOptionId();
+    private static final char PP_LEXENABLE = genOptionId();
+    private static final char PP_LEXDISABLE = genOptionId();
+    private static final char PP_NOSTDOUT = genOptionId();
+    private static final char TY_VERSION = genOptionId();
+    private static final char TY_HELP = genOptionId();
+    private final static char PP_XTC = genOptionId();
+    private final static char PP_ADJUSTLINES = genOptionId();
+
 
     @Override
     protected List<Options.OptionGroup> getOptionGroups() {
@@ -76,7 +87,10 @@ public class LexerOptions extends FeatureModelOptions implements ILexerOptions {
                 new Option("lexDisable", LongOpt.REQUIRED_ARGUMENT, PP_LEXDISABLE, "type",
                         "Disable a specific lexer feature."),
                 new Option("lexNoStdout", LongOpt.NO_ARGUMENT, PP_NOSTDOUT, null,
-                        "Do not print to stdout.")
+
+                        "Do not print to stdout."),
+                new Option("adjustLines", LongOpt.NO_ARGUMENT, PP_ADJUSTLINES, null,
+                        "Report line numbers in output (.pi) file instead of source (.c and .h) files.")
         ));
         r.add(new OptionGroup("Misc", 1000,
                 new Option("version", LongOpt.NO_ARGUMENT, TY_VERSION, null,
@@ -136,6 +150,7 @@ public class LexerOptions extends FeatureModelOptions implements ILexerOptions {
     protected boolean printVersion = false;
     protected boolean lexPrintToStdout = true;
     protected boolean xtc = false;
+    protected boolean adjustlines = false;
 
     @Override
     protected boolean interpretOption(int c, Getopt g) throws OptionException {
@@ -221,6 +236,8 @@ public class LexerOptions extends FeatureModelOptions implements ILexerOptions {
             printVersion = true;
         } else if (c == PP_XTC) {
             xtc = true;
+        } else if (c == PP_ADJUSTLINES) {
+            adjustlines = true;
         } else {
             return super.interpretOption(c, g);
         }
@@ -307,5 +324,10 @@ public class LexerOptions extends FeatureModelOptions implements ILexerOptions {
     @Override
     public boolean useXtcLexer() {
         return xtc;
+    }
+
+    @Override
+    public boolean isAdjustLineNumbers() {
+        return adjustlines;
     }
 }

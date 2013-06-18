@@ -2,7 +2,7 @@ package de.fosd.typechef.featureexpr.sat
 
 import org.sat4j.core.VecInt
 import collection.mutable.WeakHashMap
-import org.sat4j.specs.{IVecInt, IConstr, ContradictionException}
+import org.sat4j.specs.{IConstr, ContradictionException}
 ;
 import org.sat4j.minisat.SolverFactory;
 import scala.Predef._
@@ -27,22 +27,22 @@ class SatSolver {
         else
             new SatSolverImpl(nfm(featureModel), false)).isSatisfiable(exprCNF)
     }
-  /**
-   * Basically a clone of isSatisfiable(..) that also returns the satisfying assignment (if available).
-   * The return value is a Pair where the first element is a list of the feature names set to true.
-   * The second element is a list of feature names set to false.
-   */
-  def getSatAssignment(featureModel: SATFeatureModel, exprCNF:SATFeatureExpr): Option[Pair[List[String],List[String]]] = {
-    val solver =
-      (if (CACHING && (nfm(featureModel) != SATNoFeatureModel))
-        SatSolverCache.get(nfm(featureModel))
-      else
-        new SatSolverImpl(nfm(featureModel), false))
+    /**
+     * Basically a clone of isSatisfiable(..) that also returns the satisfying assignment (if available).
+     * The return value is a Pair where the first element is a list of the feature names set to true.
+     * The second element is a list of feature names set to false.
+     */
+    def getSatAssignment(featureModel: SATFeatureModel, exprCNF: SATFeatureExpr): Option[Pair[List[String], List[String]]] = {
+        val solver =
+            (if (CACHING && (nfm(featureModel) != SATNoFeatureModel))
+                SatSolverCache.get(nfm(featureModel))
+            else
+                new SatSolverImpl(nfm(featureModel), false))
 
-    if(solver.isSatisfiable(exprCNF, exprCNF!=True)) {
-      return Some(solver.getLastModel())
-    } else {return None}
-  }
+        if (solver.isSatisfiable(exprCNF, exprCNF != True)) {
+            return Some(solver.getLastModel())
+        } else {return None}
+    }
 
     private def nfm(fm: SATFeatureModel) = if (fm == null) SATNoFeatureModel else fm
 }
@@ -58,7 +58,7 @@ private class SatSolverImpl(featureModel: SATFeatureModel, isReused: Boolean) {
 
     import SatSolver._
 
-    /**Type Aliases for Readability */
+    /** Type Aliases for Readability */
     type CNF = SATFeatureExpr
     type OrClause = SATFeatureExpr
     type Literal = SATFeatureExpr
@@ -66,7 +66,7 @@ private class SatSolverImpl(featureModel: SATFeatureModel, isReused: Boolean) {
 
     val PROFILING = false
 
-    /**init / constructor */
+    /** init / constructor */
     val solver = SolverFactory.newDefault();
     //        solver.setTimeoutMs(1000);
     solver.setTimeoutOnConflicts(100000)
@@ -81,18 +81,18 @@ private class SatSolverImpl(featureModel: SATFeatureModel, isReused: Boolean) {
      *
      * featureModel is optional
      */
-    def isSatisfiable(exprCNF: CNF, optimizeSimpleExpression:Boolean=true): Boolean = {
-        this.lastModel=null // remove model from last satisfiability check
+    def isSatisfiable(exprCNF: CNF, optimizeSimpleExpression: Boolean = true): Boolean = {
+        this.lastModel = null // remove model from last satisfiability check
         assert(CNFHelper.isCNF(exprCNF))
 
         if (optimizeSimpleExpression) {
             if (exprCNF == True) {
                 // if the expression is True, then the result is true, and we need a model. The model is cached lazily.
                 if (this.trueModel == null) {
-                    isSatisfiable(exprCNF,false)
-                    this.trueModel=getLastModel()
+                    isSatisfiable(exprCNF, false)
+                    this.trueModel = getLastModel()
                 } else {
-                    lastModel=trueModel
+                    lastModel = trueModel
                 }
                 return true
             }
@@ -100,16 +100,17 @@ private class SatSolverImpl(featureModel: SATFeatureModel, isReused: Boolean) {
         }
         //as long as we do not consider feature models, expressions with a single variable
         //are always satisfiable
-        if ((featureModel == SATNoFeatureModel) && (CNFHelper.isLiteralExternal(exprCNF))){
-            exprCNF match { //one of these cases has to match, because we have a literal expression
-                case x: DefinedExternal => lastModel = Pair(List(x.satName),List())
-                case Not(x: DefinedExternal) => lastModel = Pair(List(),List(x.satName))
+        if ((featureModel == SATNoFeatureModel) && (CNFHelper.isLiteralExternal(exprCNF))) {
+            exprCNF match {
+                //one of these cases has to match, because we have a literal expression
+                case x: DefinedExternal => lastModel = Pair(List(x.satName), List())
+                case Not(x: DefinedExternal) => lastModel = Pair(List(), List(x.satName))
                 case _ => sys.error("This really should not be possible")
             }
             return true
         }
 
-    val startTime = System.currentTimeMillis();
+        val startTime = System.currentTimeMillis();
 
         if (PROFILING)
             print("<SAT " + countClauses(exprCNF) + " with " + countFlags(exprCNF) + " flags; ")
@@ -176,19 +177,19 @@ private class SatSolverImpl(featureModel: SATFeatureModel, isReused: Boolean) {
                     }
                 }
                 */
-        if (result == true) {
-          // scanning the model (storing the satisfiable assignment for later retrieval)
-          val model = solver.model()
-          var trueList : List[String] = List()
-          var falseList : List[String] = List()
-          for ((fName, modelID) <- uniqueFlagIds) {
-            if (solver.model(modelID))
-              trueList ::= fName
-            else
-              falseList ::= fName
-          }
-          lastModel = Pair(trueList,falseList)
-        }
+                if (result == true) {
+                    // scanning the model (storing the satisfiable assignment for later retrieval)
+                    val model = solver.model()
+                    var trueList: List[String] = List()
+                    var falseList: List[String] = List()
+                    for ((fName, modelID) <- uniqueFlagIds) {
+                        if (solver.model(modelID))
+                            trueList ::= fName
+                        else
+                            falseList ::= fName
+                    }
+                    lastModel = Pair(trueList, falseList)
+                }
                 if (PROFILING)
                     print(result + ";")
                 return result
@@ -202,19 +203,19 @@ private class SatSolverImpl(featureModel: SATFeatureModel, isReused: Boolean) {
                 println(" in " + (System.currentTimeMillis() - startTimeSAT) + " ms>")
         }
     }
-  /**
-   * This pair contains the model that was constructed during the last isSatisfiable call (if the result was true).
-   * The first element contains the names of the features set to true, the second contains the names of the false features.
-   */
-  var lastModel : Pair[List[String],List[String]] = null
-  // model that satisfies the FM (when a TRUE Expression is passed to the solver)
-  // this is cached after first creation
-  var trueModel : Pair[List[String],List[String]] = null
-  def getLastModel() = lastModel
+    /**
+     * This pair contains the model that was constructed during the last isSatisfiable call (if the result was true).
+     * The first element contains the names of the features set to true, the second contains the names of the false features.
+     */
+    var lastModel: Pair[List[String], List[String]] = null
+    // model that satisfies the FM (when a TRUE Expression is passed to the solver)
+    // this is cached after first creation
+    var trueModel: Pair[List[String], List[String]] = null
+    def getLastModel() = lastModel
 }
 
 private object SatSolver {
-    /**Type Aliases for Readability */
+    /** Type Aliases for Readability */
     type CNF = SATFeatureExpr
     type OrClause = SATFeatureExpr
     type Literal = SATFeatureExpr

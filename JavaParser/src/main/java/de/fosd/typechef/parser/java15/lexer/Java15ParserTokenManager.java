@@ -943,7 +943,7 @@ public class Java15ParserTokenManager implements Java15ParserConstants {
         int i = 1;
         jjstateSet[0] = startState;
         int j, kind = 0x7fffffff;
-        for (; ;) {
+        for (; ; ) {
             if (++jjround == 0x7fffffff)
                 ReInitRounds();
             if (curChar < 64) {
@@ -1354,7 +1354,7 @@ public class Java15ParserTokenManager implements Java15ParserConstants {
         int i = 1;
         jjstateSet[0] = startState;
         int j, kind = 0x7fffffff;
-        for (; ;) {
+        for (; ; ) {
             if (++jjround == 0x7fffffff)
                 ReInitRounds();
             if (curChar < 64) {
@@ -1560,7 +1560,7 @@ public class Java15ParserTokenManager implements Java15ParserConstants {
     private final void ReInitRounds() {
         int i;
         jjround = 0x80000001;
-        for (i = 52; i-- > 0;)
+        for (i = 52; i-- > 0; )
             jjrounds[i] = 0x80000000;
     }
 
@@ -1606,7 +1606,7 @@ public class Java15ParserTokenManager implements Java15ParserConstants {
         int curPos = 0;
 
         EOFLoop:
-        for (; ;) {
+        for (; ; ) {
             try {
                 curChar = input_stream.BeginToken();
             } catch (java.io.IOException e) {
@@ -1618,7 +1618,7 @@ public class Java15ParserTokenManager implements Java15ParserConstants {
             image = null;
             jjimageLen = 0;
 
-            for (; ;) {
+            for (; ; ) {
                 switch (curLexState) {
                     case 0:
                         try {

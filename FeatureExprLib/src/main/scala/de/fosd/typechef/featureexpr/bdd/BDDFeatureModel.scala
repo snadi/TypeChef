@@ -39,7 +39,7 @@ class BDDFeatureModel(val variables: Map[String, Int], val clauses: IVec[IVecInt
     def assumeFalse(featurename: String) =
         new BDDFeatureModel(variables, clauses, lastVarId, extraConstraints, assumedFalse + featurename, assumedTrue)
 
-    /**helper function*/
+    /** helper function */
     def assumptions: BDDFeatureExpr =
         (assumedTrue.map(BDDFeatureExprFactory.createDefinedExternal(_)).fold(BDDFeatureExprFactory.True)(_ and _) and
             assumedFalse.map(BDDFeatureExprFactory.createDefinedExternal(_).not).fold(BDDFeatureExprFactory.True)(_ and _)).asInstanceOf[BDDFeatureExpr]
@@ -75,6 +75,13 @@ object BDDFeatureModel extends FeatureModelFactory {
         var varIdx = 0
         val clauses = new Vec[IVecInt]()
 
+        def lookupLiteral(literal: String, variables: Map[String, Int]) =
+            if (literal.startsWith("-"))
+                -variables.getOrElse("CONFIG_" + (literal.substring(1)), throw new Exception("variable not declared"))
+            else
+                variables.getOrElse("CONFIG_" + literal, throw new Exception("variable not declared"))
+
+
         for (line <- scala.io.Source.fromFile(file).getLines) {
             if ((line startsWith "@ ") || (line startsWith "$ ")) {
                 varIdx += 1
@@ -93,7 +100,7 @@ object BDDFeatureModel extends FeatureModelFactory {
     /**
      * load a standard Dimacs file as feature model
      */
-    def createFromDimacsFile(file: String, prefix: String = "CONFIG_" , suffix:String="") = {
+    def createFromDimacsFile(file: String, variablePrefix: String = "CONFIG_", suffix: String = "") = {
         var variables: Map[String, Int] = Map()
         val clauses = new Vec[IVecInt]()
         var maxId = 0
@@ -106,7 +113,8 @@ object BDDFeatureModel extends FeatureModelFactory {
                 else
                     entries(0).toInt
                 maxId = scala.math.max(id, maxId)
-                variables = variables.updated(prefix + entries(1) + suffix, id)
+                variables = variables.updated(variablePrefix + entries(1) + suffix, id)
+
             } else if ((line startsWith "p ") || (line.trim.size == 0)) {
                 //comment, do nothing
             } else {
@@ -118,7 +126,7 @@ object BDDFeatureModel extends FeatureModelFactory {
             }
 
         }
-        assert(maxId == variables.size)
+        assert(maxId == variables.size, "largest variable id " + maxId + " differs from number of variables " + variables.size)
         new BDDFeatureModel(variables, clauses, maxId, BDDFeatureExprFactory.TrueB, Set(), Set())
     }
     /**
@@ -155,15 +163,9 @@ object BDDFeatureModel extends FeatureModelFactory {
             }
 
         }
-        assert(maxId == variables.size)
+        assert(maxId == variables.size, "largest variable id " + maxId + " differs from number of variables " + variables.size)
         new BDDFeatureModel(variables, clauses, maxId, BDDFeatureExprFactory.TrueB, Set(), Set())
     }
-
-    private def lookupLiteral(literal: String, variables: Map[String, Int]) =
-        if (literal.startsWith("-"))
-            -variables.getOrElse("CONFIG_" + (literal.substring(1)), throw new Exception("variable not declared"))
-        else
-            variables.getOrElse("CONFIG_" + literal, throw new Exception("variable not declared"))
 
 
 }

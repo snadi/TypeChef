@@ -7,10 +7,12 @@ import de.fosd.typechef.lexer.LexerException;
 import de.fosd.typechef.lexer.PreprocessorListener;
 import de.fosd.typechef.lexer.Warning;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * interface to the variability-aware lexer (or partial preprocessor)

@@ -2,7 +2,7 @@ package de.fosd.typechef.parser.test
 
 import junit.framework.TestCase
 import org.junit.{Assert, Test}
-import de.fosd.typechef.featureexpr.{FeatureExprFactory, FeatureExpr}
+import de.fosd.typechef.featureexpr.FeatureExprFactory
 
 /**
  * Created by IntelliJ IDEA.

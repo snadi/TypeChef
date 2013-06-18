@@ -5,16 +5,16 @@ import org.junit.Test
 
 class CASTEnvTest extends ConditionalControlFlow with TestHelper {
 
-  @Test def test_simple_test() {
-    val a = parseCompoundStmt("""
+    @Test def test_simple_test() {
+        val a = parseCompoundStmt( """
     {
       while (k) {
         k--;
       }
     }
-    """)
+                                   """)
 
-    val env = CASTEnv.createASTEnv(a)
-    println(env)
-  }
+        val env = CASTEnv.createASTEnv(a)
+        println(env)
+    }
 }

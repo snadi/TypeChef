@@ -1,7 +1,6 @@
 package de.fosd.typechef.featureexpr.bdd
 
 import de.fosd.typechef.featureexpr._
-import java.net.URI
 
 
 object BDDFeatureExprFactory extends AbstractFeatureExprFactory {
@@ -18,16 +17,16 @@ object BDDFeatureExprFactory extends AbstractFeatureExprFactory {
 
     def featureModelFactory = BDDFeatureModel
 
-    def createFeatureExprFast(enabledFeatures: Set[SingleFeatureExpr], disabledFeatures: Set[SingleFeatureExpr]) : FeatureExpr = {
+    def createFeatureExprFast(enabledFeatures: Set[SingleFeatureExpr], disabledFeatures: Set[SingleFeatureExpr]): FeatureExpr = {
         if (enabledFeatures.isEmpty && disabledFeatures.isEmpty) return True
         var retBDD = TrueB.bdd.id() // makes a copy of this bdd, so that it is not consumed by the andWith functions
         for (f <- enabledFeatures)
-            if (! f.isInstanceOf[SingleBDDFeatureExpr])
+            if (!f.isInstanceOf[SingleBDDFeatureExpr])
                 throw new InternalError("found a unknown feature expression type");
             else
                 retBDD = f.asInstanceOf[SingleBDDFeatureExpr].bdd.id() andWith retBDD
         for (f <- disabledFeatures)
-            if (! f.isInstanceOf[SingleBDDFeatureExpr])
+            if (!f.isInstanceOf[SingleBDDFeatureExpr])
                 throw new InternalError("found a unknown feature expression type");
             else
                 retBDD = f.asInstanceOf[SingleBDDFeatureExpr].bdd.not() andWith retBDD

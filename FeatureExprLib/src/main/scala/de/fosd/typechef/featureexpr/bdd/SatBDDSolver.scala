@@ -4,8 +4,8 @@ import org.sat4j.core.VecInt
 import collection.mutable.WeakHashMap
 
 import org.sat4j.minisat.SolverFactory
-import org.sat4j.specs.{IVecInt, IConstr, ContradictionException}
-import de.fosd.typechef.featureexpr.{SingleFeatureExpr, FeatureModel}
+import org.sat4j.specs.{IConstr, ContradictionException}
+import de.fosd.typechef.featureexpr.SingleFeatureExpr
 ;
 
 
@@ -24,15 +24,15 @@ object SatSolver {
      * Assuming that all variable names appear in the featureModel.
      *
      */
-    def getSatisfiableAssignmentFromStringSets(fm: BDDFeatureModel, interestingFeatures : Set[SingleFeatureExpr],
-                                               defEnabledFeatures : Set[String], defDisabledFeatures : Set[String],
-                                               preferDisabledFeatures:Boolean): Option[Pair[List[SingleFeatureExpr],List[SingleFeatureExpr]]] = {
+    def getSatisfiableAssignmentFromStringSets(fm: BDDFeatureModel, interestingFeatures: Set[SingleFeatureExpr],
+                                               defEnabledFeatures: Set[String], defDisabledFeatures: Set[String],
+                                               preferDisabledFeatures: Boolean): Option[Pair[List[SingleFeatureExpr], List[SingleFeatureExpr]]] = {
         val bddDNF = Set(
-            (defEnabledFeatures.map(fm.variables(_)) ++ defDisabledFeatures.map(- fm.variables(_)))
+            (defEnabledFeatures.map(fm.variables(_)) ++ defDisabledFeatures.map(-fm.variables(_)))
                 .toSeq).iterator
 
         // get one satisfying assignment (a list of features set to true, and a list of features set to false)
-        val assignment : Option[(List[String], List[String])] = SatSolver.getSatAssignment(fm, bddDNF, FExprBuilder.lookupFeatureName)
+        val assignment: Option[(List[String], List[String])] = SatSolver.getSatAssignment(fm, bddDNF, FExprBuilder.lookupFeatureName)
         // we will subtract from this set until all interesting features are handled
         // the result will only contain interesting features. Even parts of this expression will be omitted if uninteresting.
         var remainingInterestingFeatures = interestingFeatures
@@ -40,11 +40,11 @@ object SatSolver {
             case Some(Pair(trueFeatures, falseFeatures)) => {
 
                 if (preferDisabledFeatures) {
-                    var enabledFeatures : Set[SingleFeatureExpr] = Set()
+                    var enabledFeatures: Set[SingleFeatureExpr] = Set()
                     for (f <- trueFeatures) {
-                        val elem = remainingInterestingFeatures.find({fex:SingleFeatureExpr => fex.feature.equals(f)})
+                        val elem = remainingInterestingFeatures.find({fex: SingleFeatureExpr => fex.feature.equals(f)})
                         elem match {
-                            case Some(fex : SingleFeatureExpr) => {
+                            case Some(fex: SingleFeatureExpr) => {
                                 remainingInterestingFeatures -= fex
                                 enabledFeatures += fex
                             }
@@ -53,18 +53,18 @@ object SatSolver {
                     }
                     return Some(enabledFeatures.toList, remainingInterestingFeatures.toList)
                 } else {
-                    var disabledFeatures : Set[SingleFeatureExpr] = Set()
+                    var disabledFeatures: Set[SingleFeatureExpr] = Set()
                     for (f <- falseFeatures) {
-                        val elem = remainingInterestingFeatures.find({fex:SingleFeatureExpr => fex.feature.equals(f)})
+                        val elem = remainingInterestingFeatures.find({fex: SingleFeatureExpr => fex.feature.equals(f)})
                         elem match {
-                            case Some(fex : SingleFeatureExpr) => {
+                            case Some(fex: SingleFeatureExpr) => {
                                 remainingInterestingFeatures -= fex
                                 disabledFeatures += fex
                             }
                             case None => {}
                         }
                     }
-                    return Some(remainingInterestingFeatures.toList,disabledFeatures.toList)
+                    return Some(remainingInterestingFeatures.toList, disabledFeatures.toList)
                 }
             }
             case None => return None
@@ -84,21 +84,21 @@ object SatSolver {
             new SatSolverImpl(nfm(featureModel))).isSatisfiable(dnf, lookupName)
     }
 
-  /**
-   * Basically a clone of isSatisfiable(..) that also returns the satisfying assignment (if available).
-   * The return value is a Pair where the first element is a list of the feature names set to true.
-   * The second element is a list of feature names set to false.
-   */
-    def getSatAssignment(featureModel: BDDFeatureModel, dnf: Iterator[Seq[Int]], lookupName: (Int) => String): Option[Pair[List[String],List[String]]] = {
-      val solver =
-      (if (CACHING && (nfm(featureModel) != BDDNoFeatureModel))
-        SatSolverCache.get(nfm(featureModel))
-      else
-        new SatSolverImpl(nfm(featureModel)))
+    /**
+     * Basically a clone of isSatisfiable(..) that also returns the satisfying assignment (if available).
+     * The return value is a Pair where the first element is a list of the feature names set to true.
+     * The second element is a list of feature names set to false.
+     */
+    def getSatAssignment(featureModel: BDDFeatureModel, dnf: Iterator[Seq[Int]], lookupName: (Int) => String): Option[Pair[List[String], List[String]]] = {
+        val solver =
+            (if (CACHING && (nfm(featureModel) != BDDNoFeatureModel))
+                SatSolverCache.get(nfm(featureModel))
+            else
+                new SatSolverImpl(nfm(featureModel)))
 
-      if(solver.isSatisfiable(dnf, lookupName)) {
-        return Some(solver.getLastModel())
-      } else {return None}
+        if (solver.isSatisfiable(dnf, lookupName)) {
+            return Some(solver.getLastModel())
+        } else {return None}
     }
 
 
@@ -107,12 +107,12 @@ object SatSolver {
 
 private object SatSolverCache {
     val cache: WeakHashMap[BDDFeatureModel, SatSolverImpl] = new WeakHashMap()
-    def get(fm: BDDFeatureModel) ={
-        val c= cache.get(fm)
+    def get(fm: BDDFeatureModel) = {
+        val c = cache.get(fm)
         if (c.isDefined && !c.get.invalid)
             c.get
         else {
-            val s=new SatSolverImpl(fm)
+            val s = new SatSolverImpl(fm)
             cache.put(fm, s)
             s
         }
@@ -122,7 +122,7 @@ private object SatSolverCache {
 class SatSolverImpl(featureModel: BDDFeatureModel) {
     assert(featureModel != null)
 
-    /**init / constructor */
+    /** init / constructor */
     val solver = SolverFactory.newDefault();
     //        solver.setTimeoutMs(1000);
     solver.setTimeoutOnConflicts(100000)
@@ -136,7 +136,7 @@ class SatSolverImpl(featureModel: BDDFeatureModel) {
      * dnf is the disjunctive normal form of the negated(!) expression
      */
     def isSatisfiable(dnf: Iterator[Seq[Int]], lookupName: (Int) => String): Boolean = {
-        this.lastModel=null // remove model from last satisfiability check
+        this.lastModel = null // remove model from last satisfiability check
 
         val PROFILING = false
 
@@ -193,17 +193,17 @@ class SatSolverImpl(featureModel: BDDFeatureModel) {
                 print(";")
             val result = solver.isSatisfiable(assumptions)
             if (result == true) {
-              // scanning the model (storing the satisfiable assignment for later retrieval)
-              val model = solver.model()
-              var trueList : List[String] = List()
-              var falseList : List[String] = List()
-              for ((fName, modelID) <- uniqueFlagIds) {
-                if (solver.model(modelID))
-                  trueList ::= fName
-                else
-                  falseList ::= fName
-              }
-              lastModel = Pair(trueList,falseList)
+                // scanning the model (storing the satisfiable assignment for later retrieval)
+                val model = solver.model()
+                var trueList: List[String] = List()
+                var falseList: List[String] = List()
+                for ((fName, modelID) <- uniqueFlagIds) {
+                    if (solver.model(modelID))
+                        trueList ::= fName
+                    else
+                        falseList ::= fName
+                }
+                lastModel = Pair(trueList, falseList)
             }
 
             if (PROFILING)
@@ -212,12 +212,12 @@ class SatSolverImpl(featureModel: BDDFeatureModel) {
         } finally {
             for (constr <- constraintGroup.filter(_ != null)) {
                 try {
-                    val succeeded=solver.removeConstr(constr)
+                    val succeeded = solver.removeConstr(constr)
                     if (!succeeded)
                         invalidateCache()
                 } catch {
-                    case e: AssertionError=>invalidateCache()
-                    case e: NullPointerException=>invalidateCache()
+                    case e: AssertionError => invalidateCache()
+                    case e: NullPointerException => invalidateCache()
                 }
             }
 
@@ -226,13 +226,13 @@ class SatSolverImpl(featureModel: BDDFeatureModel) {
         }
     }
 
-  /**
-   * This pair contains the model that was constructed during the last isSatisfiable call (if the result was true).
-   * The first element contains the names of the features set to true, the second contains the names of the false features.
-   */
-    var lastModel : Pair[List[String],List[String]] = null
+    /**
+     * This pair contains the model that was constructed during the last isSatisfiable call (if the result was true).
+     * The first element contains the names of the features set to true, the second contains the names of the false features.
+     */
+    var lastModel: Pair[List[String], List[String]] = null
     def getLastModel() = lastModel
 
-    var invalid:Boolean = false
+    var invalid: Boolean = false
     def invalidateCache() { invalid = true }
 }

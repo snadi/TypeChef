@@ -301,7 +301,7 @@ public class OffsetCharStream implements CharStream {
 
             int backSlashCnt = 1;
 
-            for (; ;) // Read all the backslashes
+            for (; ; ) // Read all the backslashes
             {
                 if (++bufpos == available)
                     AdjustBuffSize();

@@ -22,5 +22,6 @@ package de.fosd.typechef.lexer;
  */
 public interface VirtualFileSystem {
     public VirtualFile getFile(String path);
+
     public VirtualFile getFile(String dir, String name);
 }

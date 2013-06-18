@@ -6,7 +6,7 @@ import org.junit.Assert._
 import de.fosd.typechef.parser.test.parsers._
 import de.fosd.typechef.parser.~
 import de.fosd.typechef.conditional._
-import de.fosd.typechef.featureexpr.{FeatureExprFactory, FeatureExpr}
+import de.fosd.typechef.featureexpr.FeatureExprFactory
 
 
 /**

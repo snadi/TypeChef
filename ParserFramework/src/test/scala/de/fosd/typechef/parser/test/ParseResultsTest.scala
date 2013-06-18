@@ -55,54 +55,54 @@ class ParseResultsTest {
     def testParseResultsSplit3() {
         val sp12 = new p.SplittedParseResult(fa, s1, s2) // SPLIT(A, 1, 2)
 
-        val r=sp12.seqAllSuccessful(True, (f:FeatureExpr,suc:p.Success[Int])=> new p.Success(new ~(suc.result,0),null))
+        val r = sp12.seqAllSuccessful(True, (f: FeatureExpr, suc: p.Success[Int]) => new p.Success(new ~(suc.result, 0), null))
 
         assertEquals("SplittedParseResult(def(A),Success((1~0),null),Success((2~0),null))", r.toString)
 
-//        val r2=sp12.seqAllSuccessful(fa, (f:FeatureExpr,suc:p.Success[Int])=> new p.Success(new ~(suc.result,0),null))
-//
-//        assertEquals("SplittedParseResult(def(A),Success((1~0),null),Success(2,null))", r.toString)
+        //        val r2=sp12.seqAllSuccessful(fa, (f:FeatureExpr,suc:p.Success[Int])=> new p.Success(new ~(suc.result,0),null))
+        //
+        //        assertEquals("SplittedParseResult(def(A),Success((1~0),null),Success(2,null))", r.toString)
     }
-//    @Test
-//    def testParseResultsSplit4() {
-//        //this is poor API design, giving to much power to the seqAllSuc parameter allowing stupid concatenations
-//        val sp12 = new p.SplittedParseResult(fa, s1, s2) // SPLIT(A, 1, 2)
-//        val r2=sp12.seqAllSuccessful(True, (f:FeatureExpr,suc:p.Success[Int])=> new p.SplittedParseResult(fb, s3, s4))
-//
-//        assertEquals("SplittedParseResult(def(A),Success((1~0),null),Success((2~0),null))", r2.toString)
-//    }
+    //    @Test
+    //    def testParseResultsSplit4() {
+    //        //this is poor API design, giving to much power to the seqAllSuc parameter allowing stupid concatenations
+    //        val sp12 = new p.SplittedParseResult(fa, s1, s2) // SPLIT(A, 1, 2)
+    //        val r2=sp12.seqAllSuccessful(True, (f:FeatureExpr,suc:p.Success[Int])=> new p.SplittedParseResult(fb, s3, s4))
+    //
+    //        assertEquals("SplittedParseResult(def(A),Success((1~0),null),Success((2~0),null))", r2.toString)
+    //    }
 
     @Test
     def testParseResultsSeq2() {
-        val r1=s1.seq2(True, (next:Any,f:FeatureExpr)=> new p.SplittedParseResult(fb, s3, s4))
+        val r1 = s1.seq2(True, (next: Any, f: FeatureExpr) => new p.SplittedParseResult(fb, s3, s4))
 
         assertEquals("SplittedParseResult(def(B),Success((1~3),null),Success((1~4),null))", r1.toString)
 
         val sp12 = new p.SplittedParseResult(fa, s1, s2) // SPLIT(A, 1, 2)
-        val r3=sp12.seq2(True, (next:Any,f:FeatureExpr)=> s3)
+        val r3 = sp12.seq2(True, (next: Any, f: FeatureExpr) => s3)
         assertEquals("SplittedParseResult(def(A),Success((1~3),null),Success((2~3),null))", r3.toString)
 
 
-        val r2=sp12.seq2(True, (next:Any,f:FeatureExpr)=> new p.SplittedParseResult(fb, s3, s4))
+        val r2 = sp12.seq2(True, (next: Any, f: FeatureExpr) => new p.SplittedParseResult(fb, s3, s4))
         assertEquals("SplittedParseResult(def(A),SplittedParseResult(def(B),Success((1~3),null),Success((1~4),null)),SplittedParseResult(def(B),Success((2~3),null),Success((2~4),null)))", r2.toString)
     }
     @Test
     def testParseResultsSeq2Fails() {
-        var r:p.MultiParseResult[Any]=f.seq2(True, (next:Any,f:FeatureExpr)=> new p.SplittedParseResult(fb, s3, s4))
+        var r: p.MultiParseResult[Any] = f.seq2(True, (next: Any, f: FeatureExpr) => new p.SplittedParseResult(fb, s3, s4))
 
         assertEquals("Failure(e,null,List())", r.toString)
 
         val sp = new p.SplittedParseResult(fa, s1, f)
-        r=sp.seq2(True, (next:Any,f:FeatureExpr)=> s3)
+        r = sp.seq2(True, (next: Any, f: FeatureExpr) => s3)
         assertEquals("SplittedParseResult(def(A),Success((1~3),null),Failure(e,null,List()))", r.toString)
 
-        r=sp.seq2(True, (next:Any,f:FeatureExpr)=> new p.SplittedParseResult(fb, s3, s4))
+        r = sp.seq2(True, (next: Any, f: FeatureExpr) => new p.SplittedParseResult(fb, s3, s4))
         assertEquals("SplittedParseResult(def(A),SplittedParseResult(def(B),Success((1~3),null),Success((1~4),null)),Failure(e,null,List()))", r.toString)
 
-        r=sp.seq2(True, (next:Any,_:FeatureExpr)=> f)
+        r = sp.seq2(True, (next: Any, _: FeatureExpr) => f)
         assertEquals("SplittedParseResult(def(A),Failure(e,null,List()),Failure(e,null,List()))", r.toString)
 
-        r=r.joinTree(True)
+        r = r.joinTree(True)
         assert(r.toString.startsWith("Failure(joined error,"))
 
     }

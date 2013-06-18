@@ -2,9 +2,9 @@ package de.fosd.typechef.typesystem.linker
 
 import de.fosd.typechef.conditional.{Opt, Conditional}
 import de.fosd.typechef.parser.c._
-import de.fosd.typechef.typesystem.{CType, CTypeSystem}
-import de.fosd.typechef.parser.Position
+import de.fosd.typechef.typesystem.{KParameter, CType, CTypeSystem}
 import de.fosd.typechef.featureexpr.{FeatureExprFactory, FeatureExpr}
+import de.fosd.typechef.error.Position
 
 /**
  * first attempt to infer the interface of a C file for linker checks
@@ -38,24 +38,27 @@ trait CInferInterface extends CTypeSystem with InterfaceWriter {
 
     /**
      * remove imports that are covered by exports or static functions
+     *
+     * ignore CFlags in importers
      */
     private def cleanImports() {
-        var importMap = Map[(String, CType), (FeatureExpr, Seq[Position])]()
+        type T2 = (FeatureExpr, Seq[Position], Set[CFlag])
+        var importMap = Map[(String, CType), T2]()
 
         //eliminate duplicates with a map
         for (imp <- imports) {
             val key = (imp.name, imp.ctype)
-            val old = importMap.getOrElse(key, (FeatureExprFactory.False, Seq()))
-            importMap = importMap + (key ->(old._1 or imp.fexpr, old._2 ++ imp.pos))
+            val old = importMap.getOrElse[T2](key, (FeatureExprFactory.False, Seq(), Set()))
+            importMap = importMap + (key ->(old._1 or imp.fexpr, old._2 ++ imp.pos, CFlagOps.mergeOnImports(old._3, imp.extraFlags)))
         }
         //eliminate imports that have corresponding exports
         for (exp <- (exports ++ staticFunctions)) {
             val key = (exp.name, exp.ctype)
             if (importMap.contains(key)) {
-                val (oldFexpr, oldPos) = importMap(key)
+                val (oldFexpr, oldPos, oldExtras) = importMap(key)
                 val newFexpr = oldFexpr andNot exp.fexpr
                 if (newFexpr.isSatisfiable())
-                    importMap = importMap + (key ->(newFexpr, oldPos))
+                    importMap = importMap + (key ->(newFexpr, oldPos, oldExtras))
                 else
                     importMap = importMap - key
             }
@@ -63,29 +66,64 @@ trait CInferInterface extends CTypeSystem with InterfaceWriter {
 
 
         val r = for ((k, v) <- importMap.iterator)
-        yield CSignature(k._1, k._2, v._1, v._2)
+        yield CSignature(k._1, k._2, v._1, v._2, v._3)
         imports = r.toList
     }
 
+    def findAttributes(a: GnuAttributeSpecifier, ctx: FeatureExpr): Seq[(FeatureExpr, AtomicAttribute)] =
+        (for (Opt(f, at) <- a.attributeList) yield findAttributes(at, ctx and f)).flatten
+    def findAttributes(a: AttributeSequence, ctx: FeatureExpr): Seq[(FeatureExpr, AtomicAttribute)] =
+        (for (Opt(f, at) <- a.attributes) yield findAttributes(at, ctx and f)).flatten
+    def findAttributes(a: Attribute, ctx: FeatureExpr): Seq[(FeatureExpr, AtomicAttribute)] = a match {
+        case a: AtomicAttribute => Seq((ctx, a))
+        case CompoundAttribute(inner) => (for (Opt(f, at) <- inner) yield findAttributes(at, ctx and f)).flatten
+    }
+
+
     /**
-     * all function definitions are considered as exports
+     * try to recognize __attribute__((weak)) attribute as a flag.
+     *
+     * the recognition is conservative and does ignore conditional attribute declarations
+     * (so a conditionally weak method is always recognized as weak, which may prevent us
+     * from detecting some problems, but which will not produce false positives)
+     */
+    def getExtraFlags(functionDef: FunctionDef, ctx: FeatureExpr): Set[CFlag] = {
+        val flags = for (Opt(f, g@GnuAttributeSpecifier(_)) <- functionDef.specifiers;
+                         (f, a) <- findAttributes(g, ctx)
+        ) yield
+            if (a.n == "weak" && f.isSatisfiable()) Some[CFlag](WeakExport) else None
+
+        flags.filter(_.isDefined).map(_.get).toSet
+    }
+
+
+    /**
+     * all nonstatic function definitions are considered as exports
+     *
+     * actually the behavior of "extern inline" is slightly complicated, see also
+     * http://stackoverflow.com/questions/216510/extern-inline
+     * "extern inline" means neither static nor exported
      */
     override def typedFunction(fun: FunctionDef, funType: Conditional[CType], featureExpr: FeatureExpr) {
         super.typedFunction(fun, funType, featureExpr)
 
-        val staticCondition = FeatureExprFactory.True andNot getStaticCondition(fun.specifiers)
+        val staticSpec = getStaticCondition(fun.specifiers)
+        val externSpec = getSpecifierCondition(fun.specifiers, ExternSpecifier())
+        val inlineSpec = getSpecifierCondition(fun.specifiers, InlineSpecifier())
+
+
+        //exportCondition and staticCondition are disjoint, but may not cover all cases (they are both false for "extern inline")
+        val exportCondition = staticSpec.not andNot (externSpec and inlineSpec)
+        val staticCondition = staticSpec andNot (externSpec and inlineSpec)
 
         funType.simplify(featureExpr).mapf(featureExpr, {
             (fexpr, ctype) =>
+                if ((fexpr and exportCondition).isSatisfiable())
+                    exports = CSignature(fun.getName, ctype, fexpr and exportCondition, Seq(fun.getPositionFrom), getExtraFlags(fun, fexpr and exportCondition)) :: exports
                 if ((fexpr and staticCondition).isSatisfiable())
-                    exports = CSignature(fun.getName, ctype, fexpr and staticCondition, Seq(fun.getPositionFrom)) :: exports
-                if ((fexpr andNot staticCondition).isSatisfiable())
-                    staticFunctions = CSignature(fun.getName, ctype, fexpr andNot staticCondition, Seq(fun.getPositionFrom)) :: staticFunctions
+                    staticFunctions = CSignature(fun.getName, ctype, fexpr and staticCondition, Seq(fun.getPositionFrom), getExtraFlags(fun, fexpr and staticCondition)) :: staticFunctions
         })
     }
-
-    private def getStaticCondition(specifiers: List[Opt[Specifier]]): FeatureExpr =
-        specifiers.filter(_.entry == StaticSpecifier()).foldLeft(FeatureExprFactory.False)((f, o) => f or o.feature)
 
 
     /**
@@ -96,14 +134,27 @@ trait CInferInterface extends CTypeSystem with InterfaceWriter {
         expr match {
             case identifier: Id =>
                 val deadCondition = env.isDeadCode
-                for ((fexpr, ctype) <- ctypes.toList)
-                    if (ctype.isFunction && ((fexpr and featureExpr andNot deadCondition) isSatisfiable))
-                        imports = CSignature(identifier.name, ctype, fexpr and featureExpr andNot deadCondition, Seq(identifier.getPositionFrom)) :: imports
+                for ((fexpr, ctype) <- ctypes.toList) {
+                    val localFexpr = fexpr and featureExpr andNot deadCondition
+                    if (ctype.isFunction && (localFexpr isSatisfiable))
+                        isParameter(identifier.name, env).mapf(localFexpr,
+                            (f, e) => if (!e)
+                                imports = CSignature(identifier.name, ctype, f, Seq(identifier.getPositionFrom), Set()) :: imports
+                        )
+                }
             case _ =>
         }
 
 
     }
+
+    /**
+     * check that the id refers to a parameter instead of to a function or variable
+     *
+     * returns true if scope==0
+     */
+    private def isParameter(name: String, env: Env): Conditional[Boolean] =
+        env.varEnv.lookupKind(name).map(_ == KParameter)
 
 
 }

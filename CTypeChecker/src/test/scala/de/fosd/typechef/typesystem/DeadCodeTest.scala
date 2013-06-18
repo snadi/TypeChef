@@ -7,7 +7,6 @@ import org.scalatest.FunSuite
 import de.fosd.typechef.conditional._
 import de.fosd.typechef.featureexpr.FeatureExprFactory
 import de.fosd.typechef.parser.c._
-import de.fosd.typechef.parser.c._
 import FeatureExprFactory._
 
 @RunWith(classOf[JUnitRunner])

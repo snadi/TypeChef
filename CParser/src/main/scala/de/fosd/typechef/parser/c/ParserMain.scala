@@ -5,6 +5,7 @@ import de.fosd.typechef.parser._
 import java.io.{FileWriter, File}
 import FeatureExprFactory.True
 import java.util.Collections
+import de.fosd.typechef.error.Position
 
 object MyUtil {
     implicit def runnable(f: () => Unit): Runnable =
@@ -80,10 +81,10 @@ class ParserMain(p: CParser) {
             //                "  Repeated Distribution: " + ProfilingTokenHelper.repeatedDistribution(in) + "\n" +
             print(
                 "  Conditional Tokens: " + countConditionalTokens(in.tokens) + "\n" +
-                "  Distinct Features#: " + distinctFeatures.size + "\n" +
-             //   "  Distinct Features: " + distinctFeatures.toList.sorted.mkString(";") + "\n" +
-                "  Distinct Feature Expressions #: " + countFeatureExpr(in.tokens) + "\n" +
-                "  Choice Nodes: " + countChoiceNodes(result) + "\n")
+                    "  Distinct Features#: " + distinctFeatures.size + "\n" +
+                    //   "  Distinct Features: " + distinctFeatures.toList.sorted.mkString(";") + "\n" +
+                    "  Distinct Feature Expressions #: " + countFeatureExpr(in.tokens) + "\n" +
+                    "  Choice Nodes: " + countChoiceNodes(result) + "\n")
         }
 
         //        checkParseResult(result, FeatureExprFactory.True)

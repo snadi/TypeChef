@@ -1,7 +1,6 @@
 package de.fosd.typechef.featureexpr.sat
 
 import de.fosd.typechef.featureexpr._
-import java.net.URI
 
 object SATFeatureExprFactory extends AbstractFeatureExprFactory {
 
@@ -22,10 +21,10 @@ object SATFeatureExprFactory extends AbstractFeatureExprFactory {
     //feature model stuff
     def featureModelFactory: FeatureModelFactory = SATFeatureModel
 
-    def createFeatureExprFast(enabledFeatures: Set[SingleFeatureExpr], disabledFeatures: Set[SingleFeatureExpr]) : FeatureExpr = {
+    def createFeatureExprFast(enabledFeatures: Set[SingleFeatureExpr], disabledFeatures: Set[SingleFeatureExpr]): FeatureExpr = {
         // first a fold on the enabled Features (inner) then a fold on the disabled Features
-        return disabledFeatures.foldLeft (
-            enabledFeatures.foldLeft(True)({(f:FeatureExpr,sf:SingleFeatureExpr) => f.and(sf)})
-        ) ({(f:FeatureExpr,sf:SingleFeatureExpr) => f.and(sf.not())})
+        return disabledFeatures.foldLeft(
+            enabledFeatures.foldLeft(True)({(f: FeatureExpr, sf: SingleFeatureExpr) => f.and(sf)})
+        )({(f: FeatureExpr, sf: SingleFeatureExpr) => f.and(sf.not())})
     }
 }

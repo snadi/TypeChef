@@ -2,7 +2,6 @@ package de.fosd.typechef.lexer.options
 
 import io.Source
 import de.fosd.typechef.featureexpr.FeatureExprFactory._
-import java.util.Iterator
 
 object PartialConfigurationParser {
     def load(file: String): PartialConfiguration = {

@@ -31,7 +31,7 @@ class State {
     }
 
     /* pp */void setSawElif() {
-        sawElif= true;
+        sawElif = true;
     }
 
     /* pp */boolean sawElse() {
@@ -44,7 +44,7 @@ class State {
 
     public String toString() {
         return "State(localFeatureExpr = " + getLocalFeatureExpr() + ", currentpc=" + getFullPresenceCondition() + ", parent=" + parent
-                + ", active=" + localFeatures + ", sawelse=" + sawElse + ", saw elif=" + sawElif +")";
+                + ", active=" + localFeatures + ", sawelse=" + sawElse + ", saw elif=" + sawElif + ")";
     }
 
     /**

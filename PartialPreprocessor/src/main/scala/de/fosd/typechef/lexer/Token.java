@@ -101,17 +101,17 @@ public abstract class Token implements LexerToken {
     @Override
     public boolean isLanguageToken() {
         //put this check to avoid a strange null pointer exception which i still dont understand
-        if(getType() != Token.EOF)
-        return getType() != Token.P_LINE
-                && getType() != Token.WHITESPACE
-                && !(getType() != Token.P_FEATUREEXPR
-                && getText().equals("__extension__"))
-                && getType() != Token.NL
-                && getType() != Token.P_IF
-                && getType() != Token.CCOMMENT
-                && getType() != Token.CPPCOMMENT
-                && getType() != Token.P_ENDIF
-                && getType() != Token.P_ELIF;
+        if (getType() != Token.EOF)
+            return getType() != Token.P_LINE
+                    && getType() != Token.WHITESPACE
+                    && !(getType() != Token.P_FEATUREEXPR
+                    && getText().equals("__extension__"))
+                    && getType() != Token.NL
+                    && getType() != Token.P_IF
+                    && getType() != Token.CCOMMENT
+                    && getType() != Token.CPPCOMMENT
+                    && getType() != Token.P_ENDIF
+                    && getType() != Token.P_ELIF;
         else
             return false;
     }
@@ -448,6 +448,8 @@ public abstract class Token implements LexerToken {
     public abstract Source getSource();
 
     public abstract String getSourceName();
+
+    public abstract void setSourceName(String src);
 
     /**
      * "Lazily print" this token, i.e. print it without constructing a full in-memory representation. This is just a

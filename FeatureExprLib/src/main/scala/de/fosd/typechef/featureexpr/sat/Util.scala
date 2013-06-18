@@ -6,10 +6,10 @@ import scala.ref.SoftReference
 abstract class NFException(msg: String) extends Exception(msg)
 
 class NoNFException(
-                           e: SATFeatureExpr,
-                           fullExpr: SATFeatureExpr,
-                           expectCNF: Boolean)
-        extends NFException("expression is not in " + (if (expectCNF) "cnf" else "dnf") + " " + e + " (" + fullExpr + ")")
+                       e: SATFeatureExpr,
+                       fullExpr: SATFeatureExpr,
+                       expectCNF: Boolean)
+    extends NFException("expression is not in " + (if (expectCNF) "cnf" else "dnf") + " " + e + " (" + fullExpr + ")")
 
 class NoLiteralException(e: SATFeatureExpr) extends NFException("expression is not a literal " + e)
 

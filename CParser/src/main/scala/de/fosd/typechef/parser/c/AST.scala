@@ -1,7 +1,7 @@
 package de.fosd.typechef.parser.c
 
 import de.fosd.typechef.conditional._
-import de.fosd.typechef.parser.{WithPosition, Position}
+import de.fosd.typechef.error.{WithPosition, Position}
 
 /**
  * AST for C
@@ -57,8 +57,9 @@ LocalLabelDeclaration -- label names
   */
 
 //Expressions
-trait AST extends Product with Cloneable with WithPosition {
-  override def clone(): AST.this.type = super.clone().asInstanceOf[AST.this.type]
+
+trait AST extends Product with Serializable with Cloneable with WithPosition {
+    override def clone(): AST.this.type = super.clone().asInstanceOf[AST.this.type]
 }
 
 sealed abstract class Expr extends AST
@@ -80,21 +81,21 @@ case class SimplePostfixSuffix(t: String) extends PostfixSuffix
 case class PointerPostfixSuffix(kind: String, id: Id) extends PostfixSuffix
 
 case class FunctionCall(params: ExprList) extends PostfixSuffix {
-  //hack to propagate position information
-  override def setPositionRange(from: Position, to: Position) = {
-    if (!params.hasPosition) params.setPositionRange(from, to)
-    super.setPositionRange(from, to)
-  }
+    //hack to propagate position information
+    override def setPositionRange(from: Position, to: Position) = {
+        if (!params.hasPosition) params.setPositionRange(from, to)
+        super.setPositionRange(from, to)
+    }
 }
 
 case class ArrayAccess(expr: Expr) extends PostfixSuffix
 
 case class PostfixExpr(p: Expr, s: PostfixSuffix) extends Expr {
-  //hack to propagate position information
-  override def setPositionRange(from: Position, to: Position) = {
-    if (!p.hasPosition) p.setPositionRange(from, to);
-    super.setPositionRange(from, to)
-  }
+    //hack to propagate position information
+    override def setPositionRange(from: Position, to: Position) = {
+        if (!p.hasPosition) p.setPositionRange(from, to);
+        super.setPositionRange(from, to)
+    }
 }
 
 case class UnaryExpr(kind: String, e: Expr) extends Expr
@@ -227,20 +228,20 @@ case class Declaration(declSpecs: List[Opt[Specifier]], init: List[Opt[InitDecla
 
 
 abstract class InitDeclarator(val declarator: Declarator, val attributes: List[Opt[AttributeSpecifier]]) extends AST with CDef {
-  def getId = declarator.getId
-  def getName = declarator.getName
-  def getExpr: Option[Expr]
-  def hasInitializer: Boolean = getExpr.isDefined
+    def getId = declarator.getId
+    def getName = declarator.getName
+    def getExpr: Option[Expr]
+    def hasInitializer: Boolean = getExpr.isDefined
 }
 
 case class InitDeclaratorI(override val declarator: Declarator, override val attributes: List[Opt[AttributeSpecifier]], i: Option[Initializer]) extends InitDeclarator(declarator, attributes) {
-  def getExpr = i map {
-    _.expr
-  }
+    def getExpr = i map {
+        _.expr
+    }
 }
 
 case class InitDeclaratorE(override val declarator: Declarator, override val attributes: List[Opt[AttributeSpecifier]], e: Expr) extends InitDeclarator(declarator, attributes) {
-  def getExpr = Some(e)
+    def getExpr = Some(e)
 }
 
 
@@ -261,19 +262,19 @@ case class InitDeclaratorE(override val declarator: Declarator, override val att
 sealed abstract class AbstractDeclarator(val pointers: List[Opt[Pointer]], val extensions: List[Opt[DeclaratorAbstrExtension]]) extends AST
 
 sealed abstract class Declarator(val pointers: List[Opt[Pointer]], val extensions: List[Opt[DeclaratorExtension]]) extends AST {
-  def getId: Id
-  def getName: String
+    def getId: Id
+    def getName: String
 }
 
 
 case class AtomicNamedDeclarator(override val pointers: List[Opt[Pointer]], id: Id, override val extensions: List[Opt[DeclaratorExtension]]) extends Declarator(pointers, extensions) {
-  def getId = id
-  def getName = id.name
+    def getId = id
+    def getName = id.name
 }
 
 case class NestedNamedDeclarator(override val pointers: List[Opt[Pointer]], nestedDecl: Declarator, override val extensions: List[Opt[DeclaratorExtension]]) extends Declarator(pointers, extensions) {
-  def getId = nestedDecl.getId
-  def getName = nestedDecl.getName
+    def getId = nestedDecl.getId
+    def getName = nestedDecl.getName
 }
 
 case class AtomicAbstractDeclarator(override val pointers: List[Opt[Pointer]], override val extensions: List[Opt[DeclaratorAbstrExtension]]) extends AbstractDeclarator(pointers, extensions)
@@ -338,11 +339,11 @@ case class StructInitializer(expr: Expr, attributes: List[Opt[AttributeSpecifier
 case class AsmExpr(isVolatile: Boolean, expr: Expr) extends AST with ExternalDef
 
 case class FunctionDef(specifiers: List[Opt[Specifier]], declarator: Declarator, oldStyleParameters: List[Opt[OldParameterDeclaration]], stmt: CompoundStatement) extends AST with ExternalDef with CDef {
-  def getName = declarator.getName
+    def getName = declarator.getName
 }
 
 case class NestedFunctionDef(isAuto: Boolean, specifiers: List[Opt[Specifier]], declarator: Declarator, parameters: List[Opt[Declaration]], stmt: CompoundStatement) extends CompoundDeclaration with CDef {
-  def getName = declarator.getName
+    def getName = declarator.getName
 }
 
 

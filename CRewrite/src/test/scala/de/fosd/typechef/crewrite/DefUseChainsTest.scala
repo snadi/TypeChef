@@ -4,8 +4,8 @@ import de.fosd.typechef.parser.c.TestHelper
 import org.junit.Test
 
 class DefUseChainsTest extends TestHelper with DefUseChains with ConditionalControlFlow {
-  @Test def test_ggt() {
-    val a = parseFunctionDef("""
+    @Test def test_ggt() {
+        val a = parseFunctionDef( """
     int ggt(int a, int b) {
       int c = a;
       int d = b;
@@ -18,12 +18,12 @@ class DefUseChainsTest extends TestHelper with DefUseChains with ConditionalCont
       }
       return c;
     }
-    """)
+                                  """)
 
-    val env = CASTEnv.createASTEnv(a)
+        val env = CASTEnv.createASTEnv(a)
 
-    // println("succs: " + DotGraph.map2file(getAllSucc(a, env), env))
-    // println("preds: " + DotGraph.map2file(getAllPred(a, env), env))
-  }
+        // println("succs: " + DotGraph.map2file(getAllSucc(a, env), env))
+        // println("preds: " + DotGraph.map2file(getAllPred(a, env), env))
+    }
 
 }

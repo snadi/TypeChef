@@ -2,8 +2,6 @@ package de.fosd.typechef.featureexpr
 
 import junit.framework.TestCase
 import org.junit.{Assert, Test}
-import sat.SATFeatureModel
-import java.io.File
 
 
 /**
@@ -30,17 +28,17 @@ class FeatureModelTest extends TestCase {
     }
 
 
-    def testFm(f:AbstractFeatureExprFactory)    {
+    def testFm(f: AbstractFeatureExprFactory) {
         def d(n: String) = f.createDefinedExternal(n)
-        val a=d("CONFIG_A")
-        val b=d("CONFIG_B")
-        val c=d("CONFIG_C")
-        val x=d("CONFIG_X")
+        val a = d("CONFIG_A")
+        val b = d("CONFIG_B")
+        val c = d("CONFIG_C")
+        val x = d("CONFIG_X")
 
         //A -> B, B->C
-        val fmDimacs=f.featureModelFactory.createFromDimacsFile_2Var(dimacsFile)
-        val approx=(x implies b) and (a implies b)
-        val fmApprox=f.featureModelFactory.create(approx)
+        val fmDimacs = f.featureModelFactory.createFromDimacsFile_2Var(dimacsFile)
+        val approx = (x implies b) and (a implies b)
+        val fmApprox = f.featureModelFactory.create(approx)
 
         Assert.assertFalse((a implies b).isTautology())
         Assert.assertTrue((a implies b).isTautology(fmDimacs))
@@ -48,14 +46,14 @@ class FeatureModelTest extends TestCase {
         Assert.assertFalse((a implies c).isTautology())
         Assert.assertTrue((a implies c).isTautology(fmDimacs))
 
-        val fmCombined=fmDimacs.and(approx)
+        val fmCombined = fmDimacs.and(approx)
 
 
         Assert.assertTrue((x implies c).isTautology(fmCombined))
 
 
 
-        val fmWithX=fmCombined.assumeTrue("CONFIG_X")
+        val fmWithX = fmCombined.assumeTrue("CONFIG_X")
         Assert.assertTrue(x.isTautology(fmWithX))
         Assert.assertTrue(c.isTautology(fmWithX))
 

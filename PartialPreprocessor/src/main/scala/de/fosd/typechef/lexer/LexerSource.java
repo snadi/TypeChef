@@ -387,7 +387,7 @@ public class LexerSource extends Source {
         if (e != '\'') {
             // error("Illegal character constant");
             /* We consume up to the next ' or the rest of the line. */
-            for (; ;) {
+            for (; ; ) {
                 if (isLineSeparator(e)) {
                     unread(e);
                     break;
@@ -415,7 +415,7 @@ public class LexerSource extends Source {
 
         StringBuilder buf = new StringBuilder();
 
-        for (; ;) {
+        for (; ; ) {
             int c = read();
             if (c == close) {
                 break;
@@ -450,7 +450,7 @@ public class LexerSource extends Source {
     private Token _number(StringBuilder text, long val, int d)
             throws IOException, LexerException {
         int bits = 0;
-        for (; ;) {
+        for (; ; ) {
             /* XXX Error check duplicate bits. */
             if (d == 'E' || d == 'e') {
                 text.append((char) d);
@@ -573,7 +573,7 @@ public class LexerSource extends Source {
         StringBuilder text = new StringBuilder();
         int d;
         text.append((char) c);
-        for (; ;) {
+        for (; ; ) {
             d = read();
             if (Character.isIdentifierIgnorable(d))
                 ;
@@ -590,7 +590,7 @@ public class LexerSource extends Source {
         StringBuilder text = new StringBuilder();
         int d;
         text.append((char) c);
-        for (; ;) {
+        for (; ; ) {
             d = read();
             if (ppvalid && isLineSeparator(d)) /* XXX Ugly. */
                 break;

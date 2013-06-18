@@ -154,7 +154,7 @@ import java.io.Reader;
             }
         }
 
-        for (; ;) {
+        for (; ; ) {
             int c = _read();
             switch (c) {
                 case '\\':

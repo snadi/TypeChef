@@ -2,7 +2,7 @@ package de.fosd.typechef.parser.c
 
 import java.io.InputStream
 import de.fosd.typechef.featureexpr.FeatureExprFactory
-import de.fosd.typechef.conditional.{One, Conditional}
+import de.fosd.typechef.conditional.One
 import java.util.Collections
 
 /**

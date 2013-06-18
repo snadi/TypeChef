@@ -67,7 +67,7 @@ class RepOptTest extends TestCase {
 
     @Test
     def testRepOptCommonEnd() {
-        var (ast, next) = parseExtList("""
+        var (ast, next) = parseExtList( """
 #ifdef X
 typedef char a
 #else
@@ -75,7 +75,7 @@ typedef int a
 #endif
 ;
 typedef int b;
-""")
+                                        """)
         println(ast.mkString("\n"))
         println(next)
         assertTrue("actual AST size: " + ast.size, ast.size == 3)
@@ -84,7 +84,7 @@ typedef int b;
     }
 
     def testRepOptMultiFeatureOverlap2() {
-        var (ast, next) = parseExtList("""
+        var (ast, next) = parseExtList( """
 #ifdef X
 #ifdef Y
 typedef char a
@@ -96,7 +96,7 @@ typedef int a
 typedef long a;
 typedef int b;
 #end
-""")
+                                        """)
         println(ast.mkString("\n"))
         println(next)
         assert(ast.size == 4)
@@ -104,7 +104,7 @@ typedef int b;
     }
 
     def testRepOptMultiFeatureOverlap7_linux() {
-        var (ast, next) = parseExtList("""
+        var (ast, next) = parseExtList( """
 #ifdef A
 #ifdef SMP
 
@@ -127,14 +127,14 @@ extern __attribute__((section(".data" "")))  __typeof__(u16) per_cpu__x86_bios_c
 typedef long y;
 typedef long y;
 #endif
-""")
+                                        """)
         println(ast.mkString("\n"))
         println(next)
         assertEquals(10, ast.size) //and one internal choice node
     }
 
     def testRepOptMultiFeatureOverlap6_linux() {
-        var (ast, next) = parseExtList("""
+        var (ast, next) = parseExtList( """
 #ifdef A
 #ifdef CPU
 extern __attribute__((section(".discard"), unused)) char __pcpu_scope_orig_ist;
@@ -184,14 +184,14 @@ typedef long y;
 typedef long y;
 #endif
 #endif
-""")
+                                        """)
         println(ast.mkString("\n"))
         println(next)
         assert(ast.size == 11)
     }
 
     def testRepOptMultiFeatureOverlap5_linux() {
-        var (ast, next) = parseExtList("""
+        var (ast, next) = parseExtList( """
 #ifdef A
 #ifdef CPU
 extern __attribute__((section(".discard"), unused)) char __pcpu_scope_orig_ist;
@@ -222,14 +222,14 @@ typedef long y;
 typedef long y;
 #endif
 #endif
-""")
+                                        """)
         println(ast.mkString("\n"))
         println(next)
         assert(ast.size == 8)
     }
 
     def testRepOptMultiFeatureOverlap4() {
-        var (ast, next) = parseExtList("""
+        var (ast, next) = parseExtList( """
 #ifdef A
 #ifdef B
 typedef char a
@@ -251,14 +251,14 @@ typedef long y;
 typedef long y;
 #endif
 #endif
-""")
+                                        """)
         println(ast.mkString("\n"))
         println(next)
         assert(ast.size == 8)
     }
 
     def testRepOptMultiFeatureOverlap3() {
-        var (ast, next) = parseExtList("""
+        var (ast, next) = parseExtList( """
 #ifdef X
 #ifdef Y
 typedef
@@ -273,7 +273,7 @@ int
 a;
 typedef long a;
 #end
-""")
+                                        """)
         println(ast.mkString("\n"))
         println(next)
         assert(ast.size == 3)
@@ -283,7 +283,7 @@ typedef long a;
 
 
     def testRepOptMultiFeatureOverlap() {
-        var (ast, next) = parseExtList("""
+        var (ast, next) = parseExtList( """
 #ifdef X
 #ifdef Y
 typedef char a
@@ -294,7 +294,7 @@ typedef int a
 #else
 typedef long a;
 #end
-""")
+                                        """)
         println(ast.mkString("\n"))
         println(next)
         assert(ast.size == 3)
@@ -302,7 +302,7 @@ typedef long a;
     }
 
     def testRepOptMultiFeature() {
-        var (ast, next) = parseExtList("""
+        var (ast, next) = parseExtList( """
 #ifdef X
 #ifdef Y
 typedef char a;
@@ -312,7 +312,7 @@ typedef int a;
 #else
 typedef long a;
 #end
-""")
+                                        """)
         println(ast.mkString("\n"))
         println(next)
         assert(ast.size == 3)
@@ -325,14 +325,14 @@ typedef long a;
      */
     @Test
     def testRepOptPlain() {
-        val (ast, next) = parseExtList("""
+        val (ast, next) = parseExtList( """
 #ifdef X
 typedef char a;
 #else
 typedef int a;
 #endif
 typedef int b;
-""")
+                                        """)
         println(ast)
         println(next)
         val size = ast.asInstanceOf[List[Opt[ExternalDef]]].size
@@ -343,7 +343,7 @@ typedef int b;
 
     @Test
     def testRepOptPlain2() {
-        val (ast, next) = parseExtList("""
+        val (ast, next) = parseExtList( """
 #ifdef X
 typedef char a;
 typedef char c;
@@ -352,7 +352,7 @@ typedef int a;
 typedef int c;
 #endif
 typedef int b;
-""")
+                                        """)
         println(ast)
         println(next)
         assert(ast.asInstanceOf[List[Opt[ExternalDef]]].size == 5)

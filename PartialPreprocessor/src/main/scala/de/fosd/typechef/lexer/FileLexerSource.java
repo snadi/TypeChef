@@ -40,6 +40,7 @@ public class FileLexerSource extends LexerSource {
         super(new BufferedReader(reader), true);
         this.path = path;
     }
+
     /**
      * Creates a new Source for lexing the given File
      * <p/>

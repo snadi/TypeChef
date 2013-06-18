@@ -2,7 +2,7 @@ package de.fosd.typechef.parser.test.parsers
 
 import de.fosd.typechef.parser._
 import de.fosd.typechef.conditional._
-import de.fosd.typechef.featureexpr.{FeatureExprFactory, FeatureExpr}
+import de.fosd.typechef.featureexpr.FeatureExprFactory
 
 case class DigitList2(list: List[Opt[Conditional[AST]]]) extends AST
 

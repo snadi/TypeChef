@@ -9,7 +9,6 @@ import de.fosd.typechef.featureexpr.FeatureExprFactory
 class RepOptTest extends TestCase with DigitListUtilities {
 
     import de.fosd.typechef.parser._
-    import de.fosd.typechef.featureexpr.FeatureExpr
 
     case class DList(list: List[Opt[Conditional[AST]]]) extends AST {
         override def toString(): String = list.map(o => o.entry + " - " + o.feature).mkString("[", "\n", "]")

@@ -163,7 +163,7 @@ object SystemLinker {
             mktime
             strftime
             time
-    """.trim.split('\n').map(_.trim).filter(_ != "")
+                                              """.trim.split('\n').map(_.trim).filter(_ != "")
 
 
     //symbols extracted from /usr/lib/libc.so and /lib/ld-linux.so.2 (probably neither accurate not complete)
@@ -2534,7 +2534,7 @@ object SystemLinker {
             crypt
             encrypt
             swab
-        """.trim.split('\n').map(_.trim)
+                                                """.trim.split('\n').map(_.trim)
 
     lazy val allLibs = (libcSymbols ++ stdLibFunctions ++ otherLibFunctions).toSet
 
@@ -2763,7 +2763,7 @@ object SystemLinker {
             string_to_security_class
             unmap_class
             unmap_perm
-        """.trim.split('\n').map(_.trim)
+                                                  """.trim.split('\n').map(_.trim)
 
     lazy val pamLibFunctions: Array[String] = """
 pam_acct_mgmt
@@ -2818,7 +2818,7 @@ pam_binary_handler_fn
 pam_misc_conv_died
 pam_misc_conv_die_time
 pam_misc_conv_warn_tim
-     """.trim.split('\n').map(_.trim)
+                                              """.trim.split('\n').map(_.trim)
 
     def conditionalLinkSelinux(interface: CInterface, condition: FeatureExpr): CInterface = conditionalLinkSymbols(interface, selinuxLibFunctions, condition)
     def conditionalLinkPam(interface: CInterface, condition: FeatureExpr): CInterface = conditionalLinkSymbols(interface, pamLibFunctions, condition)
