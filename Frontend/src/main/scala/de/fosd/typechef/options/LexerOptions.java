@@ -1,17 +1,10 @@
-<<<<<<<HEAD:PartialPreprocessor/src/main/scala/de/fosd/typechef/lexer/options/LexerOptions.java
-        package de.fosd.typechef.lexer.options;
-=======
-        package de.fosd.typechef.options;
->>>>>>>upstream/master:Frontend/src/main/scala/de/fosd/typechef/options/LexerOptions.java
+package de.fosd.typechef.options;
 
-        import de.fosd.typechef.lexer.Feature;
+import de.fosd.typechef.lexer.Feature;
 import de.fosd.typechef.lexer.Warning;
 import de.fosd.typechef.lexer.macrotable.MacroFilter;
-<<<<<<<HEAD:PartialPreprocessor/src/main/scala/de/fosd/typechef/lexer/options/LexerOptions.java
-        =======
-        import de.fosd.typechef.lexer.options.ILexerOptions;
->>>>>>>upstream/master:Frontend/src/main/scala/de/fosd/typechef/options/LexerOptions.java
-        import gnu.getopt.Getopt;
+import de.fosd.typechef.lexer.options.ILexerOptions;
+import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
 
 import java.io.File;
