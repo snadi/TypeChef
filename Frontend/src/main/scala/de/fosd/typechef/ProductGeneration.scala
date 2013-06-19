@@ -6,7 +6,7 @@ import featureexpr._
 
 import bdd.{BDDFeatureExpr, BDDFeatureModel, SatSolver}
 import parser.c.{AST, TranslationUnit}
-import typesystem.CTypeSystemFrontend
+import de.fosd.typechef.typesystem.{CTypeCache, CTypeSystemFrontend}
 import scala.collection.immutable.HashMap
 import scala.Predef._
 import scala._
@@ -410,7 +410,7 @@ object ProductGeneration extends EnforceTreeHelper {
         (famast, tasks, thisFilePath, log)
     }
 
-    def dataflowAnalysis(fm_ts: FeatureModel, ast: AST, opt: FrontendOptions, logMessage: String) {
+    def dataflowAnalysis(fm_ts: FeatureModel, ast: AST, opt: FrontendOptions, logMessage: String, typeCache: CTypeCache = null) {
         val (famast, tasks, filePath, log) = varAwareAnalysisSetup(fm_ts, ast, opt)
         dataflowAnalysisTasks(famast, tasks, fm_ts, filePath, log)
     }
