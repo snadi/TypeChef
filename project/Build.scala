@@ -169,7 +169,7 @@ object TypeChef extends Build {
         file("CParser"),
         settings = buildSettings ++
             Seq(parallelExecution in Test := false,
-                libraryDependencies <+= scalaVersion(kiamaDependency(_)))
+                libraryDependencies <+= scalaVersion(kiamaDependency(_, true)))
     ) dependsOn(featureexpr, jcpp, parserexp, conditionallib, errorlib)
 
 
@@ -182,8 +182,7 @@ object TypeChef extends Build {
     lazy val ctypechecker = Project(
         "CTypeChecker",
         file("CTypeChecker"),
-        settings = buildSettings ++
-            Seq(libraryDependencies <+= scalaVersion(kiamaDependency(_)))
+        settings = buildSettings
     ) dependsOn(cparser % "test->test;compile->compile", conditionallib, errorlib)
 
     lazy val javaparser = Project(
@@ -198,20 +197,6 @@ object TypeChef extends Build {
         settings = buildSettings ++
             Seq(libraryDependencies <+= scalaVersion(kiamaDependency(_)))
     ) dependsOn(cparser % "test->test;compile->compile", ctypechecker, conditionallib, errorlib)
-
-    lazy val crefactor = Project(
-        "CRefactor",
-        file("CRefactor"),
-        settings = buildSettings
-    ) dependsOn(cparser % "test->test;compile->compile", ctypechecker, conditionallib, crewrite, frontend, errorlib)
-
-    lazy val sampling = Project(
-        "Sampling",
-        file("Sampling"),
-        settings = buildSettings ++
-            Seq(libraryDependencies <+= scalaVersion(kiamaDependency(_)))
-    ) dependsOn(cparser % "test->test;compile->compile", ctypechecker, crewrite, conditionallib, frontend, errorlib)
-
 
     def kiamaDependency(scalaVersion: String, testOnly: Boolean = false) = {
         val x = scalaVersion match {

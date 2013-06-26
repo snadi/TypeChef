@@ -6,16 +6,11 @@ import de.fosd.typechef.error.Position
 
 class MyToken(val text: String, val feature: FeatureExpr) extends ProfilingToken {
     def t() = text
-
     def getText = text
-
     def getFeature = feature
-
     def getPosition = new Position {
         def getFile = "stream"
-
         def getLine = 1
-
         def getColumn = 1
     }
 

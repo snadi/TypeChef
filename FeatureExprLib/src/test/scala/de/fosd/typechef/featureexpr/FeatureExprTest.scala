@@ -140,18 +140,12 @@ class FeatureExprTest extends TestCase {
 
 
     def v(value: Int): FeatureExprValue = d.createInteger(value)
-
     def not(v: FeatureExpr) = v.not
-
     //Leave these as def, not val, maybe (???) to test caching more.
     def a = feature("a")
-
     def b = feature("b")
-
     def c = feature("c")
-
     def feature(n: String) = createDefinedExternal(n)
-
     def createLT(a: FeatureExprValue, b: FeatureExprValue) = d.createLessThan(a, b)
 
 

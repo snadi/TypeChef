@@ -267,15 +267,6 @@ sealed abstract class SATFeatureExpr extends FeatureExpr {
         result
     }
 
-    def collectDistinctFeatures2: Set[DefinedExternal] = {
-        var result: Set[DefinedExternal] = Set()
-        this.mapDefinedExpr(_ match {
-            case e: DefinedExternal => result += e; e
-            case e => e
-        }, Map())
-        result
-    }
-
     def collectDistinctFeatureObjects: Set[SingleFeatureExpr] = {
         var result: Set[SingleFeatureExpr] = Set()
         this.mapDefinedExpr(_ match {
@@ -618,6 +609,7 @@ object True extends And(Set()) with DefaultPrint {
     override def debug_print(ind: Int) = indent(ind) + toTextExpr + "\n"
     override def isSatisfiable(fm: FeatureModel) = true
     override def evaluate(selectedFeatures: Set[String]) = true
+
     private def writeReplace(): Object = new FeatureExprSerializationProxy(this.toTextExpr)
 }
 
@@ -627,6 +619,7 @@ object False extends Or(Set()) with DefaultPrint {
     override def debug_print(ind: Int) = indent(ind) + toTextExpr + "\n"
     override def isSatisfiable(fm: FeatureModel) = false
     override def evaluate(selectedFeatures: Set[String]) = false
+
     private def writeReplace(): Object = new FeatureExprSerializationProxy(this.toTextExpr)
 }
 
@@ -762,6 +755,7 @@ class And(val clauses: Set[SATFeatureExpr]) extends BinaryLogicConnective[And] {
     override protected def calcCNFEquiSat: SATFeatureExpr = FExprBuilder.createAnd(clauses.map(_.toCnfEquiSat))
     override def evaluate(selectedFeatures: Set[String]) =
         clauses.foldLeft(true)(_ && _.evaluate(selectedFeatures))
+
     private def writeReplace(): Object = new FeatureExprSerializationProxy(this.toTextExpr)
 }
 
@@ -875,6 +869,7 @@ class Or(val clauses: Set[SATFeatureExpr]) extends BinaryLogicConnective[Or] {
 
     override def evaluate(selectedFeatures: Set[String]) =
         clauses.foldLeft(false)(_ || _.evaluate(selectedFeatures))
+
     private def writeReplace(): Object = new FeatureExprSerializationProxy(this.toTextExpr)
 }
 
@@ -915,6 +910,7 @@ class Not(val expr: SATFeatureExpr) extends HashCachingFeatureExpr {
 
     override def evaluate(selectedFeatures: Set[String]) =
         !expr.evaluate(selectedFeatures)
+
     private def writeReplace(): Object = new FeatureExprSerializationProxy(this.toTextExpr)
 }
 
@@ -965,6 +961,7 @@ class DefinedExternal(name: String) extends DefinedExpr {
     def countSize() = 1
     def isExternal = true
     override def evaluate(selectedFeatures: Set[String]) = selectedFeatures contains name
+
     private def writeReplace(): Object = new FeatureExprSerializationProxy(this.toTextExpr)
 }
 
@@ -986,6 +983,7 @@ class DefinedMacro(val name: String, val presenceCondition: SATFeatureExpr, val 
     //override def collectDistinctFeatures=presenceCondition.resolveToExternal.collectDistinctFeatures
     //override def collectDistinctFeatureObjects=presenceCondition.resolveToExternal.collectDistinctFeatureObjects
     override def evaluate(selectedFeatures: Set[String]) = presenceCondition.evaluate(selectedFeatures)
+
     private def writeReplace(): Object = throw new RuntimeException("cannot serialize DefinedMacro")
 }
 

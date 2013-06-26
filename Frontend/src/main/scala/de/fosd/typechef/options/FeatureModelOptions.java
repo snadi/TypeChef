@@ -7,9 +7,6 @@ import de.fosd.typechef.lexer.FeatureExprLib;
 import de.fosd.typechef.lexer.options.ILexerOptions;
 import de.fosd.typechef.lexer.options.PartialConfiguration;
 import de.fosd.typechef.lexer.options.PartialConfigurationParser$;
-import de.fosd.typechef.options.OptionException;
-import de.fosd.typechef.options.Options;
-import de.fosd.typechef.typesystem.ICTypeSysOptions;
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
 
@@ -77,13 +74,7 @@ public abstract class FeatureModelOptions extends LexerOptions implements ILexer
             if (featureModel != null)
                 throw new OptionException("cannot load feature model from dimacs file. feature model already exists.");
             checkFileExists(g.getOptarg());
-            // case studies busybox and load a specialized feature model
-            // all others load a standard feature model in which the prefix is set to "" (default is "CONFIG_"),
-            // which is used in busybox and linux
-            if (g.getOptarg().contains("linux") || g.getOptarg().contains("busybox"))
-                featureModel = FeatureExprLib.featureModelFactory().createFromDimacsFile_2Var(g.getOptarg());
-            else
-                featureModel = FeatureExprLib.featureModelFactory().createFromDimacsFile(g.getOptarg(), "");
+            featureModel = FeatureExprLib.featureModelFactory().createFromDimacsFile_2Var(g.getOptarg());
         } else if (c == FM_FEXPR) {     //--featureModelFExpr
             checkFileExists(g.getOptarg());
             FeatureExpr f = new FeatureExprParserJava(FeatureExprLib.l()).parseFile(g.getOptarg());

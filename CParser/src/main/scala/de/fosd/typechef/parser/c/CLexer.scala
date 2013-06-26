@@ -36,7 +36,6 @@ object CLexer {
         }
         new TokenReader(result.toList, 0, new CTypeContext(), CToken.EOF)
     }
-
     //
     //    /** used to recognize identifiers in the token implementation **/
     //

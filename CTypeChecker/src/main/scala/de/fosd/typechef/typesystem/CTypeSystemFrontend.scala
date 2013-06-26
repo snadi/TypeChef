@@ -30,7 +30,6 @@ class CTypeSystemFrontend(iast: TranslationUnit,
 
     var errors: List[TypeChefError] = List()
 
-    var isSilent = false
 
     val DEBUG_PRINT = false
 
@@ -52,9 +51,7 @@ class CTypeSystemFrontend(iast: TranslationUnit,
         if (condition.isSatisfiable() && condition.isSatisfiable(featureModel)) {
             val e = new TypeChefError(severity, condition, msg, where, severityExtra)
             errors = e :: errors
-            if (!isSilent) {
-                println("  - " + e)
-            }
+            println("  - " + e)
         }
 
 
@@ -78,9 +75,10 @@ class CTypeSystemFrontend(iast: TranslationUnit,
         return merrors.isEmpty
     }
     def checkASTSilent: Boolean = {
-        isSilent = true
         errors = List() // clear error list
         typecheckTranslationUnit(iast)
         return errors.isEmpty
     }
 }
+
+

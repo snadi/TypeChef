@@ -45,6 +45,7 @@ class CParserTest2 extends TestCase {
         assertParseable("const", p.typeQualifier)
         assertParseable("restrict", p.typeQualifier)
         assertParseable("volatile", p.typeQualifier)
+
         assertParseable("unsigned int", p.typeName)
     }
 

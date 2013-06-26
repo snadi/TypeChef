@@ -21,14 +21,12 @@ class SatSolver {
      * hence caching is currently disabled
      */
     val CACHING = false
-
     def isSatisfiable(exprCNF: SATFeatureExpr, featureModel: SATFeatureModel = SATNoFeatureModel): Boolean = {
         (if (CACHING && (nfm(featureModel) != SATNoFeatureModel))
             SatSolverCache.get(nfm(featureModel))
         else
             new SatSolverImpl(nfm(featureModel), false)).isSatisfiable(exprCNF)
     }
-
     /**
      * Basically a clone of isSatisfiable(..) that also returns the satisfying assignment (if available).
      * The return value is a Pair where the first element is a list of the feature names set to true.
@@ -43,9 +41,7 @@ class SatSolver {
 
         if (solver.isSatisfiable(exprCNF, exprCNF != True)) {
             return Some(solver.getLastModel())
-        } else {
-            return None
-        }
+        } else {return None}
     }
 
     private def nfm(fm: SATFeatureModel) = if (fm == null) SATNoFeatureModel else fm
@@ -53,7 +49,6 @@ class SatSolver {
 
 private object SatSolverCache {
     val cache: WeakHashMap[SATFeatureModel, SatSolverImpl] = new WeakHashMap()
-
     def get(fm: SATFeatureModel) =
     /*if (fm == NoFeatureModel) new SatSolverImpl(fm)
    else */ cache.getOrElseUpdate(fm, new SatSolverImpl(fm, true))
@@ -208,7 +203,6 @@ private class SatSolverImpl(featureModel: SATFeatureModel, isReused: Boolean) {
                 println(" in " + (System.currentTimeMillis() - startTimeSAT) + " ms>")
         }
     }
-
     /**
      * This pair contains the model that was constructed during the last isSatisfiable call (if the result was true).
      * The first element contains the names of the features set to true, the second contains the names of the false features.
@@ -217,7 +211,6 @@ private class SatSolverImpl(featureModel: SATFeatureModel, isReused: Boolean) {
     // model that satisfies the FM (when a TRUE Expression is passed to the solver)
     // this is cached after first creation
     var trueModel: Pair[List[String], List[String]] = null
-
     def getLastModel() = lastModel
 }
 

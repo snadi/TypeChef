@@ -16,7 +16,6 @@ import de.fosd.typechef.parser.c.TranslationUnit
 
 object Frontend {
 
-    private var storedAst: AST = null
 
     def main(args: Array[String]) {
         // load options
@@ -71,18 +70,6 @@ object Frontend {
 
         def get(period: String): Long = times.getOrElse(period, 0)
 
-        override def toString = {
-            var res = "timing "
-            val switems = times.toList.filterNot(x => x._1 == "none" || x._1 == "done")
-
-            if (switems.size > 0) {
-                res = res + "("
-                res = res + switems.map(_._1).reduce(_ + ", " + _)
-                res = res + ")\n"
-                res = res + switems.map(_._2.toString).reduce(_ + ";" + _)
-            }
-            res
-        }
     }
 
 
@@ -95,17 +82,9 @@ object Frontend {
 
         val fm = opt.getLexerFeatureModel().and(opt.getLocalFeatureModel).and(opt.getFilePresenceCondition)
         opt.setFeatureModel(fm) //otherwise the lexer does not get the updated feature model with file presence conditions
-        /*
-        // create dimacs file from feature model
-        opt.getFeatureModelTypeSystem.asInstanceOf[SATFeatureModel].writeToDimacsFile(new File(
-            "/tmp/BB_fm.dimacs"
-        ))
-
-        System.exit(0)
-        */
         if (!opt.getFilePresenceCondition.isSatisfiable(fm)) {
             println("file has contradictory presence condition. existing.") //otherwise this can lead to strange parser errors, because True is satisfiable, but anything else isn't
-            return
+            return;
         }
 
         var ast: AST = null
@@ -127,21 +106,20 @@ object Frontend {
             if (ast == null) {
                 //no parsing and serialization if read serialized ast
                 val parserMain = new ParserMain(new CParser(fm))
-                val ast = parserMain.parserMain(in, opt)
+                ast = parserMain.parserMain(in, opt)
 
-                if (ast != null && opt.serializeAST) {
-                    stopWatch.start("serialize")
+                stopWatch.start("serialize")
+                if (ast != null && opt.serializeAST)
                     serializeAST(ast, opt.getSerializedASTFilename)
-                }
-
             }
+
 
             if (ast != null) {
                 val fm_ts = opt.getTypeSystemFeatureModel.and(opt.getLocalFeatureModel).and(opt.getFilePresenceCondition)
-                val cachedTypes = opt.xfree // just an example
+                val cachedTypes = opt.conditionalControlFlow || opt.dataFlow
                 val ts = if (cachedTypes)
-                        new CTypeSystemFrontend(ast.asInstanceOf[TranslationUnit], fm_ts, opt) with CTypeCache
-                    else new CTypeSystemFrontend(ast.asInstanceOf[TranslationUnit], fm_ts, opt)
+                    new CTypeSystemFrontend(ast.asInstanceOf[TranslationUnit], fm_ts, opt) with CTypeCache
+                else new CTypeSystemFrontend(ast.asInstanceOf[TranslationUnit], fm_ts, opt)
 
                 /** I did some experiments with the TypeChef FeatureModel of Linux, in case I need the routines again, they are saved here. */
                 //Debug_FeatureModelExperiments.experiment(fm_ts)
@@ -165,31 +143,19 @@ object Frontend {
                     if (opt.writeDebugInterface)
                         ts.debugInterface(interface, new File(opt.getDebugInterfaceFilename))
                 }
-                if (opt.dumpcfg) {
-                    stopWatch.start("dumpCFG")
+                if (opt.conditionalControlFlow) {
+                    stopWatch.start("controlFlow")
 
                     val cf = new CAnalysisFrontend(ast.asInstanceOf[TranslationUnit], fm_ts)
-                    cf.dumpCFG()
+                    cf.checkCfG()
                 }
-                if (opt.doublefree) {
-                    stopWatch.start("doublefree")
-                    val df = new CAnalysisFrontend(ast.asInstanceOf[TranslationUnit], fm_ts)
-                    df.doubleFree()
-                }
-                if (opt.uninitializedmemory) {
-                    stopWatch.start("uninitializedmemory")
-                    val uv = new CAnalysisFrontend(ast.asInstanceOf[TranslationUnit], fm_ts)
-                    uv.uninitializedMemory()
-                }
-                if (opt.xfree) {
-                    stopWatch.start("xfree")
-                    val xf = new CAnalysisFrontend(ast.asInstanceOf[TranslationUnit], fm_ts)
-                    xf.xfree()
-                }
-                if (opt.danglingswitchcode) {
-                    stopWatch.start("danglingswitchcode")
-                    val ds = new CAnalysisFrontend(ast.asInstanceOf[TranslationUnit], fm_ts)
-                    ds.danglingSwitchCode()
+                if (opt.dataFlow) {
+                    assert(cachedTypes)
+                    stopWatch.start("dataFlow")
+                    ProductGeneration.dataflowAnalysis(fm_ts, ast, opt,
+                        logMessage = ("Time for lexing(ms): " + (stopWatch.get("lexing")) + "\nTime for parsing(ms): " + (stopWatch.get("parsing")) + "\n"),
+                        typeCache = ts.asInstanceOf[CTypeCache]
+                    )
                 }
 
             }
@@ -198,13 +164,13 @@ object Frontend {
         stopWatch.start("done")
         errorXML.write()
         if (opt.recordTiming)
-            println(stopWatch)
+            println("timing (lexer, parser, type system, interface inference, conditional control flow, data flow)\n" + (stopWatch.get("lexing")) + ";" + (stopWatch.get("parsing")) + ";" + (stopWatch.get("typechecking")) + ";" + (stopWatch.get("interfaces")) + ";" + (stopWatch.get("controlFlow")) + ";" + (stopWatch.get("dataFlow")))
 
     }
 
 
     def lex(opt: FrontendOptions): TokenReader[CToken, CTypeContext] = {
-        val tokens = new lexer.Main().run(opt, opt.parse)
+        val tokens = new lexer.Main().run(opt, opt.parse, opt.getFilePresenceCondition, opt.getFile)
         val in = CLexer.prepareTokens(tokens)
         in
     }
@@ -223,6 +189,4 @@ object Frontend {
         fr.close()
         ast
     }
-
-    def getAST = storedAst
 }

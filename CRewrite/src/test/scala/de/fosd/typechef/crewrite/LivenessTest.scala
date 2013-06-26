@@ -1,61 +1,62 @@
 package de.fosd.typechef.crewrite
 
 import org.junit.Test
-import de.fosd.typechef.parser.c._
+import de.fosd.typechef.parser.c.{Id, TestHelper, PrettyPrinter, FunctionDef}
 import de.fosd.typechef.featureexpr.FeatureExprFactory
 import org.scalatest.matchers.ShouldMatchers
-import de.fosd.typechef.typesystem.{CDeclUse, CTypeSystemFrontend}
-import de.fosd.typechef.conditional.Opt
 
-class LivenessTest extends TestHelper with ShouldMatchers with IntraCFG with CFGHelper {
+class LivenessTest extends TestHelper with ShouldMatchers with ConditionalControlFlow with Liveness {
 
     private def runExample(code: String) {
         val a = parseFunctionDef(code)
 
         val env = CASTEnv.createASTEnv(a)
         val ss = getAllSucc(a.stmt.innerStatements.head.entry, FeatureExprFactory.empty, env).map(_._1).filterNot(x => x.isInstanceOf[FunctionDef])
+        setEnv(env)
+        val udr = determineUseDeclareRelation(a)
+        println(udr)
+        setUdr(udr)
+        setFm(FeatureExprFactory.empty)
 
-        val ts = new CTypeSystemFrontend(TranslationUnit(List(Opt(FeatureExprFactory.True, a)))) with CDeclUse
-        assert(ts.checkASTSilent, "typecheck fails!")
-        val udm = ts.getUseDeclMap
-        val lv = new Liveness(env, udm, FeatureExprFactory.empty)
-
-        for (s <- ss) {
-            println(PrettyPrinter.print(s) + "  uses: " + lv.gen(s) + "   defines: " + lv.kill(s) +
-                "  in: " + lv.in(s) + "   out: " + lv.out(s))
-        }
-
+        for (s <- ss)
+            println(PrettyPrinter.print(s) + "  uses: " + usesVar(s, env) + "   defines: " + definesVar(s, env) +
+                "  in: " + in(s) + "   out: " + out(s))
+        println("succs: " + DotGraph.map2file(getAllSucc(a, FeatureExprFactory.empty, env), env))
     }
 
     private def runDefinesExample(code: String) = {
         val a = parseStmt(code)
-        val lv = new Liveness(CASTEnv.createASTEnv(a), null, null)
-        lv.kill(a)
+        definesVar(a, CASTEnv.createASTEnv(a))
     }
 
     private def runUsesExample(code: String) = {
         val a = parseStmt(code)
-        val lv = new Liveness(CASTEnv.createASTEnv(a), null, null)
-        lv.gen(a)
+        usesVar(a, CASTEnv.createASTEnv(a))
     }
 
     private def runDeclaresExample(code: String) = {
         val a = parseDecl(code)
-        val lv = new Liveness(CASTEnv.createASTEnv(a), null, null)
-        lv.declaresVar(a)
+        declaresVar(a, CASTEnv.createASTEnv(a))
+    }
+
+    private def runUseDeclareRelationExample(code: String) = {
+        val a = parseFunctionDef(code)
+        val env = CASTEnv.createASTEnv(a)
+        setEnv(env)
+        determineUseDeclareRelation(a)
     }
 
     @Test def test_return_function() {
         runExample( """
       void foo() {
-        return foo();
+        return f(a, b, c);
     }
                     """)
     }
 
     @Test def test_standard_liveness_example() {
         runExample( """
-      int foo(int a, int b, int c) {
+      void foo() {
         a = 0;
         l1: b = a + 1;
         c = c + b;
@@ -68,7 +69,7 @@ class LivenessTest extends TestHelper with ShouldMatchers with IntraCFG with CFG
 
     @Test def test_standard_liveness_variability_f() {
         runExample( """
-      int foo(int a, int b, int c) {
+      void foo(int a, int b, int c) {
         a = 0;
         l1: b = a + 1;
         c = c + b;
@@ -82,7 +83,7 @@ class LivenessTest extends TestHelper with ShouldMatchers with IntraCFG with CFG
 
     @Test def test_standard_liveness_variability_notf() {
         runExample( """
-      int foo(int a, int b, int c) {
+      void foo() {
         a = 0;
         l1: b = a + 1;
         c = c + b;
@@ -93,8 +94,8 @@ class LivenessTest extends TestHelper with ShouldMatchers with IntraCFG with CFG
     }
 
     @Test def test_standard_liveness_variability() {
-        runExample( """
-      int foo(int a, int b, int c) {
+        val a = parseFunctionDef( """
+      void foo() {
         a = 0;
         l1: b = a + 1;
         c = c + b;
@@ -105,7 +106,7 @@ class LivenessTest extends TestHelper with ShouldMatchers with IntraCFG with CFG
         #endif
         return c;
     }
-                    """)
+                                  """)
     }
 
     @Test def test_jens() {
@@ -131,6 +132,7 @@ class LivenessTest extends TestHelper with ShouldMatchers with IntraCFG with CFG
         int c = a;
         if (c) {
         }
+        return c;
     }
                     """)
     }
@@ -372,7 +374,7 @@ class LivenessTest extends TestHelper with ShouldMatchers with IntraCFG with CFG
         runExample( """
       static void make_hash(const char *key, unsigned *start, unsigned *decrement, const int hash_prime) {
       unsigned long hash_num = key[0];
-      int len = 1;
+      int len = strlen(key);
       int i;
 
       for (i = 1; i < len; i++) {
@@ -438,7 +440,7 @@ class LivenessTest extends TestHelper with ShouldMatchers with IntraCFG with CFG
                         """) should be(Map(FeatureExprFactory.True -> Set(Id("a"), Id("c")), fb -> Set(Id("b"))))
         runUsesExample( """a = (b < 2) ? c : d;
 
-                        """) should be(Map(FeatureExprFactory.True -> Set(Id("b")))) // TODO conditional expressions.
+                        """) should be(Map(FeatureExprFactory.True -> Set(Id("b")))) // TODO
 
         runUsesExample("&a;") should be(Map(FeatureExprFactory.True -> Set(Id("a"))))
         runUsesExample("*a;") should be(Map(FeatureExprFactory.True -> Set(Id("a"))))
@@ -556,5 +558,164 @@ class LivenessTest extends TestHelper with ShouldMatchers with IntraCFG with CFG
       union {
         int i;
       } u;""") should be(Map(FeatureExprFactory.True -> Set(Id("u"))))
+    }
+
+    @Test def test_useDeclareRelation() {
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = 0;
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = 0;
+        int b = a;
+        if (b) {
+          int a = b;
+          a;
+        }
+        b;
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo(int argc) {
+        struct s {
+          int i;
+          int j;
+        };
+
+        struct s k;
+
+        if (argc) {
+          k.i = 0;
+        } else {
+          k.j = 1;
+        }
+        k.i = 2;
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = 0;
+        int b = a;
+        if (b) {
+          #if definedEx(A)
+          int a = b;
+          #endif
+          a;
+        }
+        b;
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = 0;
+        if (a) {
+          int a;
+          a;
+        }
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = 0;
+        if (a) { }
+        else if (a) {
+          int a;
+          a;
+        }
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = 0;
+        if (a) { }
+        else {
+          int a;
+          a;
+        }
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = 0;
+        do {
+          int a;
+          a;
+        } while (a);
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = 0;
+        while (a) {
+          int a;
+          a;
+        }
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = 0;
+        for (;a < 10;) {
+          int a;
+          a;
+        }
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = 0;
+        if (a) {
+          int a;
+          a;
+        }
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = 0;
+        if (a) { }
+        else if (a) {
+          #if definedEx(A)
+          int a;
+          #endif
+          a;
+        }
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = 0;
+        if (a) { }
+        else {
+          #if definedEx(A)
+          int a;
+          #endif
+          a;
+        }
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = 0;
+        do {
+          #if definedEx(A)
+          int a;
+          #endif
+          a;
+        } while (a);
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = 0;
+        while (a) {
+          #if definedEx(A)
+          int a;
+          #endif
+          a;
+        }
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = 0;
+        for (;a < 10;) {
+          #if definedEx(A)
+          int a;
+          #endif
+          a;
+        }
+      }"""))
+        println(runUseDeclareRelationExample( """
+      void foo() {
+        int a = ({int a = 2; a + 2;}) + 3;
+      }"""))
     }
 }

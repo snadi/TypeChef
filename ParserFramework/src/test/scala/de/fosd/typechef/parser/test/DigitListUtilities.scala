@@ -13,15 +13,10 @@ trait DigitListUtilities {
     val True = FeatureExprFactory.True
 
     def t(text: String): MyToken = t(text, FeatureExprFactory.True)
-
     def t(text: String, feature: FeatureExpr): MyToken = new MyToken(text, feature)
-
     def outer(x: AST) = DigitList2(List(o(x)))
-
     def outer(x: Conditional[AST]) = DigitList2(List(Opt(FeatureExprFactory.True, x)))
-
     def wrapList(x: AST*) = DigitList2(List() ++ x.map(One(_)).map(Opt(FeatureExprFactory.True, _)))
-
     def wrapList(x: List[AST]): DigitList2 = wrapList(x: _*)
 
 

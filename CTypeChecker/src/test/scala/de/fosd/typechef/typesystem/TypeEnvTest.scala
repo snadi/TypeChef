@@ -422,8 +422,8 @@ class TypeEnvTest extends FunSuite with ShouldMatchers with CTypeSystem with CEn
         enumenv should contain key ("Color")
         enumenv should not contain key("Undef")
 
-        enumenv("Direction") should be(True, Id("Direction"))
-        enumenv("Color") should be((fy or fx), Id("Color"))
+        enumenv("Direction") should be(True)
+        enumenv("Color") should be(fy or fx)
 
         env("South") should be(Choice(fx, _i, One(CUndefined)))
         env("North") should be(_i)
@@ -708,7 +708,7 @@ class TypeEnvTest extends FunSuite with ShouldMatchers with CTypeSystem with CEn
         last.varEnv("uncompressed") should be(One(CUnknown()))
         last.varEnv("SEQ_COPY") should be(_i)
 
-        last.enumEnv("lzma2_seq") should be(FeatureExprFactory.True, Id("lzma2_seq"))
+        last.enumEnv("lzma2_seq") should be(FeatureExprFactory.True)
     }
 
     test("joergs defuse example") {

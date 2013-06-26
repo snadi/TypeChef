@@ -982,6 +982,7 @@ return 1;
         //
     }
 
+
     test("conflicting types in redeclaration") {
         //https://www.securecoding.cert.org/confluence/display/seccode/DCL40-C.+Incompatible+declarations+of+the+same+function+or+object
         expect(false) {

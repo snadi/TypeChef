@@ -50,7 +50,6 @@ class Test {}
         assertEquals(4, result.tokens.size)
         assertTrue(result.tokens.forall(_.getFeature().equivalentTo(FeatureExprFactory.createDefinedExternal("X"))))
     }
-
     @Test
     def testJavaLexerIfdef2() {
         val result: TokenReader[TokenWrapper, Null] = JavaLexer.lex( """//#ifdef X
@@ -65,15 +64,12 @@ class Test {}
     @Test
     def unsupportedPreprocessorDirective1 = expectUnsupported( """//#define x 1
 x""")
-
     @Test
     def unsupportedPreprocessorDirective2 = expectUnsupported( """//#if x==1" +
     		x""")
-
     @Test
     def errorOnIllformedNesting = expectUnsupported( """//#ifdef X
     		class x {}""")
-
     @Test
     def errorOnIllformedNesting2 = expectUnsupported( """//#endif
     		class x{}""")

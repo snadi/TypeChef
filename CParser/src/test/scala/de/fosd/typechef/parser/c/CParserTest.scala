@@ -1127,6 +1127,7 @@ void bar() {
                             """, p.translationUnit)
     }
 
+
     @Test
     def test_uclibc {
         assertParseableAST( """
@@ -1163,11 +1164,6 @@ void bar() {
                               |	      a = *++haystack;""".stripMargin, p.statement)
     }
 
-    @Test
-    def test_forunsigned {
-        //based on a problem in uclibc; only working with a newer C standard C99 or GNUC99
-        //        assertParseableAST("""for (unsigned int t = 0; t < 16; ++t);""".stripMargin , p.statement)
-    }
 
     private def assertNoDeadNodes(ast: Product) {
         assertNoDeadNodes(ast, FeatureExprFactory.True, ast)

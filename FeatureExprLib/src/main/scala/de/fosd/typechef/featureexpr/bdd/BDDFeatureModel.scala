@@ -36,7 +36,6 @@ class BDDFeatureModel(val variables: Map[String, Int], val clauses: IVec[IVecInt
 
     def assumeTrue(featurename: String) =
         new BDDFeatureModel(variables, clauses, lastVarId, extraConstraints, assumedFalse, assumedTrue + featurename)
-
     def assumeFalse(featurename: String) =
         new BDDFeatureModel(variables, clauses, lastVarId, extraConstraints, assumedFalse + featurename, assumedTrue)
 
@@ -101,7 +100,7 @@ object BDDFeatureModel extends FeatureModelFactory {
     /**
      * load a standard Dimacs file as feature model
      */
-    def createFromDimacsFile(file: String, variablePrefix: String = "CONFIG_"): FeatureModel = {
+    def createFromDimacsFile(file: String, variablePrefix: String = "CONFIG_", suffix: String = "") = {
         var variables: Map[String, Int] = Map()
         val clauses = new Vec[IVecInt]()
         var maxId = 0
@@ -114,7 +113,8 @@ object BDDFeatureModel extends FeatureModelFactory {
                 else
                     entries(0).toInt
                 maxId = scala.math.max(id, maxId)
-                variables = variables.updated(variablePrefix + entries(1), id)
+                variables = variables.updated(variablePrefix + entries(1) + suffix, id)
+
             } else if ((line startsWith "p ") || (line.trim.size == 0)) {
                 //comment, do nothing
             } else {
@@ -129,12 +129,10 @@ object BDDFeatureModel extends FeatureModelFactory {
         assert(maxId == variables.size, "largest variable id " + maxId + " differs from number of variables " + variables.size)
         new BDDFeatureModel(variables, clauses, maxId, BDDFeatureExprFactory.TrueB, Set(), Set())
     }
-
     /**
      * special reader for the -2var model used by the LinuxAnalysis tools from waterloo
      */
     def createFromDimacsFile_2Var(file: String) = loadDimacsFile_2Var(scala.io.Source.fromFile(file))
-
     def createFromDimacsFile_2Var(file: URI) = loadDimacsFile_2Var(scala.io.Source.fromFile(file))
 
     private def loadDimacsFile_2Var(source: scala.io.Source) = {

@@ -42,9 +42,7 @@ object SatSolver {
                 if (preferDisabledFeatures) {
                     var enabledFeatures: Set[SingleFeatureExpr] = Set()
                     for (f <- trueFeatures) {
-                        val elem = remainingInterestingFeatures.find({
-                            fex: SingleFeatureExpr => fex.feature.equals(f)
-                        })
+                        val elem = remainingInterestingFeatures.find({fex: SingleFeatureExpr => fex.feature.equals(f)})
                         elem match {
                             case Some(fex: SingleFeatureExpr) => {
                                 remainingInterestingFeatures -= fex
@@ -57,9 +55,7 @@ object SatSolver {
                 } else {
                     var disabledFeatures: Set[SingleFeatureExpr] = Set()
                     for (f <- falseFeatures) {
-                        val elem = remainingInterestingFeatures.find({
-                            fex: SingleFeatureExpr => fex.feature.equals(f)
-                        })
+                        val elem = remainingInterestingFeatures.find({fex: SingleFeatureExpr => fex.feature.equals(f)})
                         elem match {
                             case Some(fex: SingleFeatureExpr) => {
                                 remainingInterestingFeatures -= fex
@@ -81,7 +77,6 @@ object SatSolver {
      * hence caching is currently disabled
      */
     val CACHING = true
-
     def isSatisfiable(featureModel: BDDFeatureModel, dnf: Iterator[Seq[Int]], lookupName: (Int) => String): Boolean = {
         (if (CACHING && (nfm(featureModel) != BDDNoFeatureModel))
             SatSolverCache.get(nfm(featureModel))
@@ -103,9 +98,7 @@ object SatSolver {
 
         if (solver.isSatisfiable(dnf, lookupName)) {
             return Some(solver.getLastModel())
-        } else {
-            return None
-        }
+        } else {return None}
     }
 
 
@@ -114,7 +107,6 @@ object SatSolver {
 
 private object SatSolverCache {
     val cache: WeakHashMap[BDDFeatureModel, SatSolverImpl] = new WeakHashMap()
-
     def get(fm: BDDFeatureModel) = {
         val c = cache.get(fm)
         if (c.isDefined && !c.get.invalid)
@@ -239,12 +231,8 @@ class SatSolverImpl(featureModel: BDDFeatureModel) {
      * The first element contains the names of the features set to true, the second contains the names of the false features.
      */
     var lastModel: Pair[List[String], List[String]] = null
-
     def getLastModel() = lastModel
 
     var invalid: Boolean = false
-
-    def invalidateCache() {
-        invalid = true
-    }
+    def invalidateCache() { invalid = true }
 }

@@ -22,31 +22,24 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
 
     class SeqParser[T, U](thisParser: => MultiParser[T], thatParser: => MultiParser[U]) extends MultiParser[~[T, U]] {
         name = "~"
-
         def apply(in: Input, parserState: ParserState): MultiParseResult[~[T, U]] = {
             val firstResult = thisParser(in, parserState)
             firstResult.seq2(parserState, thatParser)
         }
-
         def a = thisParser
-
         def b = thatParser
     }
 
     class SeqCommitParser[T, U](thisParser: => MultiParser[T], thatParser: => MultiParser[U]) extends SeqParser[T, U](thisParser, thatParser) {
         name = "~!"
-
         override def apply(in: Input, parserState: ParserState): MultiParseResult[~[T, U]] =
             thisParser(in, parserState).seq2(parserState, (next: Input, fs: FeatureExpr) => thatParser(next, fs).commit)
     }
 
     class AltParser[T, U >: T](thisParser: => MultiParser[T], alternativeParser: => MultiParser[U]) extends MultiParser[U] {
         name = "|"
-
         def a = thisParser
-
         def b = alternativeParser
-
         def apply(in: Input, parserState: ParserState): MultiParseResult[U] = {
             thisParser(in, parserState).replaceAllFailure(parserState, (fs: FeatureExpr) => alternativeParser(in, fs))
         }
@@ -54,18 +47,14 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
 
     class MapParser[T, U](thisParser: => MultiParser[T], f: T => U) extends MultiParser[U] {
         name = "map"
-
         def a = thisParser
-
         def apply(in: Input, feature: FeatureExpr): MultiParseResult[U] =
             thisParser(in, feature).map(f)
     }
 
     class MapWithPositionParser[T, U](thisParser: => MultiParser[T], f: T => U) extends MultiParser[U] {
         name = "map"
-
         def a = thisParser
-
         def apply(in: Input, feature: FeatureExpr): MultiParseResult[U] = {
             val startPos = in.pos
             val result = thisParser(in, feature).map(f)
@@ -82,15 +71,12 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
 
     abstract class RepParser[T](thisParser: => MultiParser[T]) extends MultiParser[List[Opt[T]]] {
         def a = thisParser
-
         name = "*"
     }
 
     class JoinParser[T](thisParser: => MultiParser[T]) extends MultiParser[Conditional[T]] {
         name = "!"
-
         def a = thisParser
-
         def apply(in: Input, feature: FeatureExpr): MultiParseResult[Conditional[T]] =
             thisParser(in, feature).join(feature)
     }
@@ -105,9 +91,7 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
 
     class OptParser[+T](thisParser: => MultiParser[T]) extends MultiParser[Option[T]] {
         name = "opt"
-
         def a = thisParser
-
         def apply(in: Input, feature: FeatureExpr): MultiParseResult[Option[T]] =
             (thisParser ^^ (x => Some(x)) | success(None))(in, feature)
     }
@@ -116,12 +100,10 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
     abstract class MultiParser[+T] extends ((Input, ParserState) => MultiParseResult[T]) {
         thisParser =>
         protected var name: String = ""
-
         def named(n: String): this.type = {
             name = n;
             this
         }
-
         override def toString() = "Parser (" + name + ")"
 
         /**
@@ -151,7 +133,6 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
         def ^^[U](f: T => U): MultiParser[U] = mapWithPosition(f)
 
         def map[U](f: T => U): MultiParser[U] = new MapParser(this, f)
-
         def mapWithPosition[U](f: T => U): MultiParser[U] = new MapWithPositionParser(this, f)
 
         //replace on success
@@ -170,7 +151,6 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
          * join parse results when possible
          */
         def !(): MultiParser[Conditional[T]] = join.named("!")
-
         def join: MultiParser[Conditional[T]] = new JoinParser(this)
 
         def changeContext(contextModification: (T, FeatureExpr, TypeContext) => TypeContext): MultiParser[T] =
@@ -189,14 +169,12 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
                 }
             }
         }.named("~>")
-
         /**
          * combines ~> and ~! (non backtracking and dropping first result)
          */
         def ~!>[U](thatParser: => MultiParser[U]): MultiParser[U] = this ~! thatParser ^^ {
             case a ~ b => b
         }
-
         def ~~>[U](thatParser: => MultiParser[U]): MultiParser[U] = this ~~ thatParser ^^ {
             case a ~ b => b
         }
@@ -211,7 +189,6 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
                 }
             }
         }.named("<~")
-
         def <~~[U](thatParser: => MultiParser[U]): MultiParser[T] = {
             thisParser ~~ thatParser ^^ {
                 (x: T ~ U) => x match {
@@ -219,7 +196,6 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
                 }
             }
         }.named("<~~")
-
         /** Returns a parser that repeatedly parses what this parser parses
           *
           * @return rep(this)
@@ -283,9 +259,7 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
         private case class Sealable[T](val isSealed: Boolean, val list: List[T])
 
         private def seal(list: List[T]) = Sealable(true, list)
-
         private def unsealed(list: List[T]) = Sealable(false, list)
-
         private def anyUnsealed(parseResult: MultiParseResult[Sealable[T]]) =
             parseResult.exists(!_.isSealed)
 
@@ -480,7 +454,6 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
                 check2(seal.resultList)
             case _ => true
         }
-
         private def check2(l: List[Opt[T]]): Boolean = {
             val knownExternals = new java.util.IdentityHashMap[T, FeatureExpr]();
 
@@ -837,17 +810,14 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
         new MultiParser[T] {
             def apply(in: Input, fs: FeatureExpr) = Failure(msg, in, List())
         }
-
     def failc[T](msg: String): MultiParser[Conditional[T]] =
         new MultiParser[Conditional[T]] {
             def apply(in: Input, fs: FeatureExpr) = Failure(msg, in, List())
         }
-
     def success[T](v: T) =
         MultiParser {
             (in: Input, fs: FeatureExpr) => Success(v, in)
         }
-
     def MultiParser[T](f: (Input, FeatureExpr) => MultiParseResult[T]): MultiParser[T] =
         new MultiParser[T] {
             def apply(in: Input, fs: FeatureExpr) = f(in, fs)
@@ -855,7 +825,6 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
 
     def matchInput(p: (Elem, FeatureExpr, TypeContext) => Boolean, kind: String) = new AtomicParser[Elem](kind) {
         private def err(e: Option[Elem], ctx: TypeContext) = errorMsg(kind, e, ctx)
-
         //        @tailrec
         def apply(in: Input, context: FeatureExpr): MultiParseResult[Elem] = {
             val parseResult: MultiParseResult[(Input, Elem)] = next(in, context)
@@ -909,7 +878,6 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
                 }
             }
         }
-
         private def splitParser(in: Input, context: FeatureExpr): MultiParseResult[(Input, Elem)] = {
             val feature = in.first.getFeature
             val ctxAndFeat = context.and(feature)
@@ -927,9 +895,7 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
 
 
     def token(kind: String, p: Elem => Boolean) = tokenWithContext(kind, (e, _, _) => p(e))
-
     def tokenWithContext(kind: String, p: (Elem, FeatureExpr, TypeContext) => Boolean) = matchInput(p, kind)
-
     private
     def errorMsg(kind: String, inEl: Option[Elem], ctx: TypeContext): String =
         (if (!inEl.isDefined) "reached EOF, " else "found \"" + inEl.get.getText + "\", ") + "but expected \"" + kind + "\""
@@ -947,49 +913,34 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
      */
     sealed abstract class MultiParseResult[+T] {
         def seqAllSuccessful[U](context: FeatureExpr, f: (FeatureExpr, Success[T]) => MultiParseResult[U]): MultiParseResult[U]
-
         def seq2[U](context: FeatureExpr, p: (Input, FeatureExpr) => MultiParseResult[U]): MultiParseResult[~[T, U]]
-
         def replaceAllFailure[U >: T](context: FeatureExpr, f: FeatureExpr => MultiParseResult[U]): MultiParseResult[U]
-
         def map[U](f: T => U): MultiParseResult[U]
-
         def mapf[U](feature: FeatureExpr, f: (FeatureExpr, T) => U): MultiParseResult[U]
-
         def mapfr[U](feature: FeatureExpr, f: (FeatureExpr, ParseResult[T]) => MultiParseResult[U]): MultiParseResult[U]
-
         /**
          * joins as far as possible. joins all successful ones but maintains partially successful results.
          * keeping partially unsucessful results is necessary to consider multiple branches for an alternative on ASTs
          **/
         def join(parserContext: FeatureExpr): MultiParseResult[Conditional[T]]
-
         def joinTree(parserContext: FeatureExpr): MultiParseResult[Conditional[T]]
-
         def joinCrosstree(parserContext: FeatureExpr): MultiParseResult[Conditional[T]]
-
         def expectOneResult: ParseResult[T] =
             this match {
                 case s@Success(_, _) => s
                 case s@NoSuccess(_, _, _) => s
                 case SplittedParseResult(f, a, b) => Error("Unsuccessful join " + f + ": " + a + " / " + b, null, List())
             }
-
         def joinNoSuccess(): MultiParseResult[T]
 
         def allFailed: Boolean
-
         def exists(predicate: T => Boolean): Boolean
-
         /**
          * toList recursively flattens the tree structure and creates resulting feature expressions
          */
         def toList(baseFeatureExpr: FeatureExpr): List[(FeatureExpr, ParseResult[T])]
-
         def toErrorList: List[Error]
-
         def changeContext(ctx: FeatureExpr, contextModification: (T, FeatureExpr, TypeContext) => TypeContext): MultiParseResult[T]
-
         //replace all failures by errors (non-backtracking!)
         def commit: MultiParseResult[T]
     }
@@ -1002,20 +953,15 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
         def seqAllSuccessful[U](context: FeatureExpr, f: (FeatureExpr, Success[T]) => MultiParseResult[U]): MultiParseResult[U] = {
             SplittedParseResult(feature, resultA.seqAllSuccessful(context.and(feature), f), resultB.seqAllSuccessful(context.and(feature.not), f))
         }
-
         def seq2[U](context: FeatureExpr, thatParser: (Input, FeatureExpr) => MultiParseResult[U]): MultiParseResult[~[T, U]] =
             SplittedParseResult[~[T, U]](feature, resultA.seq2(context and feature, thatParser), resultB.seq2(context andNot feature, thatParser))
-
         def replaceAllFailure[U >: T](context: FeatureExpr, f: FeatureExpr => MultiParseResult[U]): MultiParseResult[U] = {
             SplittedParseResult(feature, resultA.replaceAllFailure(context.and(feature), f), resultB.replaceAllFailure(context.and(feature.not), f))
         }
-
         def map[U](f: T => U): MultiParseResult[U] =
             SplittedParseResult(feature, resultA.map(f), resultB.map(f))
-
         def mapf[U](inFeature: FeatureExpr, f: (FeatureExpr, T) => U): MultiParseResult[U] =
             SplittedParseResult(feature, resultA.mapf(inFeature and feature, f), resultB.mapf(inFeature and (feature.not), f))
-
         def mapfr[U](inFeature: FeatureExpr, f: (FeatureExpr, ParseResult[T]) => MultiParseResult[U]): MultiParseResult[U] = {
             val newResultA = resultA.mapfr(inFeature and feature, f)
             val newResultB = resultB.mapfr(inFeature and (feature.not), f)
@@ -1084,13 +1030,11 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
             val nextB = inB.skipHidden(parserContext and (feature.not), featureSolverCache)
             return nextA.offset == nextB.offset
         }
-
         private def firstOf(inA: TokenReader[Elem, TypeContext], inB: TokenReader[Elem, TypeContext]) =
             (if (inA.offst < inB.offst) inB else inA).setContext(joinContext(inA.context, inB.context))
 
         //don't create a choice when both branches are the same
         private def createChoice[T](f: FeatureExpr, a: T, b: T): Conditional[T] = createChoiceC(f, One(a), One(b))
-
         private def createChoiceC[T](f: FeatureExpr, a: Conditional[T], b: Conditional[T]): Conditional[T] = if (a == b) a else Choice(f, a, b)
 
         //removes entries from the tree
@@ -1157,18 +1101,12 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
                     Error(msg1, next1, List(f1, f2) ++ inner1 ++ inner2)
                 case (a, b) => SplittedParseResult(feature, a, b)
             }
-
         def allFailed = resultA.allFailed && resultB.allFailed
-
         def exists(p: T => Boolean) = resultA.exists(p) || resultB.exists(p)
-
         def toList(context: FeatureExpr) = resultA.toList(context and feature) ++ resultB.toList(context and (feature.not))
-
         def toErrorList = resultA.toErrorList ++ resultB.toErrorList
-
         def changeContext(ctx: FeatureExpr, contextModification: (T, FeatureExpr, TypeContext) => TypeContext) =
             SplittedParseResult(feature, resultA.changeContext(ctx and feature, contextModification), resultB.changeContext(ctx andNot feature, contextModification))
-
         def commit: MultiParseResult[T] =
             SplittedParseResult(feature, resultA.commit, resultB.commit)
     }
@@ -1186,21 +1124,13 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
      */
     sealed abstract class ParseResult[+T](nextInput: TokenReader[Elem, TypeContext]) extends MultiParseResult[T] {
         def map[U](f: T => U): ParseResult[U]
-
         def mapfr[U](feature: FeatureExpr, f: (FeatureExpr, ParseResult[T]) => MultiParseResult[U]): MultiParseResult[U] = f(feature, this)
-
         def next = nextInput
-
         def isSuccess: Boolean
-
         def join(parserContext: FeatureExpr): MultiParseResult[Conditional[T]] = this.map(One(_))
-
         def joinTree(parserContext: FeatureExpr): MultiParseResult[Conditional[T]] = join(parserContext)
-
         def joinCrosstree(parserContext: FeatureExpr): MultiParseResult[Conditional[T]] = join(parserContext)
-
         def joinNoSuccess() = this
-
         def toList(context: FeatureExpr) = List((context, this))
     }
 
@@ -1209,19 +1139,12 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
             lastNoSuccess = this
 
         def map[U](f: Nothing => U) = this
-
         def mapf[U](inFeature: FeatureExpr, f: (FeatureExpr, Nothing) => U): MultiParseResult[U] = this
-
         def isSuccess: Boolean = false
-
         def seqAllSuccessful[U](context: FeatureExpr, f: (FeatureExpr, Success[Nothing]) => MultiParseResult[U]): MultiParseResult[U] = this
-
         def seq2[U](context: FeatureExpr, p: (Input, FeatureExpr) => MultiParseResult[U]): MultiParseResult[Nothing] = this
-
         def allFailed = true
-
         def exists(predicate: Nothing => Boolean) = false
-
         def changeContext(ctx: FeatureExpr, contextModification: (Nothing, FeatureExpr, TypeContext) => TypeContext) = this
     }
 
@@ -1240,9 +1163,7 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
      */
     case class Failure(override val msg: String, override val nextInput: TokenReader[Elem, TypeContext], override val innerErrors: List[NoSuccess]) extends NoSuccess(msg, nextInput, innerErrors) {
         def replaceAllFailure[U >: Nothing](context: FeatureExpr, f: FeatureExpr => MultiParseResult[U]) = f(context)
-
         def commit = Error(msg, nextInput, innerErrors)
-
         def toErrorList = List()
     }
 
@@ -1251,45 +1172,31 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
      */
     case class Error(override val msg: String, override val nextInput: TokenReader[Elem, TypeContext], override val innerErrors: List[NoSuccess]) extends NoSuccess(msg, nextInput, innerErrors) {
         def replaceAllFailure[U >: Nothing](context: FeatureExpr, f: FeatureExpr => MultiParseResult[U]) = this
-
         def commit = this
-
         def toErrorList = List(this)
     }
 
     case class Success[+T](val result: T, nextInput: TokenReader[Elem, TypeContext]) extends ParseResult[T](nextInput) {
         def map[U](f: T => U): ParseResult[U] = Success(f(result), next)
-
         def mapf[U](inFeature: FeatureExpr, f: (FeatureExpr, T) => U): MultiParseResult[U] = Success(f(inFeature, result), next)
-
         def isSuccess: Boolean = true
-
         def seqAllSuccessful[U](context: FeatureExpr, f: (FeatureExpr, Success[T]) => MultiParseResult[U]): MultiParseResult[U] = f(context, this)
-
         def seq2[U](context: FeatureExpr, p: (Input, FeatureExpr) => MultiParseResult[U]): MultiParseResult[~[T, U]] = {
             val pResult = p(nextInput, context)
             concat(pResult)
         }
-
         private def concat[U](pResult: MultiParseResult[U]): MultiParseResult[~[T, U]] = pResult match {
             case s: Success[_] => Success(new ~(result, s.result.asInstanceOf[U]), s.next)
             case n: NoSuccess => n
             case s: SplittedParseResult[_] => SplittedParseResult(s.feature, concat(s.resultA.asInstanceOf[MultiParseResult[U]]), concat(s.resultB.asInstanceOf[MultiParseResult[U]]))
         }
-
         def seq[U](context: FeatureExpr, thatResult: MultiParseResult[U]): MultiParseResult[~[T, U]] =
             thatResult.seqAllSuccessful[~[T, U]](context, (fs: FeatureExpr, x: Success[U]) => Success(new ~(result, x.result), x.next))
-
         def replaceAllFailure[U >: T](context: FeatureExpr, f: FeatureExpr => MultiParseResult[U]): MultiParseResult[U] = this
-
         def allFailed = false
-
         def exists(predicate: T => Boolean) = predicate(result)
-
         def toErrorList = List()
-
         def changeContext(ctx: FeatureExpr, contextModification: (T, FeatureExpr, TypeContext) => TypeContext): MultiParseResult[T] = Success(result, nextInput.setContext(contextModification(result, ctx, nextInput.context)))
-
         def commit: MultiParseResult[T] = this
     }
 

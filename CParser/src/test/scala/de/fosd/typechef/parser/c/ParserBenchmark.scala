@@ -11,7 +11,6 @@ import java.util.Collections
 object ParserBenchmark extends App {
 
     val p = new CParser()
-
     def parseFile(fileName: String) = {
         var inputStream = getClass.getResourceAsStream("/" + fileName)
         if (inputStream == null && new File(fileName).exists)

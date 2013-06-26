@@ -22,7 +22,6 @@ class FeatureModelTest extends TestCase {
     def testBasics {
         testFm(bdd)
     }
-
     @Test
     def testBasicsSat {
         testFm(sat)

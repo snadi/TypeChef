@@ -22,7 +22,7 @@ trait FeatureModelFactory {
      *
      * does prefix all loaded names with CONFIG_ by default
      */
-    def createFromDimacsFile(file: String, variablePrefix: String = "CONFIG_"): FeatureModel
+    def createFromDimacsFile(file: String, variablePrefix: String = "CONFIG_", suffix: String = ""): FeatureModel
 
     /**
      * special reader for the -2var model used by the LinuxAnalysis tools from waterloo
@@ -31,7 +31,6 @@ trait FeatureModelFactory {
      * names to _MODULE
      */
     def createFromDimacsFile_2Var(file: String): FeatureModel
-
     def createFromDimacsFile_2Var(file: URI): FeatureModel
 
 }

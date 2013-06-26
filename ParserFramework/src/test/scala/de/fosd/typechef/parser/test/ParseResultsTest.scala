@@ -63,7 +63,6 @@ class ParseResultsTest {
         //
         //        assertEquals("SplittedParseResult(def(A),Success((1~0),null),Success(2,null))", r.toString)
     }
-
     //    @Test
     //    def testParseResultsSplit4() {
     //        //this is poor API design, giving to much power to the seqAllSuc parameter allowing stupid concatenations
@@ -87,7 +86,6 @@ class ParseResultsTest {
         val r2 = sp12.seq2(True, (next: Any, f: FeatureExpr) => new p.SplittedParseResult(fb, s3, s4))
         assertEquals("SplittedParseResult(def(A),SplittedParseResult(def(B),Success((1~3),null),Success((1~4),null)),SplittedParseResult(def(B),Success((2~3),null),Success((2~4),null)))", r2.toString)
     }
-
     @Test
     def testParseResultsSeq2Fails() {
         var r: p.MultiParseResult[Any] = f.seq2(True, (next: Any, f: FeatureExpr) => new p.SplittedParseResult(fb, s3, s4))

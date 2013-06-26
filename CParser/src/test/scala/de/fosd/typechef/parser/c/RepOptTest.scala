@@ -23,7 +23,6 @@ class RepOptTest extends TestCase {
                 fail(msg + " at " + unparsed + " " + inner)
         }
     }
-
     def parseExtList(code: String): (List[Opt[ExternalDef]], TokenReader[AbstractToken, CTypeContext]) = {
         val actual = p.parseAny(code.stripMargin, p.externalList)
         (actual: @unchecked) match {
@@ -37,7 +36,6 @@ class RepOptTest extends TestCase {
             }
         }
     }
-
     def assertParseAnyResult(expected: Any, code: String, mainProduction: (TokenReader[AbstractToken, CTypeContext], FeatureExpr) => p.MultiParseResult[Any]) {
         val actual = p.parseAny(code.stripMargin, mainProduction)
         System.out.println(actual)
@@ -50,7 +48,6 @@ class RepOptTest extends TestCase {
                 fail(msg + " at " + unparsed + " " + inner)
         }
     }
-
     def assertParseError(code: String, mainProduction: (TokenReader[AbstractToken, CTypeContext], FeatureExpr) => p.MultiParseResult[Any], expectErrorMsg: Boolean = false) {
         val actual = p.parseAny(code.stripMargin, mainProduction)
         System.out.println(actual)
@@ -62,7 +59,6 @@ class RepOptTest extends TestCase {
             case p.NoSuccess(msg, unparsed, inner) =>;
         }
     }
-
     def assertParseError(code: String, productions: List[(TokenReader[AbstractToken, CTypeContext], FeatureExpr) => p.MultiParseResult[Any]]) {
         for (production <- productions)
             assertParseError(code, production)
@@ -369,16 +365,16 @@ typedef int b;
     /*    @Test
     def testRepOptCommonEnd2() {
         var (ast, next) = parseExtList("""
-  #ifdef X
-  typedef char a;
-  typedef char c
-  #else
-  typedef int a;
-  typedef int c
-  #endif
-  ;
-  typedef int b;
-  """)
+#ifdef X
+typedef char a;
+typedef char c
+#else
+typedef int a;
+typedef int c
+#endif
+;
+typedef int b;
+""")
         ast = flatten(ast)
         println(ast.mkString("\n"))
         println(next)
