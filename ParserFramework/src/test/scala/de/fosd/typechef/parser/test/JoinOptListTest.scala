@@ -23,6 +23,7 @@ class JoinOptListTest extends MultiFeatureParser {
         val j = joinOptLists(o1, o, fx)
         assertEquals(Opt(fa and fx, "OnlyA") :: o, j)
     }
+
     @Test def testJoinOptList2 {
         val o = Opt(fa, "CommonA") :: Opt(fb, "CommonB") :: Nil
         val o1 = Opt(fa, "OnlyA") :: o

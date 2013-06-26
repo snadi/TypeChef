@@ -10,10 +10,15 @@ import de.fosd.typechef.featureexpr.FeatureExprFactory.sat._
 class TestDefinedMacro extends TestCase {
 
     def a = createDefinedExternal("A")
+
     def b = createDefinedExternal("B")
+
     def c = createDefinedExternal("C")
+
     def d = createDefinedExternal("D")
+
     def x = createDefinedExternal("X")
+
     def y = createDefinedExternal("Y")
 
     def assertEquiv(a: FeatureExpr, b: FeatureExpr) = assertTrue("expected: " + a + " equivalentTo " + b, a equivalentTo b)
