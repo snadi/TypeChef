@@ -101,7 +101,7 @@ object BDDFeatureModel extends FeatureModelFactory {
     /**
      * load a standard Dimacs file as feature model
      */
-    def createFromDimacsFile(file: String, variablePrefix: String = "CONFIG_"): FeatureModel = {
+    def createFromDimacsFile(file: String, variablePrefix: String = "CONFIG_", suffix: String): FeatureModel = {
         var variables: Map[String, Int] = Map()
         val clauses = new Vec[IVecInt]()
         var maxId = 0
