@@ -7,6 +7,7 @@ object BDDFeatureExprFactory extends AbstractFeatureExprFactory {
 
 
     def createDefinedExternal(name: String): SingleFeatureExpr = FExprBuilder.definedExternal(name)
+
     def createDefinedMacro(name: String, macroTable: FeatureProvider): FeatureExpr = FExprBuilder.definedMacro(name, macroTable)
 
 

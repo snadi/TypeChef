@@ -14,6 +14,7 @@ class ErrorFeature(msg: String, f: FeatureExpr) extends FeatureExpr {
     def getSatisfiableAssignment(featureModel: FeatureModel, interestingFeatures: Set[SingleFeatureExpr], preferDisabledFeatures: Boolean) = error
     protected def calcSize = error
     def collectDistinctFeatures = error
+    def collectDistinctFeatures2 = error
     def collectDistinctFeatureObjects = error
     def or(that: FeatureExpr) = error
     def and(that: FeatureExpr) = error

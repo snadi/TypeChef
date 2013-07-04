@@ -2,7 +2,7 @@ package de.fosd.typechef.parser.c
 
 import java.io.InputStream
 import de.fosd.typechef.featureexpr.FeatureExprFactory
-import de.fosd.typechef.conditional.One
+import de.fosd.typechef.conditional.{One, Conditional}
 import java.util.Collections
 
 /**
@@ -63,5 +63,11 @@ trait TestHelper {
         val p = new CParser()
         val r = p.phrase(p.statement)(in, FeatureExprFactory.True)
         r.asInstanceOf[p.Success[One[Statement]]].result.value
+    }
+    def parseTranslationUnit(code: String): TranslationUnit = {
+        val in = CLexer.lex(code, null).setContext(new CTypeContext())
+        val p = new CParser()
+        val r = p.phrase(p.translationUnit)(in, FeatureExprFactory.True)
+        r.asInstanceOf[p.Success[TranslationUnit]].result
     }
 }

@@ -18,7 +18,6 @@ import java.util.*;
  * Time: 22:13
  * To change this template use File | Settings | File Templates.
  */
-
 public abstract class LexerOptions extends Options implements ILexerOptions {
 
     private static final char PP_INCLUDE = genOptionId();
@@ -33,7 +32,6 @@ public abstract class LexerOptions extends Options implements ILexerOptions {
     private static final char TY_HELP = genOptionId();
     private final static char PP_XTC = genOptionId();
     private final static char PP_ADJUSTLINES = genOptionId();
-
 
     @Override
     protected List<Options.OptionGroup> getOptionGroups() {
@@ -80,7 +78,6 @@ public abstract class LexerOptions extends Options implements ILexerOptions {
                 new Option("lexDisable", LongOpt.REQUIRED_ARGUMENT, PP_LEXDISABLE, "type",
                         "Disable a specific lexer feature."),
                 new Option("lexNoStdout", LongOpt.NO_ARGUMENT, PP_NOSTDOUT, null,
-
                         "Do not print to stdout."),
                 new Option("adjustLines", LongOpt.NO_ARGUMENT, PP_ADJUSTLINES, null,
                         "Report line numbers in output (.pi) file instead of source (.c and .h) files.")

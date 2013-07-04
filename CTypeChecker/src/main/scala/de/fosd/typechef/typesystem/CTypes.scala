@@ -272,7 +272,6 @@ case class CBuiltinVaList() extends CType {
     def toXML = <builtinvalist/>
 }
 
-
 /** errors */
 case class CUnknown(msg: String = "") extends CType {
     override def toObj = this

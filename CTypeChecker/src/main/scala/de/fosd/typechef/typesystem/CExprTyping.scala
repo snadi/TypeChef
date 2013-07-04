@@ -9,7 +9,7 @@ import de.fosd.typechef.error._
 /**
  * typing C expressions
  */
-trait CExprTyping extends CTypes with CEnv with CDeclTyping with CTypeSystemInterface {
+trait CExprTyping extends CTypes with CEnv with CDeclTyping with CTypeSystemInterface with CDeclUse {
 
 
     /**
@@ -17,8 +17,12 @@ trait CExprTyping extends CTypes with CEnv with CDeclTyping with CTypeSystemInte
      * environment for all subsequent tokens (eg in a sequence)
      */
     def getExprType(expr: Expr, featureExpr: FeatureExpr, env: Env): Conditional[CType] = {
-        val et = getExprType(_: Expr, featureExpr, env)
-        def etF(e: Expr, f: FeatureExpr, newEnv: Env = env) = getExprType(e, f, newEnv)
+        getExprTypeRec(expr, featureExpr, env)
+    }
+
+    def getExprTypeRec(expr: Expr, featureExpr: FeatureExpr, env: Env, recurse: Boolean = false): Conditional[CType] = {
+        val et = getExprTypeRec(_: Expr, featureExpr, env, true)
+        def etF(e: Expr, f: FeatureExpr, newEnv: Env = env) = getExprTypeRec(e, f, newEnv, true)
         //        TODO assert types in varCtx and funCtx are welltyped and non-void
 
         val resultType: Conditional[CType] =
@@ -92,14 +96,20 @@ trait CExprTyping extends CTypes with CEnv with CDeclTyping with CTypeSystemInte
                         }
 
                         et(expr).mapfr(featureExpr, {
-                            case (f, CObj(CAnonymousStruct(fields, _))) => lookup(fields, f).map(_.toObj)
-                            case (f, CAnonymousStruct(fields, _)) => lookup(fields, f)
-                            case (f, CObj(CStruct(s, isUnion))) => structEnvLookup(env.structEnv, s, isUnion, id, p, f).map(_.toObj)
-                            case (f, CStruct(s, isUnion)) => structEnvLookup(env.structEnv, s, isUnion, id, p, f).mapf(f, {
-                                case (f, e) if (arrayType(e)) =>
-                                    reportTypeError(f, "expression " + p + " must not have array " + e, p)
-                                case (f, e) => e
-                            })
+                            case (f, CObj(CAnonymousStruct(fields, _))) =>
+                                addAnonStructUse(i, fields)
+                                lookup(fields, f).map(_.toObj)
+                            case (f, CAnonymousStruct(fields, _)) =>
+                                lookup(fields, f)
+                            case (f, CObj(CStruct(s, isUnion))) =>
+                                addStructUse(i, featureExpr, env, s, isUnion)
+                                structEnvLookup(env.structEnv, s, isUnion, id, p, f).map(_.toObj)
+                            case (f, CStruct(s, isUnion)) =>
+                                structEnvLookup(env.structEnv, s, isUnion, id, p, f).mapf(f, {
+                                    case (f, e) if (arrayType(e)) =>
+                                        reportTypeError(f, "expression " + p + " must not have array " + e, p)
+                                    case (f, e) => e
+                                })
                             case (f, e) =>
                                 One(reportTypeError(f, "request for member " + id + " in something not a structure or union (" + p + "; " + e + ")", p))
                         })
@@ -113,6 +123,9 @@ trait CExprTyping extends CTypes with CEnv with CDeclTyping with CTypeSystemInte
                     //(a)b
                     case ce@CastExpr(targetTypeName, expr) =>
                         val targetTypes = getTypenameType(targetTypeName, featureExpr, env)
+                        for ((Opt(feat, entry: TypeDefTypeSpecifier)) <- targetTypeName.specifiers) {
+                            addTypeUse(entry.name, env, feat)
+                        }
                         val sourceTypes = et(expr).map(_.toValue)
                         ConditionalLib.mapCombinationF(sourceTypes, targetTypes, featureExpr,
                             (fexpr: FeatureExpr, sourceType: CType, targetType: CType) =>
@@ -204,8 +217,15 @@ trait CExprTyping extends CTypes with CEnv with CDeclTyping with CTypeSystemInte
                         val newExpr = AssignExpr(expr, "+=", Constant("1").setPositionRange(p)).setPositionRange(p)
                         et(newExpr)
                     //sizeof()
-                    case SizeOfExprT(_) => sizeofType(env)
-                    case SizeOfExprU(_) => sizeofType(env)
+                    case SizeOfExprT(x) =>
+                        /*x match {
+                            case TypeName(lst, decl) =>
+                                checkTypeSpecifiers(lst, featureExpr, env)
+                            case _ =>
+                        }*/
+                        sizeofType(env, x, featureExpr)
+                    case SizeOfExprU(x) =>
+                        sizeofType(env, x, featureExpr)
                     case ue@UnaryOpExpr(kind, expr) =>
                         if (kind == "&&")
                         //label deref, TODO check that label is actually declared
@@ -287,6 +307,9 @@ trait CExprTyping extends CTypes with CEnv with CDeclTyping with CTypeSystemInte
 
         typedExpr(expr, resultType, featureExpr, env)
         addEnv(expr, env)
+        if (!recurse) {
+            addUse(expr, featureExpr, env)
+        }
         resultType.simplify(featureExpr)
     }
 
@@ -450,8 +473,53 @@ trait CExprTyping extends CTypes with CEnv with CDeclTyping with CTypeSystemInte
      * sizeof() has type Any->size_t. Type size_t is defined in individual header files (e.g. stddef.h) of the system though
      * and may not be defined in all cases. here we look up the type of size_t and return an int in case it fails
      */
-    def sizeofType(env: Env): Conditional[CType] =
+    def sizeofType(env: Env, x: AST, featureExpr: FeatureExpr): Conditional[CType] = {
+        x match {
+            case p@PostfixExpr(expr, PointerPostfixSuffix(_, i@Id(id))) =>
+                addStructUsageFromSizeOfExprU(p, featureExpr, env)
+            case p@PostfixExpr(i: Id, _) =>
+                addUse(i, featureExpr, env)
+            case pd@PointerDerefExpr(i: Id) =>
+                // TODO: isUnion is set to true
+                addStructDeclUse(i, env, true, featureExpr)
+            case pd@PointerDerefExpr(NAryExpr(p, expr)) => addStructUsageFromSizeOfExprU(p, featureExpr, env)
+            case pd@PointerDerefExpr(c: CastExpr) =>
+                getExprType(c, featureExpr, env)
+            case pe@PostfixExpr(p: PostfixExpr, _) => addStructUsageFromSizeOfExprU(p, featureExpr, env)
+            case tn@TypeName(lst: List[Opt[Specifier]], decl) =>
+                getTypenameType(tn, featureExpr, env)
+
+            case _ => // println("missed " + x)
+        }
         env.typedefEnv.getOrElse("size_t", CUnsigned(CInt()))
+    }
+
+    private def addStructUsageFromSizeOfExprU(a: AST, featureExpr: FeatureExpr, env: Env) = {
+        val et = getExprTypeRec(_: Expr, featureExpr, env, true)
+        a match {
+            case p@PostfixExpr(expr, PointerPostfixSuffix(_, i@Id(id))) =>
+                et(expr).mapfr(featureExpr, {
+                    case (f, CObj(CAnonymousStruct(fields, _))) =>
+                        addAnonStructUse(i, fields)
+                        null
+                    case (f, CAnonymousStruct(fields, _)) =>
+                        null
+                    case (f, CObj(CStruct(s, isUnion))) =>
+                        addStructUse(i, featureExpr, env, s, isUnion)
+                        null
+                    case (f, CStruct(s, isUnion)) =>
+                        null
+                    case (f, CObj(CPointer(CStruct(name, isUnion)))) =>
+                        addStructUse(i, featureExpr, env, name, isUnion)
+                        null
+                    case (f, e) =>
+                        null
+                })
+            case pde@PointerDerefExpr(expr) =>
+                print("")
+            case _ =>
+        }
+    }
 
 
     /**
@@ -469,5 +537,6 @@ trait CExprTyping extends CTypes with CEnv with CDeclTyping with CTypeSystemInte
         else ctype
 
     }
+
 
 }
