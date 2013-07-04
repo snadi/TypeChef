@@ -1,9 +1,5 @@
 package de.fosd.typechef
 
-/*
-* temporarily copied from PreprocessorFrontend due to technical problems
-*/
-
 
 import de.fosd.typechef.parser.c._
 import de.fosd.typechef.typesystem._
@@ -16,7 +12,6 @@ import de.fosd.typechef.parser.c.TranslationUnit
 
 object Frontend {
 
-    private var storedAst: AST = null
 
     def main(args: Array[String]) {
         // load options
@@ -95,14 +90,6 @@ object Frontend {
 
         val fm = opt.getLexerFeatureModel().and(opt.getLocalFeatureModel).and(opt.getFilePresenceCondition)
         opt.setFeatureModel(fm) //otherwise the lexer does not get the updated feature model with file presence conditions
-        /*
-        // create dimacs file from feature model
-        opt.getFeatureModelTypeSystem.asInstanceOf[SATFeatureModel].writeToDimacsFile(new File(
-            "/tmp/BB_fm.dimacs"
-        ))
-
-        System.exit(0)
-        */
         if (!opt.getFilePresenceCondition.isSatisfiable(fm)) {
             println("file has contradictory presence condition. existing.") //otherwise this can lead to strange parser errors, because True is satisfiable, but anything else isn't
             return
@@ -127,7 +114,7 @@ object Frontend {
             if (ast == null) {
                 //no parsing and serialization if read serialized ast
                 val parserMain = new ParserMain(new CParser(fm))
-                val ast = parserMain.parserMain(in, opt)
+                ast = parserMain.parserMain(in, opt)
 
                 if (ast != null && opt.serializeAST) {
                     stopWatch.start("serialize")
@@ -169,7 +156,9 @@ object Frontend {
                     stopWatch.start("dumpCFG")
 
                     val cf = new CAnalysisFrontend(ast.asInstanceOf[TranslationUnit], fm_ts)
-                    cf.dumpCFG()
+                    val writer = new CFGCSVWriter(new FileWriter(new File(opt.getCCFGFilename)))
+                    val dotwriter = new DotGraph(new FileWriter(new File(opt.getCCFGDotFilename)))
+                    cf.writeCFG(opt.getFile, new ComposedWriter(List(dotwriter, writer)))
                 }
                 if (opt.doublefree) {
                     stopWatch.start("doublefree")
@@ -204,7 +193,7 @@ object Frontend {
 
 
     def lex(opt: FrontendOptions): TokenReader[CToken, CTypeContext] = {
-        val tokens = new lexer.Main().run(opt, opt.parse)
+        val tokens = new lexer.Main().run(opt, opt.parse, opt.getFilePresenceCondition, opt.getFile)
         val in = CLexer.prepareTokens(tokens)
         in
     }
@@ -215,14 +204,14 @@ object Frontend {
         fw.close()
     }
 
-    def loadSerializedAST(filename: String): AST = {
+    def loadSerializedAST(filename: String): AST = try {
         val fr = new ObjectInputStream(new FileInputStream(filename)) {
             override protected def resolveClass(desc: ObjectStreamClass) = { /*println(desc);*/ super.resolveClass(desc) }
         }
         val ast = fr.readObject().asInstanceOf[AST]
         fr.close()
         ast
+    } catch {
+        case e: ObjectStreamException => System.err.println("failed loading serialized AST: " + e.getMessage); null
     }
-
-    def getAST = storedAst
 }

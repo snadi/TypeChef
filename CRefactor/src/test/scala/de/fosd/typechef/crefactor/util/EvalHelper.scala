@@ -6,7 +6,6 @@ import de.fosd.typechef.featureexpr.{FeatureExprFactory, FeatureExpr, SingleFeat
 import java.util.regex.Pattern
 import scala.io.Source
 import de.fosd.typechef.crefactor.Logging
-import de.fosd.typechef.ProductGeneration.SimpleConfiguration
 import de.fosd.typechef.Frontend
 import java.util.IdentityHashMap
 import java.util

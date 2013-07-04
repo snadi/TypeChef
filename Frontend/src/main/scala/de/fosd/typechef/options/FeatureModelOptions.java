@@ -83,7 +83,7 @@ public abstract class FeatureModelOptions extends LexerOptions implements ILexer
             if (g.getOptarg().contains("linux") || g.getOptarg().contains("busybox"))
                 featureModel = FeatureExprLib.featureModelFactory().createFromDimacsFile_2Var(g.getOptarg());
             else
-                featureModel = FeatureExprLib.featureModelFactory().createFromDimacsFile(g.getOptarg(), "");
+                featureModel = FeatureExprLib.featureModelFactory().createFromDimacsFile(g.getOptarg(), "", "");
         } else if (c == FM_FEXPR) {     //--featureModelFExpr
             checkFileExists(g.getOptarg());
             FeatureExpr f = new FeatureExprParserJava(FeatureExprLib.l()).parseFile(g.getOptarg());
