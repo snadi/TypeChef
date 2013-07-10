@@ -21,6 +21,7 @@ class State {
     /* pp */State(State parent) {
         this.parent = parent;
         this.sawElse = false;
+        this.sawElif = false;
     }
 
     /* pp */void setSawElse() {
@@ -39,7 +40,7 @@ class State {
     }
 
     /* pp */boolean sawElif() {
-        return sawElse;
+        return sawElif;
     }
 
     public String toString() {
