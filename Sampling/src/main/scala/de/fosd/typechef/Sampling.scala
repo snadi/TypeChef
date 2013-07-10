@@ -52,7 +52,7 @@ object Sampling extends EnforceTreeHelper {
             return
         }
 
-        new lexer.Main().run(opt, opt.parse)
+        new lexer.Main().run(opt, opt.parse, null, null)
         val in = lex(opt)
 
         // parse anyway no matter what the options say
@@ -67,7 +67,7 @@ object Sampling extends EnforceTreeHelper {
     }
 
     def lex(opt: FamilyBasedVsSampleBasedOptions): TokenReader[CToken, CTypeContext] = {
-        val tokens = new lexer.Main().run(opt, opt.parse)
+        val tokens = new lexer.Main().run(opt, opt.parse, null, null)
         val in = CLexer.prepareTokens(tokens)
         in
     }
