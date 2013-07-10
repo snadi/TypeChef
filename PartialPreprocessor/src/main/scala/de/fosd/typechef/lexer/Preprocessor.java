@@ -2690,7 +2690,15 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                         for (FeatureExpr prevFeature : state.localFeatures.subList(0, counter)) {
                                             parentExpr = parentExpr.and(prevFeature);
                                         }
-                                        addNestedConstraint(prevLocalExpr.not(), parentExpr.and(filepc));
+
+                                        //only negate if its not the last expression
+                                        if (counter != state.localFeatures.size() - 1) {
+                                            addNestedConstraint(prevLocalExpr.not(), parentExpr.and(filepc));
+                                        } else {
+                                            addNestedConstraint(prevLocalExpr, parentExpr.and(filepc));
+                                        }
+
+
                                     }
 
                                     counter++;
@@ -2698,14 +2706,20 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                 }
                             }
 
-                            pop_state();
 
-
-                            FeatureExpr parentExpr = state.getFullPresenceCondition();
+                            FeatureExpr parentExpr = state.parent.getFullPresenceCondition();
 
                             if (tokenCounter > start) {
+                                System.err.println(tok.getLine() + " " + localExpr + "  => " + parentExpr.and(filepc));
                                 addNestedConstraint(localExpr, parentExpr.and(filepc));
                             }
+
+                            //if sawElse then add the opposite of expression as well
+                            /* if (tokenCounter > start && state.sawElse()) {
+                                addNestedConstraint(localExpr.not(), parentExpr.and(filepc));
+                            }*/
+
+                            pop_state();
 
                             Token l = source_skipline(warnings
                                     .contains(Warning.ENDIF_LABELS));
