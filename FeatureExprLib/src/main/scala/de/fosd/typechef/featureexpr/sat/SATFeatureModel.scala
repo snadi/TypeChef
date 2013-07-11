@@ -93,7 +93,7 @@ class SATFeatureModel(val variables: Map[String, Int], val clauses: IVec[IVecInt
 
         writeToFile(fileName, res)
     }
-    def writeToDimacsFile(file: File) {
+    def writeToDimacsFile(file: File, prefix: String = "", suffix: String = "") {
         var fw: FileWriter = null
 
         try {
@@ -104,7 +104,8 @@ class SATFeatureModel(val variables: Map[String, Int], val clauses: IVec[IVecInt
                 a._2 < b._2
             }
             for ((varname, varid) <- vars.sortWith(sortFunction)) {
-                val realVarname = if (varname.startsWith("CONFIG_")) varname.replaceFirst("CONFIG_", "") else varname
+                var realVarname = if (varname.startsWith(prefix)) varname.replaceFirst(prefix, "") else varname
+                realVarname = if (varname.endsWith(suffix)) varname.replaceFirst(suffix, "") else realVarname
                 fw.write("c " + varid + " " + realVarname + "\n")
             }
             var numClauses = 0;
@@ -115,7 +116,7 @@ class SATFeatureModel(val variables: Map[String, Int], val clauses: IVec[IVecInt
                     for (entry: Int <- clause.toArray) {
                         clauseBuffer.append(entry + " ");
                     }
-                    clauseBuffer.append("0\n");
+                    clauseBuffer.append("1\n");
                 }
             }
             fw.write("p cnf " + vars.length + " " + numClauses + "\n")
