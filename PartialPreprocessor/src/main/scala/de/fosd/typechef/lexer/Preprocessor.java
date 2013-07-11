@@ -2710,7 +2710,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                             FeatureExpr parentExpr = state.parent.getFullPresenceCondition();
 
                             if (tokenCounter > start) {
-                                System.err.println(tok.getLine() + " " + localExpr + "  => " + parentExpr.and(filepc));
                                 addNestedConstraint(localExpr, parentExpr.and(filepc));
                             }
 
