@@ -4,6 +4,8 @@ package de.fosd.typechef
 import de.fosd.typechef.parser.c._
 import de.fosd.typechef.typesystem._
 import de.fosd.typechef.crewrite._
+import featureexpr.FeatureExprFactory
+import featureexpr.FeatureExpr
 import java.io._
 import parser.TokenReader
 import de.fosd.typechef.options.{FrontendOptionsWithConfigFiles, FrontendOptions, OptionException}
@@ -194,6 +196,29 @@ object Frontend {
 
     def lex(opt: FrontendOptions): TokenReader[CToken, CTypeContext] = {
         val tokens = new lexer.Main().run(opt, opt.parse, opt.getFilePresenceCondition, opt.getFile)
+
+        //get block pcs (nesting)
+        var blockPcs = Set[FeatureExpr]()
+        var previousFeatureExpr = FeatureExprFactory.True
+        val it = tokens.iterator
+        while (it.hasNext()) {
+            val currExpr = it.next().getFeature.and(opt.getFilePresenceCondition)
+            if (!currExpr.equivalentTo(previousFeatureExpr)) {
+                blockPcs += currExpr
+                previousFeatureExpr = currExpr
+            }
+        }
+
+        if (!blockPcs.isEmpty) {
+            val nestedIfDefWriter: PrintWriter = new PrintWriter(new FileWriter(opt.getFile.replace(".c", "") + ".nested"))
+            blockPcs.foreach {
+                expr =>
+                    expr.print(nestedIfDefWriter)
+                    nestedIfDefWriter.println()
+            }
+            nestedIfDefWriter.close()
+        }
+
         val in = CLexer.prepareTokens(tokens)
         in
     }

@@ -2693,9 +2693,9 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
                                         //only negate if its not the last expression
                                         if (counter != state.localFeatures.size() - 1) {
-                                            addNestedConstraint(prevLocalExpr.not(), parentExpr.and(filepc));
+                                            //  addNestedConstraint(prevLocalExpr.not(), parentExpr.and(filepc));
                                         } else {
-                                            addNestedConstraint(prevLocalExpr, parentExpr.and(filepc));
+                                            //addNestedConstraint(prevLocalExpr, parentExpr.and(filepc));
                                         }
 
 
@@ -2710,7 +2710,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                             FeatureExpr parentExpr = state.parent.getFullPresenceCondition();
 
                             if (tokenCounter > start) {
-                                addNestedConstraint(localExpr, parentExpr.and(filepc));
+                                //  addNestedConstraint(localExpr, parentExpr.and(filepc));
                             }
 
                             //if sawElse then add the opposite of expression as well
