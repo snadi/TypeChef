@@ -82,7 +82,6 @@ object Frontend {
         }
     }
 
-
     def processFile(opt: FrontendOptions) {
         val errorXML = new ErrorXML(opt.getErrorXMLFile)
         opt.setRenderParserError(errorXML.renderParserError)
@@ -197,29 +196,32 @@ object Frontend {
     def lex(opt: FrontendOptions): TokenReader[CToken, CTypeContext] = {
         val tokens = new lexer.Main().run(opt, opt.parse, opt.getFilePresenceCondition, opt.getFile)
 
-        //get block pcs (nesting)
-        var blockPcs = Set[FeatureExpr]()
-        var previousFeatureExpr = FeatureExprFactory.True
-        val it = tokens.iterator
-        while (it.hasNext()) {
-            val currExpr = it.next().getFeature.and(opt.getFilePresenceCondition)
-            if (!currExpr.equivalentTo(previousFeatureExpr)) {
-                blockPcs += currExpr
-                previousFeatureExpr = currExpr
-            }
-        }
-
-        if (!blockPcs.isEmpty) {
-            val nestedIfDefWriter: PrintWriter = new PrintWriter(new FileWriter(opt.getFile.replace(".c", "") + ".nested"))
-            blockPcs.foreach {
-                expr =>
-                    expr.print(nestedIfDefWriter)
-                    nestedIfDefWriter.println()
-            }
-            nestedIfDefWriter.close()
-        }
-
         val in = CLexer.prepareTokens(tokens)
+
+        //get block pcs (nesting)
+        if (in != null) {
+            var blockPcs = Set[FeatureExpr]()
+            var previousFeatureExpr = FeatureExprFactory.True
+            val it = in.tokens.iterator
+            while (it.hasNext) {
+                val currExpr = it.next().getFeature
+                if (!(currExpr eq previousFeatureExpr)) {
+                    blockPcs += currExpr.and(opt.getFilePresenceCondition)
+                    previousFeatureExpr = currExpr
+                }
+            }
+
+            if (!blockPcs.isEmpty) {
+                val nestedIfDefWriter: PrintWriter = new PrintWriter(new FileWriter(opt.getFile.replace(".c", "") + ".nested"))
+                blockPcs.foreach {
+                    expr =>
+                        expr.print(nestedIfDefWriter)
+                        nestedIfDefWriter.println()
+                }
+                nestedIfDefWriter.close()
+            }
+        }
+
         in
     }
 
