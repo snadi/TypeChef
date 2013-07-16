@@ -28,46 +28,52 @@ private FeatureExpr toFeature(String name){
 }
 
 fexpr returns [FeatureExpr value]:
-    expr {$value = $expr.value; System.out.println($value);}
-    | implication {$value = $implication.value; System.out.println($value);}
-    | equivalence {$value = $equivalence.value; System.out.println($value);}
-    | mutex {$value = $mutex.value; System.out.println($value);}
+    orExpr {$value = $orExpr.value;}
+    | implication {$value = $implication.value;}
+    | equivalence {$value = $equivalence.value;}
+    | mutex {$value = $mutex.value;}
+    ;
+
+orExpr returns [FeatureExpr value]:
+    andExpr {$value = $andExpr.value;}
+    (OR andExpr {$value = $value.or($andExpr.value);})*
+    ;
+
+andExpr returns [FeatureExpr value]:
+    predicate {$value = $predicate.value;}
+    (AND predicate {$value = $value.and($predicate.value);})*
+    ;
+
+predicate returns [FeatureExpr value]:
+    notExpr  {$value = $notExpr.value;}
+    | atom  {$value = $atom.value;}
+    ;
+
+notExpr returns [FeatureExpr value]:
+    NOT atom {$value = $atom.value.not();}
     ;
 
 atom returns [FeatureExpr value]:
-    (NOT? DEF LEFTPARA ID RIGHTPARA{
-        if($NOT != null)
-            $value = toFeature($ID.getText()).not();
-        else
-            $value = toFeature($ID.getText());
-    }
+    DEF LEFTPARA ID RIGHTPARA {$value = toFeature($ID.getText());}
     | TRUE {$value = featureFactory.True();}
-    | FALSE  {$value = featureFactory.False();}  )
+    | FALSE  {$value = featureFactory.False();}
+    | LEFTPARA orExpr RIGHTPARA {$value = $orExpr.value;}
     ;
-
-expr returns [FeatureExpr value]:
-    f1=atom {$value = $f1.value;}
-    (
-    WHITESPACE*
-    (AND WHITESPACE* f2=atom {$value = $value.and($f2.value);})
-    | (OR WHITESPACE* f2=atom {$value = $value.or($f2.value);})
-    )*
-     |  LEFTPARA expr RIGHTPARA {$value = $expr.value;}
-    ;
-
-equivalence returns [FeatureExpr value]:
-   	f1=expr {$value = $f1.value;} WHITESPACE*
-   	EQUIV WHITESPACE* f2=expr {$value = $value.equiv($f2.value);}
-   	;
 
 implication returns [FeatureExpr value]:
-	f1=expr {$value = $f1.value;} WHITESPACE*
-	IMPLIES WHITESPACE* f2=expr {$value = $value.implies($f2.value);}
+	f1=orExpr {$value = $f1.value;}
+	IMPLIES f2=orExpr {$value = $value.implies($f2.value);}
 	;
 
+equivalence returns [FeatureExpr value]:
+   	f1=orExpr {$value = $f1.value;}
+   	EQUIV f2=orExpr {$value = $value.equiv($f2.value);}
+   	;
+
+
 mutex returns [FeatureExpr value]:
-    f1=expr {$value = $f1.value;} WHITESPACE*
-    MEX WHITESPACE* f2=expr {$value = $value.mex($f2.value);}
+    f1=orExpr {$value = $f1.value;}
+    MEX f2=orExpr {$value = $value.mex($f2.value);}
     ;
 
 /*oneof returns [FeatureExpr value]
@@ -94,7 +100,7 @@ OR: '||' | '|' | 'or';
 AND: '&&' | '&' | 'and';
 TRUE: '1' | 'true' | 'True' | 'TRUE'  ;
 FALSE: '0' | 'false' | 'False' | 'FALSE' ;
-WHITESPACE: ' '+ | '\t'+ ;
+WHITESPACE: (' ' | '\t')+  -> skip;
 NEWLINE:'\r'? '\n' ;
 NOT: '!';
 LEFTPARA: '(';
