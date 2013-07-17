@@ -4,6 +4,8 @@ import java.io._
 import de.fosd.typechef.typesystem.CType
 import de.fosd.typechef.featureexpr.{FeatureExprFactory, FeatureExprParser}
 import de.fosd.typechef.error.Position
+import org.antlr.v4.runtime.{CommonTokenStream, ANTLRInputStream}
+import de.fosd.typechef.featureexpr.antlr.{FExprParser, FExprLexer}
 
 trait InterfaceWriter {
 
@@ -79,11 +81,17 @@ trait InterfaceWriter {
     private def signatureFromXML(node: scala.xml.Node): CSignature = {
         val sig = node \ "sig"
         new CSignature(
-            (sig \ "name").text.trim,
-            CType.fromXML((sig \ "type")),
-            new FeatureExprParser().parse((sig \ "featureexpr").text),
-            (sig \ "pos").map(positionFromXML(_)),
-            (sig \ "extraFlag").flatMap(extraFlagFromXML(_)).filter(_.isDefined).map(_.get).toSet
+        (sig \ "name").text.trim,
+        CType.fromXML((sig \ "type")), {
+            val input = new ANTLRInputStream((sig \ "featureexpr").text.trim())
+            val lexer = new FExprLexer(input)
+            val tokens = new CommonTokenStream(lexer)
+            val parser = new FExprParser(tokens)
+            parser.fexpr().value
+        },
+        // new FeatureExprParser().parse((sig \ "featureexpr").text),
+        (sig \ "pos").map(positionFromXML(_)),
+        (sig \ "extraFlag").flatMap(extraFlagFromXML(_)).filter(_.isDefined).map(_.get).toSet
         )
     }
     private def positionFromXML(node: scala.xml.Node): Position = {
