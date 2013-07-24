@@ -201,7 +201,7 @@ object Frontend {
         //get block pcs (nesting)
         if (in != null) {
             var blockPcs = Set[FeatureExpr]()
-            var previousFeatureExpr = FeatureExprFactory.False
+            var previousFeatureExpr = FeatureExprFactory.True
             val it = in.tokens.iterator
             while (it.hasNext) {
                 val currExpr = it.next().getFeature
