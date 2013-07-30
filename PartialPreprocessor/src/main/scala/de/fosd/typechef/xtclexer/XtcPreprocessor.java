@@ -157,13 +157,8 @@ public class XtcPreprocessor implements VALexer {
     @Override
     public LexerToken getNextToken() throws IOException {
         Stream lexer = getCurrentLexer().get(0);
-        Syntax s = null;
-        try {
-            s = lexer.scan();
-        } catch (Exception e) {
-            System.err.println("Caught exception: " + e.getClass());
-        }
-        while (s != null && s.kind() != Syntax.Kind.EOF) {
+        Syntax s = lexer.scan();
+        while (s.kind() != Syntax.Kind.EOF) {
             if (s.kind() == Syntax.Kind.CONDITIONAL) {
                 Syntax.Conditional c = s.toConditional();
                 if (c.tag() == Syntax.ConditionalTag.START) {
@@ -192,15 +187,12 @@ public class XtcPreprocessor implements VALexer {
 
             s = lexer.scan();
         }
-
         getCurrentLexer().remove(0);
         if (getCurrentLexer().isEmpty())
             return new EOFToken();
         else
             return getNextToken();
-
     }
-
 
     @Override
     public HashSet<String> getNestedConstraints() {
