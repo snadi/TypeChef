@@ -40,8 +40,12 @@ public class XtcPreprocessor implements VALexer {
     private LexerInterface.ErrorHandler exceptionErrorHandler = new LexerInterface.ExceptionErrorHandler() {
         public void error(PresenceConditionManager.PresenceCondition pc, String msg, Locatable location) {
             FeatureExpr fexpr = translate(pc);
-            if (fexpr.isSatisfiable(featureModel))
-                super.error(pc, msg, location);
+            if (fexpr.isSatisfiable(featureModel)) {
+                if (msg.contains("#error"))
+                    System.err.println("error at location: " + location + " msg: " + msg + " with pc: " + pc);
+                else
+                    super.error(pc, msg, location);
+            }
         }
     };
 
@@ -153,8 +157,13 @@ public class XtcPreprocessor implements VALexer {
     @Override
     public LexerToken getNextToken() throws IOException {
         Stream lexer = getCurrentLexer().get(0);
-        Syntax s = lexer.scan();
-        while (s.kind() != Syntax.Kind.EOF) {
+        Syntax s = null;
+        try {
+            s = lexer.scan();
+        } catch (Exception e) {
+            System.err.println("Caught exception: " + e.getClass());
+        }
+        while (s != null && s.kind() != Syntax.Kind.EOF) {
             if (s.kind() == Syntax.Kind.CONDITIONAL) {
                 Syntax.Conditional c = s.toConditional();
                 if (c.tag() == Syntax.ConditionalTag.START) {
@@ -183,12 +192,15 @@ public class XtcPreprocessor implements VALexer {
 
             s = lexer.scan();
         }
+
         getCurrentLexer().remove(0);
         if (getCurrentLexer().isEmpty())
             return new EOFToken();
         else
             return getNextToken();
+
     }
+
 
     @Override
     public HashSet<String> getNestedConstraints() {
