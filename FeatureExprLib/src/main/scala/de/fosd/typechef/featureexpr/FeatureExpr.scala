@@ -31,7 +31,9 @@ trait FeatureExpr extends Serializable {
 
     //not final for potential optimizations
     def implies(that: FeatureExpr) = this.not.or(that)
-    def xor(that: FeatureExpr) = (this or that) andNot (this and that)
+    //def xor(that: FeatureExpr) = (this or that) andNot (this and that)
+    def xor(that: FeatureExpr) = (this andNot that) or (this.not and that)
+
     def equiv(that: FeatureExpr) = (this and that) or (this.not and that.not)
 
     /**
