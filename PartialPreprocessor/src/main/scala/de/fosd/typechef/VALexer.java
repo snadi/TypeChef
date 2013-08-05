@@ -88,7 +88,7 @@ public interface VALexer {
 
     public HashSet<String> getNestedConstraints();
 
-    public HashSet<String> getHashErrorConstraints();
+    public HashSet<FeatureExpr> getHashErrorConstraints();
 
     public HashSet<String> getHashWarningConstraints();
 

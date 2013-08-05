@@ -144,7 +144,7 @@ public class Main {
             @Override
             public VALexer create(FeatureModel featureModel) {
                 if (options.useXtcLexer())
-                    return new XtcPreprocessor(options.getMacroFilter(), featureModel);
+                    return new XtcPreprocessor(options.getMacroFilter(), featureModel, filePc);
                 return new Preprocessor(options.getMacroFilter(), featureModel, filePc);
             }
         }, options, returnTokenList, fileName);
@@ -257,7 +257,7 @@ public class Main {
 
         //check for nested and hasherror, and hashWarning constraints
         HashSet<String> nestedConstraints = pp.getNestedConstraints();
-        HashSet<String> hashErrorConstraints = pp.getHashErrorConstraints();
+        HashSet<FeatureExpr> hashErrorConstraints = pp.getHashErrorConstraints();
         HashSet<String> warningConstraints = pp.getHashWarningConstraints();
 
         if (nestedConstraints != null && !nestedConstraints.isEmpty()) {
@@ -272,8 +272,10 @@ public class Main {
         if (hashErrorConstraints != null && !hashErrorConstraints.isEmpty()) {
             //create file to dump conditions from #error directives in it
             PrintWriter errorDirWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".hasherr"));
-            for (String constraint : hashErrorConstraints)
-                errorDirWriter.println(constraint);
+            for (FeatureExpr constraint : hashErrorConstraints) {
+                constraint.print(errorDirWriter);
+                errorDirWriter.println();
+            }
 
             errorDirWriter.close();
         }

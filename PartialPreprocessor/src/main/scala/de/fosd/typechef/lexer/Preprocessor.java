@@ -158,7 +158,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     private Stack<Integer> tokenStart;
     private FeatureExpr filepc;
     private HashSet<String> nestingConstraints;
-    private HashSet<String> hashErrorConstraints;
+    private HashSet<FeatureExpr> hashErrorConstraints;
     private HashSet<String> warningConstraints;
 
 
@@ -168,7 +168,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         this(macroFilter, fm);
         this.filepc = filePc;
         this.nestingConstraints = new HashSet<String>();
-        this.hashErrorConstraints = new HashSet<String>();
+        this.hashErrorConstraints = new HashSet<FeatureExpr>();
         this.warningConstraints = new HashSet<String>();
     }
 
@@ -2762,12 +2762,12 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         }
     }
 
-    private void addHashErrorConstraint(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
-        String toPrint = featureExpr1 + " => " + featureExpr2;
+    private void addHashErrorConstraint(FeatureExpr filePc, FeatureExpr featureExpr2) {
+        FeatureExpr constraint = filePc.implies(featureExpr2);
 
-        if (!hashErrorConstraints.contains(toPrint)) {
-            if (!featureExpr1.equivalentTo(FeatureExprFactory.True()) && !featureExpr1.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False()) && !featureExpr1.implies(featureExpr2).equivalentTo(FeatureExprFactory.True())) {
-                hashErrorConstraints.add(toPrint);
+        if (!hashErrorConstraints.contains(constraint)) {
+            if (!constraint.isTautology()) {
+                hashErrorConstraints.add(constraint);
             }
         }
     }
@@ -2798,7 +2798,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         return tok;
     }
 
-    public HashSet<String> getHashErrorConstraints() {
+    public HashSet<FeatureExpr> getHashErrorConstraints() {
         return hashErrorConstraints;
     }
 

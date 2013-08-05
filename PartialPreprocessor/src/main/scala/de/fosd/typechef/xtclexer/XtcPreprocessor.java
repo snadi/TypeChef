@@ -28,6 +28,8 @@ import java.util.*;
 public class XtcPreprocessor implements VALexer {
 
 
+    private HashSet<FeatureExpr> hashErrorConstraints;
+    private FeatureExpr filePc;
     private File file = null;//file is just the name for the file reader. file and fileReader should be null or nonnull at the same time
     private Reader fileReader = null;
     private List<String> sysIncludes = new ArrayList<String>();
@@ -41,22 +43,24 @@ public class XtcPreprocessor implements VALexer {
         public void error(PresenceConditionManager.PresenceCondition pc, String msg, Locatable location) {
             FeatureExpr fexpr = translate(pc);
             if (fexpr.isSatisfiable(featureModel)) {
-                if (msg.contains("#error"))
-                    System.err.println("error at location: " + location + " msg: " + msg + " with pc: " + pc);
-                else
+                if (msg.contains("#error")) {
+                    addHashErrorConstraint(filePc, fexpr.not());
+                } else
                     super.error(pc, msg, location);
             }
         }
     };
 
-    public XtcPreprocessor(final MacroFilter tcMacroFilter, FeatureModel featureModel) {
+    public XtcPreprocessor(final MacroFilter tcMacroFilter, FeatureModel featureModel, FeatureExpr filePc) {
         this.macroFilter = new XtcMacroFilter() {
             @Override
             public boolean isVariable(String macroName) {
                 return tcMacroFilter.flagFilter(macroName);
             }
         };
+        hashErrorConstraints = new HashSet<FeatureExpr>();
         this.featureModel = featureModel;
+        this.filePc = filePc;
     }
 
 
@@ -200,8 +204,8 @@ public class XtcPreprocessor implements VALexer {
     }
 
     @Override
-    public HashSet<String> getHashErrorConstraints() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public HashSet<FeatureExpr> getHashErrorConstraints() {
+        return hashErrorConstraints;
     }
 
     @Override
@@ -270,6 +274,16 @@ public class XtcPreprocessor implements VALexer {
         return result;
 
 
+    }
+
+    private void addHashErrorConstraint(FeatureExpr filePc, FeatureExpr featureExpr2) {
+        FeatureExpr constraint = filePc.implies(featureExpr2);
+
+        if (!hashErrorConstraints.contains(constraint)) {
+            if (!constraint.isTautology()) {
+                hashErrorConstraints.add(constraint);
+            }
+        }
     }
 
     private static String formulaToName(String fname) {
