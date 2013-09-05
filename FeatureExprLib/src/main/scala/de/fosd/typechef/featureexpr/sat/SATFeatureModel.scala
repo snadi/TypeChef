@@ -198,9 +198,14 @@ object SATFeatureModel extends FeatureModelFactory {
                 //comment, do nothing
             } else {
                 val vec = new VecInt()
-                for (literal <- line.split(" "))
-                    if (literal != "1")
-                        vec.push(literal.toInt)
+                val parts = line.split(" ")
+                var index = 0 //use the parts length to avoid ending in 0 vs ending in 1 problem
+                while (index < parts.length - 1) {
+                    //if (literal != "1")
+                    vec.push(parts(index).toInt)
+                    index += 1
+                }
+                assert(!vec.isEmpty)
                 clauses.push(vec)
             }
 
