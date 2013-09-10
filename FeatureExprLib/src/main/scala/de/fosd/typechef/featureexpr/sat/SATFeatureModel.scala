@@ -189,6 +189,8 @@ object SATFeatureModel extends FeatureModelFactory {
                 val entries = line.substring(2).split(" ")
                 val id = if (entries(0) endsWith "$")
                     entries(0).substring(0, entries(0).length - 1).toInt
+                else if (entries(0) startsWith "$")
+                    entries(0).substring(1).toInt
                 else
                     entries(0).toInt
                 maxId = scala.math.max(id, maxId)
