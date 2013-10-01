@@ -82,10 +82,11 @@ class ParserMain(p: CParser) {
             print(
                 "  Conditional Tokens: " + countConditionalTokens(in.tokens) + "\n" +
                     "  Distinct Features#: " + distinctFeatures.size + "\n" +
-                    //   "  Distinct Features: " + distinctFeatures.toList.sorted.mkString(";") + "\n" +
+                    "  Distinct Features: " + distinctFeatures.toList.sorted.mkString(";") + "\n" +
                     "  Distinct Feature Expressions: " + countFeatureExpr(in.tokens) + "\n" +
                     "  Choice Nodes: " + countChoiceNodes(result) + "\n\n")
         }
+
         //        checkParseResult(result, FeatureExprFactory.True)
 
         //        val resultStr: String = result.toString

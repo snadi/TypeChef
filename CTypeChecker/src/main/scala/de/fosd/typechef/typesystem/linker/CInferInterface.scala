@@ -47,13 +47,13 @@ trait CInferInterface extends CTypeSystem with InterfaceWriter {
 
         //eliminate duplicates with a map
         for (imp <- imports) {
-            val key = (imp.name, imp.ctype)
+            val key = (imp.name, imp.ctype.toValueLinker) //toValueLinker needed to remove the distinction between Object or not
             val old = importMap.getOrElse[T2](key, (FeatureExprFactory.False, Seq(), Set()))
             importMap = importMap + (key ->(old._1 or imp.fexpr, old._2 ++ imp.pos, CFlagOps.mergeOnImports(old._3, imp.extraFlags)))
         }
         //eliminate imports that have corresponding exports
         for (exp <- (exports ++ staticFunctions)) {
-            val key = (exp.name, exp.ctype)
+            val key = (exp.name, exp.ctype.toValueLinker)
             if (importMap.contains(key)) {
                 val (oldFexpr, oldPos, oldExtras) = importMap(key)
                 val newFexpr = oldFexpr andNot exp.fexpr
@@ -69,7 +69,6 @@ trait CInferInterface extends CTypeSystem with InterfaceWriter {
         yield CSignature(k._1, k._2, v._1, v._2, v._3)
         imports = r.toList
     }
-
     def findAttributes(a: GnuAttributeSpecifier, ctx: FeatureExpr): Seq[(FeatureExpr, AtomicAttribute)] =
         (for (Opt(f, at) <- a.attributeList) yield findAttributes(at, ctx and f)).flatten
     def findAttributes(a: AttributeSequence, ctx: FeatureExpr): Seq[(FeatureExpr, AtomicAttribute)] =
@@ -95,7 +94,6 @@ trait CInferInterface extends CTypeSystem with InterfaceWriter {
 
         flags.filter(_.isDefined).map(_.get).toSet
     }
-
 
     /**
      * all nonstatic function definitions are considered as exports
@@ -125,14 +123,12 @@ trait CInferInterface extends CTypeSystem with InterfaceWriter {
         })
     }
 
-
     /**
      * all function declarations without definitions are imports
      * if they are referenced at least once
      */
     override protected def typedExpr(expr: Expr, ctypes: Conditional[CType], featureExpr: FeatureExpr, env: Env) {
         super.typedExpr(expr, ctypes, featureExpr, env)
-
         expr match {
             case identifier: Id =>
                 val deadCondition = env.isDeadCode
@@ -160,3 +156,4 @@ trait CInferInterface extends CTypeSystem with InterfaceWriter {
 
 
 }
+

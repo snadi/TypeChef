@@ -307,7 +307,7 @@ abstract class MultiFeatureParser(val featureModel: FeatureModel = null, debugOu
                             x.seq(fs, opt(p)(x.next, fs)).map({
                                 case slist ~ Some(x) =>
                                     /* Appending to the tail would take linear time, and building a list that way
-                * would take quadratic time; therefore, add x to the head and remember to reverse the list at the end. */
+                  * would take quadratic time; therefore, add x to the head and remember to reverse the list at the end. */
                                     unsealed(x +: slist.list)
                                 case slist ~ None =>
                                     seal(slist.list)

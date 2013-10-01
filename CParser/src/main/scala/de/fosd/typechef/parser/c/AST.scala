@@ -62,11 +62,13 @@ trait AST extends Product with Serializable with Cloneable with WithPosition {
     override def clone(): AST.this.type = super.clone().asInstanceOf[AST.this.type]
 }
 
-sealed abstract class Expr extends AST
-
-sealed abstract class PrimaryExpr extends Expr
+trait CFGStmt extends AST
 
 trait CDef extends AST
+
+sealed abstract class Expr extends AST with CFGStmt
+
+sealed abstract class PrimaryExpr extends Expr
 
 case class Id(name: String) extends PrimaryExpr
 
@@ -127,9 +129,9 @@ abstract sealed class Statement extends AST
 
 case class CompoundStatement(innerStatements: List[Opt[Statement]]) extends Statement
 
-case class EmptyStatement() extends Statement
+case class EmptyStatement() extends Statement with CFGStmt
 
-case class ExprStatement(expr: Expr) extends Statement
+case class ExprStatement(expr: Expr) extends Statement with CFGStmt
 
 case class WhileStatement(expr: Expr, s: Conditional[Statement]) extends Statement
 
@@ -137,19 +139,19 @@ case class DoStatement(expr: Expr, s: Conditional[Statement]) extends Statement
 
 case class ForStatement(expr1: Option[Expr], expr2: Option[Expr], expr3: Option[Expr], s: Conditional[Statement]) extends Statement
 
-case class GotoStatement(target: Expr) extends Statement
+case class GotoStatement(target: Expr) extends Statement with CFGStmt
 
-case class ContinueStatement() extends Statement
+case class ContinueStatement() extends Statement with CFGStmt
 
-case class BreakStatement() extends Statement
+case class BreakStatement() extends Statement with CFGStmt
 
-case class ReturnStatement(expr: Option[Expr]) extends Statement
+case class ReturnStatement(expr: Option[Expr]) extends Statement with CFGStmt
 
-case class LabelStatement(id: Id, attribute: Option[AttributeSpecifier]) extends Statement
+case class LabelStatement(id: Id, attribute: Option[AttributeSpecifier]) extends Statement with CFGStmt
 
-case class CaseStatement(c: Expr) extends Statement
+case class CaseStatement(c: Expr) extends Statement with CFGStmt
 
-case class DefaultStatement() extends Statement
+case class DefaultStatement() extends Statement with CFGStmt
 
 case class IfStatement(condition: Conditional[Expr], thenBranch: Conditional[Statement], elifs: List[Opt[ElifStatement]], elseBranch: Option[Conditional[Statement]]) extends Statement
 
@@ -157,7 +159,7 @@ case class ElifStatement(condition: Conditional[Expr], thenBranch: Conditional[S
 
 case class SwitchStatement(expr: Expr, s: Conditional[Statement]) extends Statement
 
-abstract sealed class CompoundDeclaration extends Statement
+abstract sealed class CompoundDeclaration extends Statement with CFGStmt
 
 case class DeclarationStatement(decl: Declaration) extends CompoundDeclaration
 
@@ -227,7 +229,7 @@ case class CompoundAttribute(inner: List[Opt[AttributeSequence]]) extends Attrib
 case class Declaration(declSpecs: List[Opt[Specifier]], init: List[Opt[InitDeclarator]]) extends ExternalDef with OldParameterDeclaration
 
 
-abstract class InitDeclarator(val declarator: Declarator, val attributes: List[Opt[AttributeSpecifier]]) extends AST with CDef {
+abstract class InitDeclarator(val declarator: Declarator, val attributes: List[Opt[AttributeSpecifier]]) extends AST {
     def getId = declarator.getId
     def getName = declarator.getName
     def getExpr: Option[Expr]
@@ -338,7 +340,7 @@ case class StructInitializer(expr: Expr, attributes: List[Opt[AttributeSpecifier
 
 case class AsmExpr(isVolatile: Boolean, expr: Expr) extends AST with ExternalDef
 
-case class FunctionDef(specifiers: List[Opt[Specifier]], declarator: Declarator, oldStyleParameters: List[Opt[OldParameterDeclaration]], stmt: CompoundStatement) extends AST with ExternalDef with CDef {
+case class FunctionDef(specifiers: List[Opt[Specifier]], declarator: Declarator, oldStyleParameters: List[Opt[OldParameterDeclaration]], stmt: CompoundStatement) extends AST with ExternalDef with CFGStmt with CDef {
     def getName = declarator.getName
 }
 
@@ -347,7 +349,7 @@ case class NestedFunctionDef(isAuto: Boolean, specifiers: List[Opt[Specifier]], 
 }
 
 
-trait ExternalDef extends AST
+trait ExternalDef extends AST with CFGStmt
 
 case class EmptyExternalDef() extends ExternalDef
 

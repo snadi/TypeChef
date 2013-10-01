@@ -213,6 +213,13 @@ object SATFeatureModel extends FeatureModelFactory {
 
         }
         assert(maxId == variables.size, "largest variable id " + maxId + " differs from number of variables " + variables.size)
+        /*   variables.foreach(entry => println(entry._1 + " : " + entry._2))
+        println("max id: " + maxId + " num of clauses: " + clauses.size() + " num of vars: " + variables.size)
+        val iterator = clauses.iterator()
+        while(iterator.hasNext){
+            println(iterator.next())
+        }*/
+
         new SATFeatureModel(variables, clauses, maxId)
     }
     /**
