@@ -262,7 +262,7 @@ public class Main {
 
         if (nestedConstraints != null && !nestedConstraints.isEmpty()) {
             //create file to dump implications from nested ifdefs in
-            PrintWriter nestedIfDefWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".nested"));
+            PrintWriter nestedIfDefWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".nested2"));
             for (String constraint : nestedConstraints)
                 nestedIfDefWriter.println(constraint);
 

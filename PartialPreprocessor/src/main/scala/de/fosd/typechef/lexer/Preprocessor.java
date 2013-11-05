@@ -2693,9 +2693,12 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
                                         //only negate if its not the last expression
                                         if (counter != state.localFeatures.size() - 1) {
-                                            //  addNestedConstraint(prevLocalExpr.not(), parentExpr.and(filepc));
+                                            /*if(prevLocalExpr.collectDistinctFeatures().size() == 1 && parentExpr.collectDistinctFeatures().size() == 1)
+                                              addNestedConstraint(prevLocalExpr.not(), parentExpr.and(filepc));*/
                                         } else {
-                                            //addNestedConstraint(prevLocalExpr, parentExpr.and(filepc));
+                                            if (prevLocalExpr.collectDistinctFeatures().size() == 1 && parentExpr.collectDistinctFeatures().size() == 1)
+                                                if (!prevLocalExpr.toString().startsWith("!"))
+                                                    addNestedConstraint(prevLocalExpr, parentExpr.and(filepc));
                                         }
 
 
@@ -2707,15 +2710,18 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                             }
 
 
-                            FeatureExpr parentExpr = state.parent.getFullPresenceCondition();
+                            FeatureExpr directParent = state.parent.getLocalFeatureExpr();
 
-                            if (tokenCounter > start) {
-                                //  addNestedConstraint(localExpr, parentExpr.and(filepc));
+                            if (tokenCounter > start && !state.parent.sawElse()) {
+                                if (localExpr.collectDistinctFeatures().size() == 1 && directParent.collectDistinctFeatures().size() == 1)
+                                    if (!localExpr.toString().startsWith("!"))
+                                        addNestedConstraint(localExpr, directParent.and(filepc));
                             }
 
                             //if sawElse then add the opposite of expression as well
-                            /* if (tokenCounter > start && state.sawElse()) {
-                                addNestedConstraint(localExpr.not(), parentExpr.and(filepc));
+                            /*  if (tokenCounter > start && state.sawElse()) {
+                                 if(localExpr.collectDistinctFeatures().size() == 1 && directParent.collectDistinctFeatures().size() == 1)
+                                       addNestedConstraint(localExpr.not(), directParent.and(filepc));
                             }*/
 
                             pop_state();
