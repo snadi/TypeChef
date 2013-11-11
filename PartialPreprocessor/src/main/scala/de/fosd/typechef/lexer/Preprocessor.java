@@ -160,7 +160,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     private HashSet<String> nestingConstraints;
     private HashSet<FeatureExpr> hashErrorConstraints;
     private HashSet<String> warningConstraints;
-    private HashSet<FeatureExpr> presenceConditions;
 
 
     private List<MacroConstraint> macroConstraints = new ArrayList<MacroConstraint>();
@@ -171,7 +170,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         this.nestingConstraints = new HashSet<String>();
         this.hashErrorConstraints = new HashSet<FeatureExpr>();
         this.warningConstraints = new HashSet<String>();
-        this.presenceConditions = new HashSet<FeatureExpr>();
     }
 
     public Preprocessor(MacroFilter macroFilter, FeatureModel fm) {
@@ -2712,12 +2710,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                             FeatureExpr parentExpr = state.parent.getFullPresenceCondition();
 
                             if (tokenCounter > start) {
-                                FeatureExpr presenceCondition = state.getFullPresenceCondition();
-                                if (!containsDisjunction(parentExpr)) {
-                                    if (!presenceConditions.contains(presenceCondition)) {
-                                        presenceConditions.add(presenceCondition.and(filepc));
-                                    }
-                                }
                                 //  addNestedConstraint(localExpr, parentExpr.and(filepc));
                             }
 
@@ -2759,11 +2751,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                     // break;
             }
         }
-    }
-
-    private boolean containsDisjunction(FeatureExpr expr) {
-        String textEpxr = expr.toTextExpr();
-        return textEpxr.contains("||") || textEpxr.contains("|");
     }
 
     private void addNestedConstraint(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
@@ -2817,10 +2804,6 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
     public HashSet<String> getNestedConstraints() {
         return nestingConstraints;
-    }
-
-    public HashSet<FeatureExpr> getPresenceConditions() {
-        return presenceConditions;
     }
 
     public HashSet<String> getHashWarningConstraints() {

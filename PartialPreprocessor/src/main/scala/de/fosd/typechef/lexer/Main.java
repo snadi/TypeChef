@@ -259,27 +259,15 @@ public class Main {
         HashSet<String> nestedConstraints = pp.getNestedConstraints();
         HashSet<FeatureExpr> hashErrorConstraints = pp.getHashErrorConstraints();
         HashSet<String> warningConstraints = pp.getHashWarningConstraints();
-        HashSet<FeatureExpr> presenceConditions = pp.getPresenceConditions();
 
-        System.out.println("presence conditions size: " + presenceConditions.size());
-
-        if (presenceConditions != null && !presenceConditions.isEmpty()) {
-            System.err.println("going to print presence conditions");
-            PrintWriter presenceConditionWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".nested2"));
-            for (FeatureExpr constraint : presenceConditions)
-                presenceConditionWriter.println(constraint);
-
-            presenceConditionWriter.close();
-        }
-
-        /*if (nestedConstraints != null && !nestedConstraints.isEmpty()) {
+        if (nestedConstraints != null && !nestedConstraints.isEmpty()) {
             //create file to dump implications from nested ifdefs in
-            PrintWriter nestedIfDefWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".nested2"));
+            PrintWriter nestedIfDefWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".nested"));
             for (String constraint : nestedConstraints)
                 nestedIfDefWriter.println(constraint);
 
             nestedIfDefWriter.close();
-        }*/
+        }
 
         if (hashErrorConstraints != null && !hashErrorConstraints.isEmpty()) {
             //create file to dump conditions from #error directives in it
