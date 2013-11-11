@@ -256,14 +256,14 @@ public class Main {
 
 
         //check for nested and hasherror, and hashWarning constraints
-        HashSet<String> nestedConstraints = pp.getNestedConstraints();
+        HashSet<FeatureExpr> presenceConditions = pp.getPresenceConditions();
         HashSet<FeatureExpr> hashErrorConstraints = pp.getHashErrorConstraints();
         HashSet<String> warningConstraints = pp.getHashWarningConstraints();
 
-        if (nestedConstraints != null && !nestedConstraints.isEmpty()) {
+        if (presenceConditions != null && !presenceConditions.isEmpty()) {
             //create file to dump implications from nested ifdefs in
-            PrintWriter nestedIfDefWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".nested"));
-            for (String constraint : nestedConstraints)
+            PrintWriter nestedIfDefWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".nested2"));
+            for (FeatureExpr constraint : presenceConditions)
                 nestedIfDefWriter.println(constraint);
 
             nestedIfDefWriter.close();
