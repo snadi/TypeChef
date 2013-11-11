@@ -90,6 +90,8 @@ public interface VALexer {
 
     public HashSet<FeatureExpr> getHashErrorConstraints();
 
+    public HashSet<FeatureExpr> getPresenceConditions();
+
     public HashSet<String> getHashWarningConstraints();
 
     void setListener(PreprocessorListener preprocessorListener);

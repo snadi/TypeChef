@@ -160,6 +160,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     private HashSet<String> nestingConstraints;
     private HashSet<FeatureExpr> hashErrorConstraints;
     private HashSet<String> warningConstraints;
+    private HashSet<FeatureExpr> presenceConditions;
 
 
     private List<MacroConstraint> macroConstraints = new ArrayList<MacroConstraint>();
@@ -170,6 +171,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         this.nestingConstraints = new HashSet<String>();
         this.hashErrorConstraints = new HashSet<FeatureExpr>();
         this.warningConstraints = new HashSet<String>();
+        this.presenceConditions = new HashSet<FeatureExpr>();
     }
 
     public Preprocessor(MacroFilter macroFilter, FeatureModel fm) {
@@ -2693,12 +2695,9 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
                                         //only negate if its not the last expression
                                         if (counter != state.localFeatures.size() - 1) {
-                                            /*if(prevLocalExpr.collectDistinctFeatures().size() == 1 && parentExpr.collectDistinctFeatures().size() == 1)
-                                              addNestedConstraint(prevLocalExpr.not(), parentExpr.and(filepc));*/
+                                            //  addNestedConstraint(prevLocalExpr.not(), parentExpr.and(filepc));
                                         } else {
-                                            if (prevLocalExpr.collectDistinctFeatures().size() == 1 && parentExpr.collectDistinctFeatures().size() == 1)
-                                                if (!prevLocalExpr.toString().startsWith("!"))
-                                                    addNestedConstraint(prevLocalExpr, parentExpr.and(filepc));
+                                            //addNestedConstraint(prevLocalExpr, parentExpr.and(filepc));
                                         }
 
 
@@ -2710,18 +2709,21 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                             }
 
 
-                            FeatureExpr directParent = state.parent.getLocalFeatureExpr();
+                            FeatureExpr parentExpr = state.parent.getFullPresenceCondition();
 
-                            if (tokenCounter > start && !state.parent.sawElse()) {
-                                if (localExpr.collectDistinctFeatures().size() == 1 && directParent.collectDistinctFeatures().size() == 1)
-                                    if (!localExpr.toString().startsWith("!"))
-                                        addNestedConstraint(localExpr, directParent.and(filepc));
+                            if (tokenCounter > start) {
+                                FeatureExpr presenceCondition = state.getFullPresenceCondition();
+                                if (!containsDisjunction(parentExpr)) {
+                                    if (!presenceConditions.contains(presenceCondition)) {
+                                        presenceConditions.add(presenceCondition.and(filepc));
+                                    }
+                                }
+                                //  addNestedConstraint(localExpr, parentExpr.and(filepc));
                             }
 
                             //if sawElse then add the opposite of expression as well
-                            /*  if (tokenCounter > start && state.sawElse()) {
-                                 if(localExpr.collectDistinctFeatures().size() == 1 && directParent.collectDistinctFeatures().size() == 1)
-                                       addNestedConstraint(localExpr.not(), directParent.and(filepc));
+                            /* if (tokenCounter > start && state.sawElse()) {
+                                addNestedConstraint(localExpr.not(), parentExpr.and(filepc));
                             }*/
 
                             pop_state();
@@ -2757,6 +2759,11 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                     // break;
             }
         }
+    }
+
+    private boolean containsDisjunction(FeatureExpr expr) {
+        String textEpxr = expr.toTextExpr();
+        return textEpxr.contains("||") || textEpxr.contains("|");
     }
 
     private void addNestedConstraint(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
@@ -2810,6 +2817,10 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
     public HashSet<String> getNestedConstraints() {
         return nestingConstraints;
+    }
+
+    public HashSet<FeatureExpr> getPresenceConditions() {
+        return presenceConditions;
     }
 
     public HashSet<String> getHashWarningConstraints() {
