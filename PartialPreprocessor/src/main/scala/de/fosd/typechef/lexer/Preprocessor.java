@@ -2693,10 +2693,10 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
                                         //only negate if its not the last expression
                                         if (counter != state.localFeatures.size() - 1) {
-                                            if (!(containsDisjunction(parentExpr) || containsDisjunction(prevLocalExpr)))
+                                            if (!(containsDisjunction(parentExpr) || containsDisjunction(prevLocalExpr.not()) || containsDisjunction(filepc)))
                                                 addPresenceCondition(prevLocalExpr.not().and(parentExpr).and(filepc));
                                         } else {
-                                            if (!(containsDisjunction(parentExpr) || containsDisjunction(prevLocalExpr)))
+                                            if (!(containsDisjunction(parentExpr) || containsDisjunction(prevLocalExpr) || containsDisjunction(filepc)))
                                                 addPresenceCondition(prevLocalExpr.and(parentExpr).and(filepc));
                                         }
 
@@ -2712,7 +2712,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                             FeatureExpr parentExpr = state.parent.getFullPresenceCondition();
 
                             if (tokenCounter > start) {
-                                if (!(containsDisjunction(parentExpr) || containsDisjunction(localExpr)))
+                                if (!(containsDisjunction(parentExpr) || containsDisjunction(localExpr) || containsDisjunction(filepc)))
                                     addPresenceCondition(localExpr.and(parentExpr).and(filepc));
                             }
 
@@ -2806,7 +2806,8 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         } while (tok.isWhite());
         return tok;
     }
-     //tst
+
+    //tst
     public HashSet<FeatureExpr> getHashErrorConstraints() {
         return hashErrorConstraints;
     }
