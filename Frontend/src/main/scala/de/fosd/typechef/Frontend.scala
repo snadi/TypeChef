@@ -230,7 +230,7 @@ object Frontend extends EnforceTreeHelper {
             while (it.hasNext) {
                 val currExpr = it.next().getFeature
                 if (!(currExpr eq previousFeatureExpr)) {
-                    blockPcs += currExpr.and(opt.getFilePresenceCondition)
+                    blockPcs += currExpr //.and(opt.getFilePresenceCondition)
                     previousFeatureExpr = currExpr
                 }
             }

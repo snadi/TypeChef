@@ -2686,6 +2686,9 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
                                 if (state.sawElif()) {
 
+                                    if (localExpr.collectDistinctFeatures().contains("CONFIG_FEATURE_CPIO_P"))
+                                        System.out.println("saw elif: " + localExpr);
+
                                     //if we saw an elsif if A elsif B then the presence conditions are
                                     //B&!A and A. i.e., start from the end of the local expr and negate the curr expr
                                     //then add all other expressions
@@ -2713,11 +2716,18 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                     }
 
                                 } else {
-
+                                    if (localExpr.collectDistinctFeatures().contains("CONFIG_FEATURE_CPIO_P"))
+                                        System.out.println("is not elif: " + localExpr);
                                     //if we have not seen an elsif, then we just add the localexpr and its parent
                                     //if we have also seen an else, then we add the negation as well.
                                     //add this presence condition if the local expression is a pure disjunction
                                     if (!isPureDisjunction(localExpr)) {
+                                        if (localExpr.collectDistinctFeatures().contains("CONFIG_FEATURE_CPIO_P"))
+                                            System.out.println("is not a pure disj");
+
+                                        if (localExpr.collectDistinctFeatures().contains("CONFIG_FEATURE_CPIO_P"))
+                                            System.out.println("adding: " + localExpr.and(parentExpr));
+
                                         addPresenceCondition(localExpr.and(parentExpr).and(filepc));
 
                                         if (state.sawElse()) {
@@ -2782,7 +2792,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     private boolean isPureDisjunction(FeatureExpr featureExpr) {
         String exprTest = featureExpr.toTextExpr();
 
-        return (exprTest.contains("|")) && !(exprTest.contains("&"));
+        return (exprTest.contains("|") && !exprTest.contains("&"));
 
     }
 
