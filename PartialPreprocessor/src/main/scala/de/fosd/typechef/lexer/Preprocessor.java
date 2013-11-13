@@ -2674,51 +2674,66 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
                         case PP_ENDIF:
 
-                            FeatureExpr localExpr = state.getLocalFeatureExpr();
-
                             int start = Integer.MAX_VALUE;
 
                             if (!tokenStart.isEmpty())
                                 start = tokenStart.pop();
 
+                            if (tokenCounter > start) {
 
-                            if (tokenCounter > start && state.sawElif()) {
-                                int counter = 0;
-                                for (FeatureExpr prevLocalExpr : state.localFeatures) {
-                                    if (counter != state.localFeatures.size()) {
-                                        FeatureExpr parentExpr = FeatureExprFactory.True();
-                                        for (FeatureExpr prevFeature : state.localFeatures.subList(0, counter)) {
-                                            parentExpr = parentExpr.and(prevFeature);
+                                FeatureExpr localExpr = state.getLocalFeatureExpr();
+                                FeatureExpr parentExpr = state.parent.getFullPresenceCondition();
+
+                                if (state.sawElif()) {
+
+                                    //if we saw an elsif if A elsif B then the presence conditions are
+                                    //B&!A and A. i.e., start from the end of the local expr and negate the curr expr
+                                    //then add all other expressions
+                                    List<FeatureExpr> localExpressions = state.localFeatures;
+                                    int size = localExpressions.size();
+                                    for (int i = size - 1; i >= 0; i--) {
+                                        FeatureExpr currExpr = localExpressions.get(i).not();
+                                        for (int j = i - 1; j >= 0; j--) {
+                                            currExpr = currExpr.and(localExpressions.get(j));
                                         }
 
-                                        //only negate if its not the last expression
-                                        if (counter != state.localFeatures.size() - 1) {
-                                            if (!(containsDisjunction(parentExpr) || containsDisjunction(prevLocalExpr.not()) || containsDisjunction(filepc)))
-                                                addPresenceCondition(prevLocalExpr.not().and(parentExpr).and(filepc));
-                                        } else {
-                                            if (!(containsDisjunction(parentExpr) || containsDisjunction(prevLocalExpr) || containsDisjunction(filepc)))
-                                                addPresenceCondition(prevLocalExpr.and(parentExpr).and(filepc));
-                                        }
-
+                                        addPresenceCondition(currExpr.and(parentExpr).and(filepc));
 
                                     }
 
-                                    counter++;
+                                    //if we also saw an else so if A elseif B else. then the presence condition
+                                    //is a conjunction of all prev expressions (which are all already negated).
+                                    if (state.sawElse()) {
+                                        FeatureExpr elseExpr = FeatureExprFactory.True();
+                                        for (int i = 0; i < size; i++) {
+                                            elseExpr = elseExpr.and(localExpressions.get(i));
+                                        }
+
+                                        addPresenceCondition(elseExpr.and(parentExpr).and(filepc));
+                                    }
+
+                                } else {
+
+                                    //if we have not seen an elsif, then we just add the localexpr and its parent
+                                    //if we have also seen an else, then we add the negation as well.
+                                    //add this presence condition if the local expression is a pure disjunction
+                                    if (!isPureDisjunction(localExpr)) {
+                                        addPresenceCondition(localExpr.and(parentExpr).and(filepc));
+
+                                        if (state.sawElse()) {
+                                            addPresenceCondition(localExpr.not().and(parentExpr).and(filepc));
+                                        }
+
+                                    }
+
 
                                 }
                             }
 
-
-                            FeatureExpr parentExpr = state.parent.getFullPresenceCondition();
-
-                            if (tokenCounter > start) {
-                                if (!(containsDisjunction(parentExpr) || containsDisjunction(localExpr) || containsDisjunction(filepc)))
-                                    addPresenceCondition(localExpr.and(parentExpr).and(filepc));
-                            }
-
-                            //if sawElse then add the opposite of expression as well
-                            /* if (tokenCounter > start && state.sawElse()) {
-                                addPresenceCondition(localExpr.not(), parentExpr.and(filepc));
+                            /*//if sawElse then add the opposite of expression as well
+                             if (tokenCounter > start && state.sawElse()) {
+                                 if (!isPureDisjunction(localExpr))
+                                     addPresenceCondition(localExpr.not().and(parentExpr).and(filepc));
                             }*/
 
                             pop_state();
@@ -2764,10 +2779,10 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         }
     }
 
-    private boolean containsDisjunction(FeatureExpr featureExpr) {
+    private boolean isPureDisjunction(FeatureExpr featureExpr) {
         String exprTest = featureExpr.toTextExpr();
 
-        return exprTest.contains("||") || exprTest.contains("|");
+        return (exprTest.contains("|")) && !(exprTest.contains("&"));
 
     }
 
