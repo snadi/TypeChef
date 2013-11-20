@@ -232,7 +232,7 @@ object Frontend extends EnforceTreeHelper {
                 if (!currToken.getPosition.getFile.endsWith(".h")) {
                     val currExpr = currToken.getFeature
                     if (!(currExpr eq previousFeatureExpr)) {
-                        blockPcs += currExpr.and(opt.getFilePresenceCondition)
+                        blockPcs += currExpr //.and(opt.getFilePresenceCondition)
                         previousFeatureExpr = currExpr
                     }
                 }
