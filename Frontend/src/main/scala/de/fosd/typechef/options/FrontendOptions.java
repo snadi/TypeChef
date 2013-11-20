@@ -26,7 +26,9 @@ public class FrontendOptions extends CAnalysisOptions implements ParserOptions {
             recordTiming = false,
             parserStatistics = false,
             parserResults = true,
-            writePI = false;
+            writePI = false,
+            noFilePc = false,
+            excludeHeaderTokens = false;
     protected File errorXMLFile = null;
     private final File _autoErrorXMLFile = new File(".");
     String outputStem = "";
@@ -46,6 +48,8 @@ public class FrontendOptions extends CAnalysisOptions implements ParserOptions {
     private final static char F_HIDEPARSERRESULTS = Options.genOptionId();
     private final static char F_BDD = Options.genOptionId();
     private final static char F_ERRORXML = Options.genOptionId();
+    private final static char F_DO_NOT_WRITE_FILE_PC = Options.genOptionId();
+    private final static char F_EXCLUDE_HEADER_TOKENS = Options.genOptionId();
     private Function3<FeatureExpr, String, Position, Object> _renderParserError;
 
 
@@ -87,7 +91,10 @@ public class FrontendOptions extends CAnalysisOptions implements ParserOptions {
                         "Use BDD engine instead of SAT engine (provide as first parameter)."),
 
                 new Option("errorXML", LongOpt.OPTIONAL_ARGUMENT, F_ERRORXML, "file",
-                        "File to store syntax and type errors in XML format.")
+                        "File to store syntax and type errors in XML format."),
+                new Option("doNotWriteFilePC", LongOpt.OPTIONAL_ARGUMENT, F_DO_NOT_WRITE_FILE_PC, null,
+                        "Inlcude the fil pc in the presence conditions outputted in .nested file"),
+                new Option("excludeHeaderTokens", LongOpt.OPTIONAL_ARGUMENT, F_EXCLUDE_HEADER_TOKENS, null, "Do not output presence conditions of header file tokens")
 
         ));
         r.add(new OptionGroup("Parser options", 23,
@@ -144,6 +151,10 @@ public class FrontendOptions extends CAnalysisOptions implements ParserOptions {
                 checkFileWritable(g.getOptarg());
                 errorXMLFile = new File(g.getOptarg());
             }
+        } else if (c == F_DO_NOT_WRITE_FILE_PC) {
+            noFilePc = true;
+        } else if (c == F_EXCLUDE_HEADER_TOKENS) {
+            excludeHeaderTokens = true;
         } else
             return super.interpretOption(c, g);
 

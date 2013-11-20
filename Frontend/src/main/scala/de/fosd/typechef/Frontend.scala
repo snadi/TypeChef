@@ -222,6 +222,8 @@ object Frontend extends EnforceTreeHelper {
 
         val in = CLexer.prepareTokens(tokens)
 
+        val ignoreFilePc = opt.noFilePc
+        val ignoreHeaderFile = opt.excludeHeaderTokens
         //get block pcs (nesting)
         if (in != null) {
             var blockPcs = Set[FeatureExpr]()
@@ -231,12 +233,17 @@ object Frontend extends EnforceTreeHelper {
                 val currToken = it.next()
                 val file = currToken.getPosition.getFile
 
-                //only output non-header tokens, but if the file is null, still output them so we don't ignore something
-                //important
-                if (file == null || (file != null && !file.endsWith(".h"))) {
+                //we add conditions if 1) we are not ignoring header file or
+                //2) we are ingoring header file, and the file is either null or it is not null and a header. Include null to avoid excluding wrong files
+                //(position is null for some reason in some tokens)
+                if (!ignoreHeaderFile || (ignoreHeaderFile && (file == null || (file != null && !file.endsWith(".h"))))) {
                     val currExpr = currToken.getFeature
                     if (!(currExpr eq previousFeatureExpr)) {
-                        blockPcs += currExpr //.and(opt.getFilePresenceCondition)
+                        if (ignoreFilePc)
+                            blockPcs += currExpr
+                        else
+                            blockPcs += currExpr.and(opt.getFilePresenceCondition)
+
                         previousFeatureExpr = currExpr
                     }
                 }
