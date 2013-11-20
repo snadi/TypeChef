@@ -228,12 +228,16 @@ object Frontend extends EnforceTreeHelper {
             var previousFeatureExpr = FeatureExprFactory.True
             val it = in.tokens.iterator
             while (it.hasNext) {
-                val currExpr = it.next().getFeature
-                if (!(currExpr eq previousFeatureExpr)) {
-                    blockPcs += currExpr //.and(opt.getFilePresenceCondition)
-                    previousFeatureExpr = currExpr
+                val currToken = it.next()
+                if (!currToken.getPosition.getFile.endsWith(".h")) {
+                    val currExpr = currToken.getFeature
+                    if (!(currExpr eq previousFeatureExpr)) {
+                        blockPcs += currExpr.and(opt.getFilePresenceCondition)
+                        previousFeatureExpr = currExpr
+                    }
                 }
             }
+
 
             if (!blockPcs.isEmpty) {
                 val nestedIfDefWriter: PrintWriter = new PrintWriter(new FileWriter(opt.getFile.replace(".c", "") + ".nested"))
