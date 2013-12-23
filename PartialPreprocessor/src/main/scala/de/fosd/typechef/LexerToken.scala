@@ -14,6 +14,7 @@ import java.io.PrintWriter
  * for the C parser, we also distinguish a number of token kinds (relevant for language tokens only)
  */
 trait LexerToken {
+
     // used to determine splitting and joining
     def getFeature: FeatureExpr
 
@@ -35,6 +36,11 @@ trait LexerToken {
     def isLanguageToken: Boolean
     def isEOF: Boolean
 
+    /**
+     * if token is defined in a header file
+     */
+    def isHeaderToken: Boolean
+    def setInHeader(value: Boolean)
 
     /**
      * is a language identifier (or type in C)

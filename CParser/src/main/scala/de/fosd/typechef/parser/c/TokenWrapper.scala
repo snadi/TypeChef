@@ -26,6 +26,8 @@ class CToken(token: LexerToken, number: Int) extends ProfilingToken with Abstrac
 
     def isCharacter: Boolean = token.isCharacterLiteral
 
+    def isHeaderToken: Boolean = token.isHeaderToken
+
     override def toString = "\"" + token.getText + "\"" + (if (!getFeature.isTautology) getFeature else "")
 
     private lazy val pos = new TokenPosition(

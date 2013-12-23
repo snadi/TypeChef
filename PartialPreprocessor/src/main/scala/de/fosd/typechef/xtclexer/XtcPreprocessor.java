@@ -312,9 +312,20 @@ public class XtcPreprocessor implements VALexer {
         Syntax xtcToken;
         FeatureExpr fexpr;
         String sourceStr;
-
+        Boolean inHeader;
 
         int localLine = Integer.MIN_VALUE;
+
+        /*
+        to determine if this token is from a header file (vs. a source file)
+         */
+        public void setInHeader(boolean value) {
+            inHeader = value;
+        }
+
+        public boolean isHeaderToken() {
+            return inHeader;
+        }
 
         @Override
         public int getLine() {

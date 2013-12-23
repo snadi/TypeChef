@@ -234,9 +234,8 @@ object Frontend extends EnforceTreeHelper {
                 val file = currToken.getPosition.getFile
 
                 //we add conditions if 1) we are not ignoring header file or
-                //2) we are ingoring header file, and the file is either null or it is not null and a header. Include null to avoid excluding wrong files
-                //(position is null for some reason in some tokens)
-                if (!ignoreHeaderFile || (ignoreHeaderFile && (file == null || (file != null && !file.endsWith(".h"))))) {
+                //2) we are ingoring header file, and the current token is not a header token (i.e., is not part of a header file)
+                if (!ignoreHeaderFile || (ignoreHeaderFile && !currToken.isHeaderToken)) {
                     val currExpr = currToken.getFeature
                     if (!(currExpr eq previousFeatureExpr)) {
                         if (ignoreFilePc)

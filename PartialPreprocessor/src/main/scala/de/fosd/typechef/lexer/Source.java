@@ -46,6 +46,15 @@ public abstract class Source implements Iterable<Token>, Closeable {
     private PreprocessorListener listener;
     private boolean active;
     private boolean werror;
+    private boolean header;
+
+    public boolean isHeader() {
+        return header;
+    }
+
+    public void setHeader(boolean value) {
+        header = value;
+    }
 
     /* LineNumberReader */
 
@@ -68,6 +77,7 @@ public abstract class Source implements Iterable<Token>, Closeable {
         this.listener = null;
         this.active = true;
         this.werror = false;
+        this.header = false;
     }
 
     /**

@@ -25,6 +25,8 @@ class TokenSequenceToken extends Token {
     private int column;
     private Source source;
     private String sourceStr;
+    private boolean inHeader;
+
 
     public TokenSequenceToken(int type, int line, int column,
                               List<Token> tokenList, Source source) {
@@ -40,6 +42,17 @@ class TokenSequenceToken extends Token {
 
     private Token firstToken() {
         return internalTokens.get(0);
+    }
+
+    /*
+    to determine if this token is from a header file (vs. a source file)
+     */
+    public void setInHeader(boolean value) {
+        inHeader = value;
+    }
+
+    public boolean isHeaderToken() {
+        return inHeader;
     }
 
     @Override

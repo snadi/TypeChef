@@ -1527,7 +1527,14 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
             return false;
         if (getFeature(Feature.DEBUG_VERBOSE))
             System.err.println("pp: including " + file);
-        sourceManager.push_source(file.getSource(), true);
+
+        //since we are pushing a source because of an include statement
+        //then all tokens processed from this source should be inHeader
+        //tokens
+        Source source = file.getSource();
+        source.setHeader(true);
+
+        sourceManager.push_source(source, true);
         return true;
     }
 
@@ -2855,6 +2862,13 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
             if (tok.isLanguageToken()) {
                 tokenCounter++;
             }
+
+            //if the source is a header file, then set inHeader for tokens
+            //as true
+            if (getSource() != null && getSource().isHeader()) {
+                tok.setInHeader(true);
+            }
+
             return tok;
         } catch (de.fosd.typechef.featureexpr.FeatureException e) {
             throw new LexerException(e.getMessage());

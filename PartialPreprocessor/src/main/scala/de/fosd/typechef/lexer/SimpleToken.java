@@ -43,6 +43,7 @@ public class SimpleToken extends Token {
     protected Source source;// for debugging purposes only
     private FeatureExpr presenceCondition = FeatureExprLib.True();
     private String sourceStr;
+    private boolean inHeader;
 
     public SimpleToken(int type, int line, int column, String text,
                        Object value, Source source) {
@@ -54,6 +55,7 @@ public class SimpleToken extends Token {
         this.source = source;
         if (source == null) sourceStr = null;
         else sourceStr = source.toString();
+        this.inHeader = false;
     }
 
     public SimpleToken(int type, int line, int column, String text,
@@ -137,6 +139,17 @@ public class SimpleToken extends Token {
 
     public void setFeature(FeatureExpr expr) {
         presenceCondition = expr;
+    }
+
+    /*
+     * to check if this token is from a header file (vs. a source  file)
+     */
+    public void setInHeader(boolean value) {
+        inHeader = value;
+    }
+
+    public boolean isHeaderToken() {
+        return inHeader;
     }
 
     /**
