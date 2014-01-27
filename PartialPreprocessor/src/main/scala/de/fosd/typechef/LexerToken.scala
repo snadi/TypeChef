@@ -17,6 +17,7 @@ trait LexerToken {
 
     // used to determine splitting and joining
     def getFeature: FeatureExpr
+    def setFeature(fexpr: FeatureExpr)
 
     // used by ParserFramework only to produce error messages
     def getText: String
