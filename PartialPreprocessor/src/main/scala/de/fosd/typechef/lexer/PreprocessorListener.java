@@ -104,6 +104,8 @@ public class PreprocessorListener {
     }
 
 
-    public FeatureExpr getInvalidConfigurations() { return invalidConfigurations; }
+    public FeatureExpr getInvalidConfigurations() {
+        return invalidConfigurations;
+    }
 
 }

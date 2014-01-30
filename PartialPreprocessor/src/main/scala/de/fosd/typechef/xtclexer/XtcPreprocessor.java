@@ -517,7 +517,7 @@ public class XtcPreprocessor implements VALexer {
 
         @Override
         public void setFeature(FeatureExpr fexpr) {
-            this.fexpr=fexpr;
+            this.fexpr = fexpr;
         }
 
         @Override

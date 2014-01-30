@@ -163,7 +163,7 @@ public class Main {
         for (Feature f : options.getFeatures())
             pp.addFeature(f);
 
-        PreprocessorListener listener=new PreprocessorListener(pp);
+        PreprocessorListener listener = new PreprocessorListener(pp);
         pp.setListener(listener);
         pp.addMacro("__TYPECHEF__", FeatureExprLib.True());
 
@@ -290,9 +290,9 @@ public class Main {
         }
 
         // if there was a lexer error in some configurations, restrict all tokens with that condition
-        FeatureExpr invalidConfigurations= listener.getInvalidConfigurations();
+        FeatureExpr invalidConfigurations = listener.getInvalidConfigurations();
         if (!invalidConfigurations.isContradiction())
-            for (LexerToken tok: resultTokenList)
+            for (LexerToken tok : resultTokenList)
                 tok.setFeature(tok.getFeature().andNot(invalidConfigurations));
 
         return resultTokenList;

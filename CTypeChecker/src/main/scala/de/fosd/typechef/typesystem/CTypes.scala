@@ -76,7 +76,7 @@ case class CType(
     override def equals(that: Any) = that match {
         case thattype: CType =>
             (this.isUnknown && thattype.isUnknown) ||
-                (this.atype == thattype.atype && this.isObject == thattype.isObject && this.isConstant == thattype.isConstant && this.isVolatile == thattype.isVolatile)
+                (this.atype == thattype.atype && this.isConstant == thattype.isConstant && this.isVolatile == thattype.isVolatile)
         case thattype: AType => throw new RuntimeException("comparison between CType and AType")
         case _ => super.equals(that)
     }
