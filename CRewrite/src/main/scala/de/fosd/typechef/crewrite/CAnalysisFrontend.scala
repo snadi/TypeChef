@@ -36,7 +36,7 @@ class CInterAnalysisFrontend(tunit: TranslationUnit, fm: FeatureModel = FeatureE
 
         for (f <- fdefs) {
             writer.writeMethodGraph(getAllSucc(f, env).map {
-                x => (x._1, x._2.distinct.filter { y => y.feature.isSatisfiable(fm)}) // filter duplicates and wrong succs
+                x => (x._1, x._2.distinct.filter {y => y.feature.isSatisfiable(fm)}) // filter duplicates and wrong succs
             }, lookupFExpr, f.declarator.getName)
         }
         writer.writeFooter()
@@ -54,7 +54,7 @@ class CIntraAnalysisFrontend(tunit: TranslationUnit, ts: CTypeSystemFrontend wit
     private lazy val dum = ts.getDeclUseMap
 
     private val fanalyze = fdefs.map {
-        x => (x, getAllSucc(x, env).filterNot { x => x._1.isInstanceOf[FunctionDef] } )
+        x => (x, getAllSucc(x, env).filterNot {x => x._1.isInstanceOf[FunctionDef]})
     }
 
     var errors: List[TypeChefError] = List()
@@ -87,7 +87,7 @@ class CIntraAnalysisFrontend(tunit: TranslationUnit, ts: CTypeSystemFrontend wit
                 // code such as "int a;" occurs frequently and issues an error
                 // we filter them out by checking the declaration use map for usages
                 if (dum.containsKey(i) && dum.get(i).size > 0) {}
-                else out.find { case (t, _) => t == i } match {
+                else out.find {case (t, _) => t == i} match {
                     case None => {
                         var idecls = udm.get(i)
                         if (idecls == null)
@@ -96,7 +96,7 @@ class CIntraAnalysisFrontend(tunit: TranslationUnit, ts: CTypeSystemFrontend wit
                             err ::= new TypeChefError(Severity.Warning, fi, "warning: Variable " + i.name + " is a dead store!", i, "")
                     }
                     case Some((x, z)) => {
-                        if (! z.isTautology(fm)) {
+                        if (!z.isTautology(fm)) {
                             var xdecls = udm.get(x)
                             if (xdecls == null)
                                 xdecls = List(x)
@@ -154,25 +154,25 @@ class CIntraAnalysisFrontend(tunit: TranslationUnit, ts: CTypeSystemFrontend wit
         for (s <- nss) {
             val g = df.gen(s)
             if (g.size > 0) {
-            val in = df.in(s)
+                val in = df.in(s)
 
-            for (((i, _), h) <- in)
-                g.find { case ((t, _), _) => t == i } match {
-                    case None =>
-                    case Some(((x, _), _)) => {
-                        if (h.isSatisfiable(fm)) {
-                            var xdecls = udm.get(x)
-                            if (xdecls == null)
-                                xdecls = List(x)
-                            var idecls = udm.get(i)
-                            if (idecls == null)
-                                idecls = List(i)
-                            for (ei <- idecls)
-                                if (xdecls.exists(_.eq(ei)))
-                                    err ::= new TypeChefError(Severity.Warning, h, "warning: Variable " + x.name + " is freed multiple times!", x, "")
+                for (((i, _), h) <- in)
+                    g.find {case ((t, _), _) => t == i} match {
+                        case None =>
+                        case Some(((x, _), _)) => {
+                            if (h.isSatisfiable(fm)) {
+                                var xdecls = udm.get(x)
+                                if (xdecls == null)
+                                    xdecls = List(x)
+                                var idecls = udm.get(i)
+                                if (idecls == null)
+                                    idecls = List(i)
+                                for (ei <- idecls)
+                                    if (xdecls.exists(_.eq(ei)))
+                                        err ::= new TypeChefError(Severity.Warning, h, "warning: Variable " + x.name + " is freed multiple times!", x, "")
+                            }
                         }
                     }
-                }
             }
         }
         err
@@ -204,7 +204,7 @@ class CIntraAnalysisFrontend(tunit: TranslationUnit, ts: CTypeSystemFrontend wit
                 val in = um.in(s)
 
                 for (((i, _), h) <- in)
-                    g.find { case ((t, _), _) => t == i } match {
+                    g.find {case ((t, _), _) => t == i} match {
                         case None =>
                         case Some(((x, _), _)) => {
                             if (h.isSatisfiable(fm)) {
@@ -251,7 +251,7 @@ class CIntraAnalysisFrontend(tunit: TranslationUnit, ts: CTypeSystemFrontend wit
             if (g.size > 0) {
                 val in = xf.in(s)
 
-                for (((i,_), h) <- in)
+                for (((i, _), h) <- in)
                     g.find(_ == i) match {
                         case None =>
                         case Some(x) => {
@@ -273,7 +273,7 @@ class CIntraAnalysisFrontend(tunit: TranslationUnit, ts: CTypeSystemFrontend wit
     }
 
     def danglingSwitchCode(): Boolean = {
-        val err = fanalyze.flatMap { x => danglingSwitchCode(x._1) }
+        val err = fanalyze.flatMap {x => danglingSwitchCode(x._1)}
 
         if (err.isEmpty) {
             println("No dangling code in switch statements found!")
@@ -384,7 +384,7 @@ class CIntraAnalysisFrontend(tunit: TranslationUnit, ts: CTypeSystemFrontend wit
                 val in = cle.in(s)
                 for (((e, _), fi) <- in) {
                     println("s", PrettyPrinter.print(s), "in", in, "g", g, "u", cle.uses(s))
-                    g.find { case ((t, _), _) => t == e } match {
+                    g.find {case ((t, _), _) => t == e} match {
                         case None =>
                         case Some((k@(x, _), _)) => {
                             if (fi.isSatisfiable(fm)) {

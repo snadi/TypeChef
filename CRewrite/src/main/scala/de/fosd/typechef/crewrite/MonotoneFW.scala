@@ -226,7 +226,7 @@ sealed abstract class MonotoneFW[T](val f: FunctionDef, env: ASTEnv, val fm: Fea
         // initialize solution
         val flow = if (isForward) getAllPred(f, env)
         else getAllSucc(f, env)
-        for (cfgstmt <- flow map { _._1 })
+        for (cfgstmt <- flow map {_._1})
             memo.update(cfgstmt, ((true, l), (true, l)))
 
         var changed = false
@@ -289,14 +289,14 @@ sealed abstract class MonotoneFW[T](val f: FunctionDef, env: ASTEnv, val fm: Fea
             }
             // joining values from different paths can lead to duplicates.
             // remove them and filter out values from unsatisfiable paths.
-            res.distinct.filter { case (_, fexp) => fexp.isSatisfiable(fm) }
+            res.distinct.filter {case (_, fexp) => fexp.isSatisfiable(fm)}
         } else {
             l
         }
     }
 
-    def in(a: AST) = if (isForward) getValues(a, {_._1} ) else getValues(a, { _._2 } )
-    def out(a: AST) = if (isForward) getValues(a, {_._2} ) else getValues(a, { _._1 } )
+    def in(a: AST) = if (isForward) getValues(a, {_._1}) else getValues(a, {_._2})
+    def out(a: AST) = if (isForward) getValues(a, {_._2}) else getValues(a, {_._1})
 }
 
 // specialization of MonotoneFW for Ids (Var); helps to reduce code cloning, i.e., cloning of t2T, ...

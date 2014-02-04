@@ -72,8 +72,8 @@ sealed abstract class StdLibFuncReturn(env: ASTEnv, dum: DeclUseMap, udm: UseDec
 
         val checkvar = manytd(query {
             case NAryExpr(i: Id, others) => {
-                val existingerrchecks = errorreturn.flatMap { st => subtermIsPartOfTerm(st, others) }
-                val fexp = existingerrchecks.foldRight(FeatureExprFactory.False){ (x, y) => env.featureExpr(x) or y }
+                val existingerrchecks = errorreturn.flatMap {st => subtermIsPartOfTerm(st, others)}
+                val fexp = existingerrchecks.foldRight(FeatureExprFactory.False) {(x, y) => env.featureExpr(x) or y}
 
                 if (env.featureExpr(i).equivalentTo(fexp, fm))
                     res ++= fromCache(i, true)
@@ -113,7 +113,7 @@ sealed abstract class StdLibFuncReturn(env: ASTEnv, dum: DeclUseMap, udm: UseDec
                 // iterate errorreturn and check whether one of the elements in there occurs somewhere in the
                 // NAryExpr, i.e., we check "e" and "others" of NAryExpr
                 errorreturn.map(e => {
-                    if (! (ne.get.others.exists(sne => isPartOf(e, sne)) || isPartOf(e, ne.get.e))) erroreouscalls ::= c
+                    if (!(ne.get.others.exists(sne => isPartOf(e, sne)) || isPartOf(e, ne.get.e))) erroreouscalls ::= c
                 })
             } else {
                 erroreouscalls ::= c
@@ -180,7 +180,7 @@ class StdLibFuncReturn_Null(env: ASTEnv, dum: UseDeclMap, udm: UseDeclMap, fm: F
         Constant("0"),
         // ((void*)0)
         CastExpr(TypeName(List(Opt(FeatureExprFactory.True, VoidSpecifier())),
-            Some(AtomicAbstractDeclarator(List(Opt(FeatureExprFactory.True, Pointer(List()))),List()))),Constant("0")))
+            Some(AtomicAbstractDeclarator(List(Opt(FeatureExprFactory.True, Pointer(List()))), List()))), Constant("0")))
 
     solve()
 }

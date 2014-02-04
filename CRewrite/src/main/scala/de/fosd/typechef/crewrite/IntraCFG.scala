@@ -422,7 +422,7 @@ trait IntraCFG extends ASTNavigation with ConditionalNavigation {
 
             // loop statements
             case ForStatement(None, Some(expr2), None, One(EmptyStatement())) => getExprSucc(expr2, ctx, oldres, env)
-            case ForStatement(None, Some(expr2), None, One(CompoundStatement(List()))) => getExprSucc(expr2, ctx, oldres,  env)
+            case ForStatement(None, Some(expr2), None, One(CompoundStatement(List()))) => getExprSucc(expr2, ctx, oldres, env)
             case ForStatement(expr1, expr2, expr3, s) => {
                 if (expr1.isDefined) getExprSucc(expr1.get, ctx, oldres, env)
                 else if (expr2.isDefined) getExprSucc(expr2.get, ctx, oldres, env)

@@ -26,7 +26,7 @@ class CFGInNonVoidFunc(env: ASTEnv, ts: CTypeSystemFrontend) extends IntraCFG {
                         case None => {
                             val ftype = ConditionalLib.findSubtree[CType](env.featureExpr(x), ftypes)
                             ftype match {
-                                case One(CType(CFunction(_, CType(ret, _, _, _)), _, _, _)) if ! ret.isInstanceOf[CVoid] => res ::= o
+                                case One(CType(CFunction(_, CType(ret, _, _, _)), _, _, _)) if !ret.isInstanceOf[CVoid] => res ::= o
                                 case _ =>
                             }
                         }
@@ -36,6 +36,6 @@ class CFGInNonVoidFunc(env: ASTEnv, ts: CTypeSystemFrontend) extends IntraCFG {
         }
 
         // filter result elements of which the successor is not the function definition itself
-        res.filterNot({ x => succ(x.entry, env).contains(f) })
+        res.filterNot({x => succ(x.entry, env).contains(f)})
     }
 }

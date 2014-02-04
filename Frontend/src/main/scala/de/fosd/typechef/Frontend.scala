@@ -9,7 +9,7 @@ import parser.TokenReader
 import de.fosd.typechef.options.{FrontendOptionsWithConfigFiles, FrontendOptions, OptionException}
 import de.fosd.typechef.parser.c.CTypeContext
 import de.fosd.typechef.parser.c.TranslationUnit
-import de.fosd.typechef.featureexpr.FeatureExpr
+import featureexpr.{FeatureExprFactory, FeatureExpr}
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 
 object Frontend extends EnforceTreeHelper {
@@ -104,10 +104,10 @@ object Frontend extends EnforceTreeHelper {
         if (opt.reuseAST && opt.parse && new File(opt.getSerializedASTFilename).exists()) {
             println("loading AST.")
             try {
-            ast = loadSerializedAST(opt.getSerializedASTFilename)
-            ast = prepareAST[TranslationUnit](ast)
+                ast = loadSerializedAST(opt.getSerializedASTFilename)
+                ast = prepareAST[TranslationUnit](ast)
             } catch {
-                case e: Throwable => println(e.toString);e.printStackTrace(); ast=null
+                case e: Throwable => println(e.toString); e.printStackTrace(); ast = null
             }
             if (ast == null)
                 println("... failed reading AST\n")
@@ -139,9 +139,9 @@ object Frontend extends EnforceTreeHelper {
 
                 // some dataflow analyses require typing information
                 val ts = if (opt.typechecksa)
-                            new CTypeSystemFrontend(ast, fm_ts, opt) with CTypeCache with CDeclUse
-                         else
-                            new CTypeSystemFrontend(ast, fm_ts, opt)
+                    new CTypeSystemFrontend(ast, fm_ts, opt) with CTypeCache with CDeclUse
+                else
+                    new CTypeSystemFrontend(ast, fm_ts, opt)
 
 
                 /** I did some experiments with the TypeChef FeatureModel of Linux, in case I need the routines again, they are saved here. */
@@ -223,8 +223,48 @@ object Frontend extends EnforceTreeHelper {
 
 
     def lex(opt: FrontendOptions): TokenReader[CToken, CTypeContext] = {
-        val tokens = new lexer.Main().run(opt, opt.parse)
+        val tokens = new lexer.Main().run(opt, opt.parse, opt.getFilePresenceCondition, opt.getFile)
+
         val in = CLexer.prepareTokens(tokens)
+
+        val ignoreFilePc = opt.noFilePc
+        val ignoreHeaderFile = opt.excludeHeaderTokens
+        //get block pcs (nesting)
+        if (in != null) {
+            var blockPcs = Set[FeatureExpr]()
+            var previousFeatureExpr = FeatureExprFactory.True
+            val it = in.tokens.iterator
+            while (it.hasNext) {
+                val currToken = it.next()
+                val file = currToken.getPosition.getFile
+
+                //we add conditions if 1) we are not ignoring header file or
+                //2) we are ingoring header file, and the current token is not a header token (i.e., is not part of a header file)
+                if (!ignoreHeaderFile || (ignoreHeaderFile && !currToken.isHeaderToken)) {
+                    val currExpr = currToken.getFeature
+                    if (!(currExpr eq previousFeatureExpr)) {
+                        if (ignoreFilePc)
+                            blockPcs += currExpr
+                        else
+                            blockPcs += currExpr.and(opt.getFilePresenceCondition)
+
+                        previousFeatureExpr = currExpr
+                    }
+                }
+            }
+
+
+            if (!blockPcs.isEmpty) {
+                val nestedIfDefWriter: PrintWriter = new PrintWriter(new FileWriter(opt.getFile.replace(".c", "") + ".nested"))
+                blockPcs.foreach {
+                    expr =>
+                        expr.print(nestedIfDefWriter)
+                        nestedIfDefWriter.println()
+                }
+                nestedIfDefWriter.close()
+            }
+        }
+
         in
     }
 
@@ -242,6 +282,6 @@ object Frontend extends EnforceTreeHelper {
         fr.close()
         ast
     } catch {
-        case e:ObjectStreamException => System.err.println("failed loading serialized AST: "+e.getMessage); null
+        case e: ObjectStreamException => System.err.println("failed loading serialized AST: " + e.getMessage); null
     }
 }

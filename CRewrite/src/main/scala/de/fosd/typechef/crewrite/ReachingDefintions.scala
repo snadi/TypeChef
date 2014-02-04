@@ -49,7 +49,7 @@ class ReachingDefintions(env: ASTEnv, dum: DeclUseMap, udm: UseDeclMap, fm: Feat
             if (udm.containsKey(i))
                 for (x <- udm.get(i)) {
                     cachePGT.update(x, (x, System.identityHashCode(x)))
-                    if (! isPartOf(x, f.stmt))
+                    if (!isPartOf(x, f.stmt))
                         fvs ::= cachePGT.lookup(x).get
                     getFreshDefinitionFromUsage(cachePGT.lookup(x).get)
                 }
@@ -57,7 +57,7 @@ class ReachingDefintions(env: ASTEnv, dum: DeclUseMap, udm: UseDeclMap, fm: Feat
 
         // all patterns where definitions can occur in the code
         // !! keep consistent with defines in UsedDefinedDeclaredVariables trait !!
-        val getdefs = manytd( query {
+        val getdefs = manytd(query {
             case AssignExpr(PointerDerefExpr(i: Id), "=", _) => add2Caches(i)
             case AssignExpr(i: Id, "=", _) => add2Caches(i)
             case InitDeclaratorI(AtomicNamedDeclarator(_, i: Id, _), _, _) => add2Caches(i)
