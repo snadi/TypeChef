@@ -29,9 +29,9 @@ import de.fosd.typechef.featureexpr.sat.{SATFeatureExprFactory, SATFeatureModel}
 object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation with CFGHelper {
     type Task = Pair[String, List[SimpleConfiguration]]
 
-    /** Maps SingleFeatureExpr Objects to IDs (IDs only known/used in this file) */
+    /**Maps SingleFeatureExpr Objects to IDs (IDs only known/used in this file) */
     private var featureIDHashmap: Map[SingleFeatureExpr, Int] = null
-    /** List of all features found in the currently processed file */
+    /**List of all features found in the currently processed file */
     private var features: List[SingleFeatureExpr] = null
 
     // representation of a product configuration that can be dumped into a file
@@ -168,7 +168,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
         var taskList: ListBuffer[Task] = ListBuffer()
         // it seems that the scala lists cannot be serialized, so i use java ArrayLists
         val savedFeatures: java.util.ArrayList[String] = readObject[java.util.ArrayList[String]](new File(mainDir, "featurehashmap.ser"))
-        assert(savedFeatures.equals(toJavaList(featureList.map((_.feature)))))
+        assert(savedFeatures.equals(toJavaList(featureList.map(_.feature))))
         for (file <- mainDir.listFiles()) {
             val fn = file.getName
             if (!fn.equals("featurehashmap.ser") && fn.endsWith(".ser")) {
@@ -185,7 +185,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
         taskList.toList
     }
 
-    def initializeFeatureList(family_ast: AST) {
+    def initializeFeatureList(family_ast:AST) {
         features = getAllFeatures(family_ast)
         featureIDHashmap = new HashMap[SingleFeatureExpr, Int]().++(features.zipWithIndex)
     }
@@ -207,6 +207,8 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
                 opt.getRootFolder + "BusyboxBigConfig.config"
             else if (caseStudy.equals("openssl"))
                 opt.getRootFolder + "OpenSSL.config"
+            else if (caseStudy.equals("sqlite"))
+                opt.getRootFolder + "SQLite.config"
             else
                 throw new Exception("unknown case Study, give linux, busybox, or openssl")
             startTime = System.currentTimeMillis()
@@ -229,7 +231,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
 
         if (extasks.exists(_._1.equals("pairwise"))) {
             msg = "omitting pairwise generation, because a serialized version was loaded"
-        } else {
+            } else {
             var productsFile: File = null
             var dimacsFM: File = null
             var featureprefix = ""
@@ -244,8 +246,11 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
             } else if (caseStudy == "openssl") {
                 productsFile = new File(opt.getRootFolder + "TypeChef-OpenSSLAnalysis/openssl-1.0.1c/openssl_pairwise_configs.csv")
                 dimacsFM = new File(opt.getRootFolder + "TypeChef-OpenSSLAnalysis/openssl-1.0.1c/openssl.dimacs")
+            } else if (caseStudy == "sqlite") {
+                productsFile = new File(opt.getRootFolder + "cRefactor-SQLiteEvaluation/sqlite_pairwise_configs.csv")
+                dimacsFM = new File(opt.getRootFolder + "cRefactor-SQLiteEvaluation/sqlite.dimacs")
             } else {
-                throw new Exception("unknown case Study, give linux or busybox")
+                    throw new Exception("unknown case Study, give linux or busybox")
             }
             startTime = System.currentTimeMillis()
 
@@ -253,11 +258,11 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
 
             tasks :+= Pair("pairwise", configs)
             msg = "Time for config generation (pairwise): " + (System.currentTimeMillis() - startTime) + " ms\n" + logmsg
-        }
-        println(msg)
-        log = log + msg + "\n"
-        (log, tasks)
-    }
+            }
+            println(msg)
+            log = log + msg + "\n"
+        	(log, tasks)
+    	}
 
     private def buildConfigurationsCodecoverageNH(tunit: TranslationUnit, fm: FeatureModel, configDir: File, caseStudy: String, extasks: List[Task])
     : (String, List[Task]) = {
@@ -332,34 +337,49 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
             log = log + msg + "\n"
         }
 
-        /** singleconf */
-        if (opt.singleconf) {
-            val (flog, ftasks) = buildConfigurationsSingleConf(tunit, fm, opt, configdir, caseStudy, tasks)
-            log = log + flog
-            tasks ++= ftasks
-        }
-
         /** pairwise configurations */
         if (opt.pairwise) {
             val (plog, ptasks) = buildConfigurationsPairwise(tunit, fm, opt, configdir, caseStudy, tasks)
             log = log + plog
             tasks ++= ptasks
+        } else {
+            tasks = tasks.filterNot(_._1 == "pairwise")
         }
-
 
         /** code coverage - no Header files */
         if (opt.codecoverageNH) {
             val (clog, ctasks) = buildConfigurationsCodecoverageNH(tunit, fm, configdir, caseStudy, tasks)
             log = log + clog
             tasks ++= ctasks
+        } else {
+            tasks = tasks.filterNot(_._1 == "coverage_noHeader")
         }
-
 
         /** code coverage - including Header files */
         if (opt.codecoverage) {
             val (clog, ctasks) = buildConfigurationsCodecoverage(tunit, fm, configdir, caseStudy, tasks)
             log = log + clog
             tasks ++= ctasks
+        } else {
+            tasks = tasks.filterNot(_._1 == "coverage")
+        }
+
+        /** singleconf */
+        if (opt.singleconf) {
+            val (flog, ftasks) = buildConfigurationsSingleConf(tunit, fm, opt, configdir, caseStudy, tasks)
+            log = log + flog
+            tasks ++= ftasks
+        } else {
+            tasks = tasks.filterNot(_._1 == "fileconfig")
+        }
+
+        /** family */
+        if (opt.family) {
+            val (flog, ftasks) = ("", List(Pair("family", List(new SimpleConfiguration(List(), List())))))
+            log = log + flog
+            tasks ++= ftasks
+        } else {
+            tasks = tasks.filterNot(_._1 == "family")
         }
 
         /** Single-wise */
@@ -381,7 +401,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
                 }
         */
 
-        /** Pairwise MAX */
+        /**Pairwise MAX */
         /*
                 {
                     if (tasks.find(_._1.equals("pairWiseMax")).isDefined) {
@@ -398,7 +418,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
                 }
         */
 
-        /** Pairwise */
+        /**Pairwise */
         /*
         if (tasks.find(_._1.equals("pairWise")).isDefined) {
             msg = "omitting pairWise generation, because a serialized version was loaded"
@@ -411,7 +431,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
             log = log + msg + "\n"
         */
 
-        /** Just one hardcoded config */
+        /**Just one hardcoded config */
         /*
                     tasks :+= Pair("hardcoded", getOneConfigWithFeatures(
                       List("CONFIG_LOCK_STAT"),
@@ -440,9 +460,9 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
                 // feature indices ending with $ are artificial and can be ignored here
                 assert(augmentString(lineElements(1)).toInt.equals(currentLine), "\"" + lineElements(1) + "\"" + " != " + currentLine)
                 featureNamesTmp ::= lineElements(2)
-            }
+        	}
             currentLine += 1
-        }
+    	}
 
         // maintain a hashmap that maps feature names to corresponding feature expressions (SingleFeatureExpr)
         // we only store those features that occur in the file (keeps configuration small);
@@ -454,7 +474,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
             if (searchResult.isDefined) {
                 featureMap.update(featureNames(i), searchResult.get)
             }
-        }
+      }
 
         // parse configurations
         // format is:
@@ -469,7 +489,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
         val pconfigurations = new Array[(List[SingleFeatureExpr], List[SingleFeatureExpr])](numProducts)
         for (i <- 0 to numProducts - 1) {
             pconfigurations.update(i, (List(), List()))
-        }
+    	}
 
         // iterate over all lines with Features, determine the selection/deselection in available products and add it to
         // product configurations (true features / false features)
@@ -483,10 +503,10 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
                         product = product.copy(_1 = featureMap(featureLine(0)) :: product._1)
                     } else {
                         product = product.copy(_2 = featureMap(featureLine(0)) :: product._2)
-                    }
+          			}
                     pconfigurations.update(i - 1, product)
-                }
-            }
+        		}
+      		}
         }
 
         // create a single configuration from the true features and false features list
@@ -498,7 +518,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
                 println("no satisfiable solution for product (" + i + "): " + csvFile)
             } else {
                 retList ::= config
-            }
+      		}
         }
 
         (retList, "Generated Configs: " + retList.size + "\n")
@@ -515,13 +535,12 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
         }
         countNumberOfASTElementsHelper(ast)
     }
-
-
-    def typecheckProducts(fm_scanner: FeatureModel, fm_ts: FeatureModel, ast: AST, opt: FamilyBasedVsSampleBasedOptions,
-                          logMessage: String) {
+    
+    def initSampling(fm_scanner: FeatureModel, fm: FeatureModel, ast: TranslationUnit, opt: FamilyBasedVsSampleBasedOptions,
+                     logMessage: String): (String, String, List[Task]) = {
         var caseStudy = ""
         var thisFilePath: String = ""
-        val fileAbsPath = new File(".").getAbsolutePath + opt.getFile
+        val fileAbsPath = new File(new File(".").getAbsolutePath, opt.getFile).toString
         if (fileAbsPath.contains("linux-2.6.33.3")) {
             thisFilePath = fileAbsPath.substring(fileAbsPath.lastIndexOf("linux-2.6.33.3"))
             caseStudy = "linux"
@@ -531,26 +550,127 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
         } else if (fileAbsPath.contains("openssl-1.0.1c")) {
             thisFilePath = fileAbsPath.substring(fileAbsPath.lastIndexOf("openssl-1.0.1c"))
             caseStudy = "openssl"
+        } else if (fileAbsPath.contains("SQLite")) {
+            thisFilePath = fileAbsPath
+            caseStudy = "sqlite"
         } else {
             thisFilePath = opt.getFile
         }
 
-        val fm = fm_ts // I got false positives while using the other fm
-        val family_ast = prepareAST[TranslationUnit](ast.asInstanceOf[TranslationUnit])
-
-        println("starting product checking.")
-
         val configSerializationDir = new File(thisFilePath.substring(0, thisFilePath.length - 2))
 
         val (configGenLog: String, typecheckingTasks: List[Task]) =
-            buildConfigurations(family_ast, fm_ts, opt, configSerializationDir, caseStudy)
+            buildConfigurations(ast, fm, opt, configSerializationDir, caseStudy)
         saveSerializationOfTasks(typecheckingTasks, features, configSerializationDir, opt.getFile)
-        analyzeTasks(typecheckingTasks, family_ast, fm, opt, thisFilePath, startLog = configGenLog)
+        (configGenLog, thisFilePath, typecheckingTasks)
     }
 
-    def median(s: Seq[Long]) = {
-        val (lower, upper) = s.sortWith(_ < _).splitAt(s.size / 2)
-        if (s.size % 2 == 0) (lower.last + upper.head) / 2 else upper.head
+    private class StopWatch {
+        var lastStart: Long = 0
+        var currentPeriod: String = "none"
+        var currentPeriodId: Int = 0
+        var times: Map[(Int, String), Long] = Map()
+        val tb = java.lang.management.ManagementFactory.getThreadMXBean
+        val nstoms = 1000000
+
+        private def genId(): Int = { currentPeriodId += 1; currentPeriodId }
+
+        def start(period: String) {
+            val now = tb.getCurrentThreadCpuTime
+            val lastTime = (now - lastStart) / nstoms
+            times = times + ((genId(), currentPeriod) -> lastTime)
+            lastStart = now
+            currentPeriod = period
+        }
+
+        def get(period: String): Long = times.filter(v => v._1._2 == period).headOption.map(_._2).getOrElse(0)
+
+        override def toString = {
+            var res = "timing "
+            val switems = times.toList.filterNot(x => x._1._2 == "none" || x._1._2 == "done").sortBy(_._1._1)
+
+            if (switems.size > 0) {
+                res = res + "("
+                res = res + switems.map(_._1._2).reduce(_ + ", " + _)
+                res = res + ")\n"
+                res = res + switems.map(_._2.toString).reduce(_ + ";" + _)
+            }
+            res
+        }
+    }
+
+    def checkErrorsAgainstSamplingConfigs(fm_scanner: FeatureModel, fm: FeatureModel, ast: TranslationUnit, opt: FamilyBasedVsSampleBasedOptions,
+                                          logMessage: String) {
+
+        val (log, fileID, samplingTasks) = initSampling(fm_scanner, fm, ast, opt, logMessage)
+        val samplingTastsWithoutFamily = samplingTasks.filterNot { x => x._1 == "family" }
+        println("starting error checking.")
+        val sw = new StopWatch()
+
+        sw.start("typechecking")
+        val ts = new CTypeSystemFrontend(ast, fm, opt) with CTypeCache with CDeclUse
+        ts.checkASTSilent
+        sw.start("initsa")
+        val sa = new CIntraAnalysisFrontend(ast, ts.asInstanceOf[CTypeSystemFrontend with CTypeCache with CDeclUse], fm)
+
+        val outFilePrefix: String = fileID.substring(0, fileID.length - 2)
+
+        sw.start("doublefree")
+        sa.doubleFree()
+        sw.start("uninitializedmemory")
+        sa.uninitializedMemory()
+        sw.start("casetermination")
+        sa.caseTermination()
+        sw.start("xfree")
+        sa.xfree()
+        sw.start("danglingswitchcode")
+        sa.danglingSwitchCode()
+        sw.start("cfginnonvoidfunc")
+        sa.cfgInNonVoidFunc()
+        sw.start("checkstdlibfuncreturn")
+        sa.stdLibFuncReturn()
+        sw.start("deadstore")
+        sa.deadStore()
+        sw.start("done")
+
+        val file: File = new File(outFilePrefix + ".errreport")
+        file.getParentFile.mkdirs()
+        val fw: FileWriter = new FileWriter(file)
+        fw.write("File : " + fileID + "\n")
+        fw.write("Features : " + features.size + "\n")
+        fw.write(log + "\n")
+
+        fw.write("Potential number of data-flow errors: " + sa.errors.size + "\n\n")
+
+        for (e <- sa.errors) fw.write(e + "\n\n")
+
+        var caughterrorsmap = Map[String, Integer]()
+        for ((name, _) <- samplingTastsWithoutFamily) caughterrorsmap += ((name, 0))
+
+
+        // check for each error whether the tasklist of an sampling approach contains a configuration
+        // that fullfills the error condition (using evaluate)
+        for (e <- sa.errors) {
+            for ((name, tasklist) <- samplingTastsWithoutFamily ) {
+                if (tasklist.exists { x => e.condition.evaluate(x.getTrueSet.map(_.feature)) })
+                    caughterrorsmap += ((name, 1 + caughterrorsmap(name)))
+            }
+        }
+
+        val reslist = ("all", sa.errors.size) :: caughterrorsmap.toList.sortBy(_._1)
+        fw.write(reslist.map(_._1).mkString(";") + "\n")
+        fw.write(reslist.map(_._2).mkString(";") + "\n")
+
+        println(sw.toString)
+
+        fw.close()
+    }
+
+    def typecheckProducts(fm_scanner: FeatureModel, fm: FeatureModel, ast: TranslationUnit, opt: FamilyBasedVsSampleBasedOptions,
+                          logMessage: String) {
+
+        val (configGenLog, thisFilePath, typecheckingTasks) = initSampling(fm_scanner, fm, ast, opt, logMessage)
+        analyzeTasks(typecheckingTasks, ast, fm, opt, thisFilePath, startLog = configGenLog)
     }
 
     def parseFile(stream: InputStream, file: String, dir: String): TranslationUnit = {
@@ -559,79 +679,37 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
         ast.asInstanceOf[TranslationUnit]
     }
 
-    private def warmUp(tu: TranslationUnit) {
-        val ts = new CTypeSystemFrontend(tu) with CDeclUse
-        ts.checkASTSilent
-        ts.checkASTSilent
-        ts.checkASTSilent
-        val udm = ts.getUseDeclMap
-        liveness(tu, udm)
-        liveness(tu, udm)
-        liveness(tu, udm)
-    }
-
-    private def liveness(tunit: AST, udm: UseDeclMap, fm: FeatureModel = FeatureExprFactory.empty) {
+    private def liveness(tunit: AST, udm: UseDeclMap, env: ASTEnv, fm: FeatureModel = FeatureExprFactory.empty) {
         val fdefs = filterAllASTElems[FunctionDef](tunit)
-        fdefs.map(intraDataflowAnalysis(_, udm, fm))
+        fdefs.map( x => intraDataflowAnalysis(x, udm, env, fm))
     }
 
-    private def intraDataflowAnalysis(f: FunctionDef, udm: UseDeclMap, fm: FeatureModel) {
+    private def intraDataflowAnalysis(f: FunctionDef, udm: UseDeclMap, env: ASTEnv, fm: FeatureModel) {
         if (f.stmt.innerStatements.isEmpty) return
 
-        val env = CASTEnv.createASTEnv(f)
-        val ss = getAllSucc(f, FeatureExprFactory.empty, env)
-        val li = new Liveness(env, udm, FeatureExprFactory.empty)
+        val pp = getAllPred(f, FeatureExprFactory.empty, env)
+        val li = new Liveness(f, env, udm, FeatureExprFactory.empty)
 
-        val nss = ss.map(_._1).filterNot(x => x.isInstanceOf[FunctionDef])
-        for (s <- nss) li.in(s)
+        val nss = pp.map(_._1).filterNot(x => x.isInstanceOf[FunctionDef])
+
+        for (s <- nss) {
+            li.out(s)
+        }
     }
 
     def analyzeTasks(tasks: List[Task], tunit: TranslationUnit, fm: FeatureModel, opt: FamilyBasedVsSampleBasedOptions,
-                     fileID: String, startLog: String = "") {
-        val log: String = startLog
-        val nstoms = 1000000
-        println("starting product checking.")
+                                fileID: String, startLog: String = "") {
+      val log: String = startLog
+      val nstoms = 1000000
+      println("start analysis.")
 
 
         // measurement
         val tb = java.lang.management.ManagementFactory.getThreadMXBean
-        var foundError: Boolean = false
-        var lastTime: Long = 0
-        var curTime: Long = 0
 
-        // family base checking
-        println("family-based checking: (" + countNumberOfASTElements(tunit) + ")")
-
-        // warmup jvm
-        {
-            val folder = opt.getRootFolder + "TypeChef/CTypeChecker/src/test/resources/testfiles/"
-            val fname = folder + "boa.pi"
-            val istream: InputStream = new FileInputStream(fname)
-            val ast = parseFile(istream, fname, folder)
-            warmUp(ast)
-        }
-
-        val ts = new CTypeSystemFrontend(tunit, fm) with CDeclUse
-        lastTime = tb.getCurrentThreadCpuTime
-        foundError |= !ts.checkASTSilent
-        curTime = (tb.getCurrentThreadCpuTime - lastTime)
-        val familyTime: Long = curTime / nstoms
-
-        println("fam-time: " + (familyTime))
-
-        // analysis initialization and warm-up
-        var lastTimeDf: Long = 0
-        var curTimeDf: Long = 0
-
-        lastTimeDf = tb.getCurrentThreadCpuTime
-        liveness(tunit, ts.getUseDeclMap, fm)
-        curTimeDf = (tb.getCurrentThreadCpuTime - lastTimeDf)
-        val timeDfFamily = curTimeDf / nstoms
-
-        if (tasks.size > 0) println("start task - checking (" + (tasks.size) + " tasks)")
+        if (tasks.size > 0) println("start task - checking (" + tasks.size + " tasks)")
         // results (taskName, (NumConfigs, productDerivationTimes, errors, typecheckingTimes, dataflowTimes))
         var configCheckingResults: List[(String, (Int, List[Long], Int, List[Long], List[Long]))] = List()
-        val outFilePrefix: String = fileID.substring(0, fileID.length - 2)
         for ((taskDesc: String, configs: List[SimpleConfiguration]) <- tasks) {
             var configurationsWithErrors = 0
             var current_config = 0
@@ -644,15 +722,19 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
                 // product derivation
                 val productDerivationStart = tb.getCurrentThreadCpuTime
                 val selectedFeatures = config.getTrueSet.map(_.feature)
-                val product: TranslationUnit = ProductDerivation.deriveProduct[TranslationUnit](tunit, selectedFeatures)
-                val productDerivationDiff = (tb.getCurrentThreadCpuTime - productDerivationStart)
+                val product: TranslationUnit =
+                    if (taskDesc == "family") tunit
+                    else ProductDerivation.deriveProduct[TranslationUnit](tunit, selectedFeatures)
+
+                val productDerivationDiff = tb.getCurrentThreadCpuTime - productDerivationStart
                 productDerivationTimes ::= (productDerivationDiff / nstoms)
                 println("checking configuration " + current_config + " of " + configs.size + " (" +
-                    fileID + " , " + taskDesc + ")" + "(" + countNumberOfASTElements(product) + ")" +
-                    "(" + selectedFeatures.size + ")"
+                        fileID + " , " + taskDesc + ")" + "(" + countNumberOfASTElements(product) + ")" +
+                        "(" + selectedFeatures.size + ")"
                 )
 
-                val ts = new CTypeSystemFrontend(product) with CDeclUse
+                val ts = if (taskDesc == "family") new CTypeSystemFrontend(product, fm) with CDeclUse
+                         else new CTypeSystemFrontend(product) with CDeclUse
 
                 // typechecking measurement
                 var foundError: Boolean = false
@@ -661,7 +743,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
 
                 lastTime = tb.getCurrentThreadCpuTime
                 foundError |= !ts.checkASTSilent
-                curTime = (tb.getCurrentThreadCpuTime - lastTime)
+                curTime = tb.getCurrentThreadCpuTime - lastTime
                 val productTime: Long = curTime / nstoms
 
                 tcProductTimes ::= productTime // append to the beginning of tcProductTimes
@@ -669,9 +751,11 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
                 // liveness measurement
                 var lastTimeDf: Long = 0
                 var curTimeDf: Long = 0
+
                 lastTimeDf = tb.getCurrentThreadCpuTime
-                liveness(product, ts.getUseDeclMap)
-                curTimeDf = (tb.getCurrentThreadCpuTime - lastTimeDf)
+                val env = CASTEnv.createASTEnv(product)
+                liveness(product, ts.getUseDeclMap, env)
+                curTimeDf = tb.getCurrentThreadCpuTime - lastTimeDf
                 val timeDataFlowProduct = curTimeDf / nstoms
 
                 dfProductTimes ::= timeDataFlowProduct // add to the head - reverse later
@@ -682,28 +766,24 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
             configCheckingResults ::=(taskDesc, (configs.size, productDerivationTimes.reverse, configurationsWithErrors, dfProductTimes.reverse, tcProductTimes.reverse))
         }
 
-        val file: File = new File(outFilePrefix + ".vaareport")
-        file.getParentFile.mkdirs()
-        val fw: FileWriter = new FileWriter(file)
-        fw.write("File : " + fileID + "\n")
-        fw.write("Features : " + features.size + "\n")
-        fw.write(log + "\n")
+      val file: File = new File(fileID + "_" + tasks.map(_._1).mkString + ".vaareport")
+      file.getParentFile.mkdirs()
+      val fw: FileWriter = new FileWriter(file)
+      fw.write("File : " + fileID + "\n")
+      fw.write("Features : " + features.size + "\n")
+      fw.write(log + "\n")
 
         for ((taskDesc, (numConfigs, productDerivationTimes, errors, dfProductTimes, tcProductTimes)) <- configCheckingResults) {
             fw.write("\n -- Task: " + taskDesc + "\n")
             fw.write("(" + taskDesc + ")Processed configurations: " + numConfigs + "\n")
             fw.write("(" + taskDesc + ")Product Derivation Times: " + productDerivationTimes.mkString(",") + "\n")
             fw.write("(" + taskDesc + ")Configurations with errors: " + errors + "\n")
-            fw.write("(" + taskDesc + ")TimeSum Products: " + tcProductTimes.filter(_ > 0).sum + " ms\n")
-            fw.write("(" + taskDesc + ")Times Products: " + tcProductTimes.mkString(",") + "\n")
+            fw.write("(" + taskDesc + ")TypecheckingSum Products: " + tcProductTimes.filter(_ > 0).sum + " ms\n")
+            fw.write("(" + taskDesc + ")Typechecking Products: " + tcProductTimes.mkString(",") + "\n")
             fw.write("(" + taskDesc + ")DataflowSum Products: " + dfProductTimes.filter(_ > 0).sum + " ms\n")
             fw.write("(" + taskDesc + ")Dataflow Products: " + dfProductTimes.mkString(",") + "\n")
             fw.write("\n")
         }
-
-        fw.write("Errors in family check: " + (if (foundError) "No" else "Yes") + "\n")
-        fw.write("Time Family:      " + familyTime + " ms\n")
-        fw.write("Dataflow Time Family:     " + timeDfFamily + " ms\n")
         fw.close()
 
     }
@@ -968,19 +1048,19 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
      * @param existingConfigs described above
      * @param preferDisabledFeatures the sat solver will prefer (many) small configs instead of (fewer) large ones
      * @param includeVariabilityFromHeaderFiles if set to false (default) we will ignore variability in files not ending with ".c".
-     *                                          This corresponds to the view of the developer of a ".c" file.
+     *                                        This corresponds to the view of the developer of a ".c" file.
      * @return
      */
     def configurationCoverage(astRoot: TranslationUnit, fm: FeatureModel, features: List[SingleFeatureExpr],
                               existingConfigs: List[SimpleConfiguration] = List(), preferDisabledFeatures: Boolean,
                               includeVariabilityFromHeaderFiles: Boolean = false):
-    (List[SimpleConfiguration], String) = {
+                              (List[SimpleConfiguration], String) = {
         //val env = CASTEnv.createASTEnv(astRoot)
         val unsatCombinationsCacheFile = new File("unsatCombinationsCache.txt")
         // using this is not correct when different files have different presence conditions
         val useUnsatCombinationsCache = false
         val unsatCombinationsCache: scala.collection.immutable.HashSet[String] = if (useUnsatCombinationsCache && unsatCombinationsCacheFile.exists()) {
-            new scala.collection.immutable.HashSet[String] ++ (Source.fromFile(unsatCombinationsCacheFile).getLines()).toSet
+            new scala.collection.immutable.HashSet[String] ++ Source.fromFile(unsatCombinationsCacheFile).getLines().toSet
         } else {
             scala.collection.immutable.HashSet()
         }
@@ -990,10 +1070,10 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
         var simpleOrNodes = 0
         var simpleAndNodes = 0
         var nodeExpressions: Set[List[FeatureExpr]] = Set()
-        def collectAnnotationLeafNodes(root: Any, previousFeatureExprs: List[FeatureExpr] = List(FeatureExprFactory.True), previousFile: String = null) {
+        def collectAnnotationLeafNodes(root: Any, previousFeatureExprs: List[FeatureExpr] = List(FeatureExprFactory.True), previousFile:String = null) {
             root match {
                 case x: Opt[_] => {
-                    if (x.feature.equals(previousFeatureExprs.head)) {
+                    if (x.feature.equals(previousFeatureExprs.head)){
                         collectAnnotationLeafNodes(x.entry, previousFeatureExprs, previousFile)
                     } else {
                         collectAnnotationLeafNodes(x.entry, previousFeatureExprs.::(x.feature), previousFile)
@@ -1008,7 +1088,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
                         collectAnnotationLeafNodes(x, previousFeatureExprs, previousFile)
                     }
                 case x: AST => {
-                    val newPreviousFile = (if (x.getFile.isDefined) x.getFile.get else previousFile)
+                    val newPreviousFile = if (x.getFile.isDefined) x.getFile.get else previousFile
                     if (x.productArity == 0) {
                         // termination point of recursion
                         if (includeVariabilityFromHeaderFiles ||
@@ -1041,7 +1121,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
                 }
             }
         }
-        collectAnnotationLeafNodes(astRoot, List(FeatureExprFactory.True), (if (astRoot.getFile.isDefined) astRoot.getFile.get else null))
+        collectAnnotationLeafNodes(astRoot, List(FeatureExprFactory.True), if (astRoot.getFile.isDefined) astRoot.getFile.get else null)
 
         // now optNodes contains all Opt[..] nodes in the file, and choiceNodes all Choice nodes.
         // True node never needs to be handled
@@ -1105,7 +1185,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
             }
         }
         if (nodeExpressions.isEmpty ||
-            (nodeExpressions.size == 1 && nodeExpressions.head.equals(List(FeatureExprFactory.True)))) {
+            (nodeExpressions.size==1 && nodeExpressions.head.equals(List(FeatureExprFactory.True)))) {
             // no feature variables in this file, build one random config and return it
             val completeConfig = completeConfiguration(FeatureExprFactory.True, features, fm, preferDisabledFeatures)
             if (completeConfig != null) {
@@ -1122,14 +1202,14 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
                 //println("no satisfiable configuration for fex " + fex.toTextExpr)
             }
         } else {
-            for (featureList: List[FeatureExpr] <- nodeExpressions) {
+            for (featureList:List[FeatureExpr] <- nodeExpressions) {
                 val fex: FeatureExpr = featureList.fold(FeatureExprFactory.True)(_ and _)
                 handleFeatureExpression(fex)
             }
         }
-        def getFeaturesInCoveredExpressions: Set[SingleFeatureExpr] = {
+        def getFeaturesInCoveredExpressions : Set[SingleFeatureExpr] = {
             // how many features have been found in this file (only the .c files)?
-            var features: Set[SingleFeatureExpr] = Set()
+            var features : Set[SingleFeatureExpr] = Set()
             for (exLst <- nodeExpressions)
                 for (ex <- exLst)
                     for (feature <- ex.collectDistinctFeatureObjects)
@@ -1140,7 +1220,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
             " unsatisfiableCombinations:" + unsatCombinations + "\n" +
                 " already covered combinations:" + alreadyCoveredCombinations + "\n" +
                 " created combinations:" + retList.size + "\n" +
-                (if (!includeVariabilityFromHeaderFiles) (" Features in CFile: " + getFeaturesInCoveredExpressions.size + "\n") else "") +
+                (if (!includeVariabilityFromHeaderFiles) " Features in CFile: " + getFeaturesInCoveredExpressions.size + "\n" else "") +
                 " found " + nodeExpressions.size + " NodeExpressions\n" +
                 " found " + simpleAndNodes + " simpleAndNodes, " + simpleOrNodes + " simpleOrNodes and " + complexNodes + " complex nodes.\n")
     }
@@ -1436,7 +1516,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
                 if (fmts != null && fexpr.isSatisfiable(fmts))
                     valid += 1
             }
-            tested += 1
+                tested += 1
             if (tested % 1000 == 0) {
                 println("intermediate report:")
                 println("elapsed time (sec): " + ((System.currentTimeMillis() - startTime) / 1000))
