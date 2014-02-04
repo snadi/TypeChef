@@ -2800,9 +2800,13 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     private void addHashErrorConstraint(FeatureExpr filePc, FeatureExpr featureExpr2) {
         FeatureExpr constraint = filePc.implies(featureExpr2);
 
-        if (!hashErrorConstraints.contains(constraint)) {
-            if (!constraint.isTautology()) {
-                hashErrorConstraints.add(constraint);
+        if (featureExpr2.isTautology()) {
+            System.err.println("ERROR: Preprocessor error occurring under condition TRUE");
+        } else {
+            if (!hashErrorConstraints.contains(constraint)) {
+                if (!constraint.isTautology()) {
+                    hashErrorConstraints.add(constraint);
+                }
             }
         }
     }
