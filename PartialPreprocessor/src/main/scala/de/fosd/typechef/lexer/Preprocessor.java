@@ -157,7 +157,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     private int tokenCounter;
     private Stack<Integer> tokenStart;
     private FeatureExpr filepc;
-    private HashSet<FeatureExpr> presenceConditions;
+    //private HashSet<FeatureExpr> presenceConditions;
     private HashSet<FeatureExpr> hashErrorConstraints;
     private HashSet<String> warningConstraints;
 
@@ -167,7 +167,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     public Preprocessor(MacroFilter macroFilter, FeatureModel fm, FeatureExpr filePc) {
         this(macroFilter, fm);
         this.filepc = filePc;
-        this.presenceConditions = new HashSet<FeatureExpr>();
+        //this.presenceConditions = new HashSet<FeatureExpr>();
         this.hashErrorConstraints = new HashSet<FeatureExpr>();
         this.warningConstraints = new HashSet<String>();
     }
@@ -2697,7 +2697,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                             if (!tokenStart.isEmpty())
                                 start = tokenStart.pop();
 
-                            if (tokenCounter > start) {
+                            /*if (tokenCounter > start) {
 
                                 FeatureExpr localExpr = state.getLocalFeatureExpr();
                                 FeatureExpr parentExpr = state.parent.getFullPresenceCondition();
@@ -2745,7 +2745,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
 
                                 }
-                            }
+                            }*/
 
                             /*//if sawElse then add the opposite of expression as well
                              if (tokenCounter > start && state.sawElse()) {
@@ -2788,13 +2788,13 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         }
     }
 
-    private void addPresenceCondition(FeatureExpr featureExpr) {
+/*    private void addPresenceCondition(FeatureExpr featureExpr) {
         if (!presenceConditions.contains(featureExpr)) {
             // if (!featureExpr.equivalentTo(FeatureExprFactory.True()) && !featureExpr.equivalentTo(FeatureExprFactory.False()) && !featureExpr2.equivalentTo(FeatureExprFactory.True()) && !featureExpr2.equivalentTo(FeatureExprFactory.False())) {
             presenceConditions.add(featureExpr);
             // }
         }
-    }
+    }*/
 
     private boolean isPureDisjunction(FeatureExpr featureExpr) {
         String exprTest = featureExpr.toTextExpr();
@@ -2844,9 +2844,9 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
         return hashErrorConstraints;
     }
 
-    public HashSet<FeatureExpr> getPresenceConditions() {
-        return presenceConditions;
-    }
+//    public HashSet<FeatureExpr> getPresenceConditions() {
+//        return presenceConditions;
+//    }
 
     public HashSet<String> getHashWarningConstraints() {
         return warningConstraints;

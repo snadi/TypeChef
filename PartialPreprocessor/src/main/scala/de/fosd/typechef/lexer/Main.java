@@ -256,18 +256,18 @@ public class Main {
         }
 
         //check for nested and hasherror, and hashWarning constraints
-        HashSet<FeatureExpr> presenceConditions = pp.getPresenceConditions();
+        //HashSet<FeatureExpr> presenceConditions = pp.getPresenceConditions();
         HashSet<FeatureExpr> hashErrorConstraints = pp.getHashErrorConstraints();
         HashSet<String> warningConstraints = pp.getHashWarningConstraints();
 
-        if (presenceConditions != null && !presenceConditions.isEmpty()) {
-            //create file to dump implications from nested ifdefs in
-            PrintWriter nestedIfDefWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".nested2"));
-            for (FeatureExpr constraint : presenceConditions)
-                nestedIfDefWriter.println(constraint);
-
-            nestedIfDefWriter.close();
-        }
+//        if (presenceConditions != null && !presenceConditions.isEmpty()) {
+//            //create file to dump implications from nested ifdefs in
+//            PrintWriter nestedIfDefWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".nested2"));
+//            for (FeatureExpr constraint : presenceConditions)
+//                nestedIfDefWriter.println(constraint);
+//
+//            nestedIfDefWriter.close();
+//        }
 
         if (hashErrorConstraints != null && !hashErrorConstraints.isEmpty()) {
             //create file to dump conditions from #error directives in it

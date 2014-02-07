@@ -86,7 +86,7 @@ public interface VALexer {
 
     LexerToken getNextToken() throws IOException, LexerException;
 
-    public HashSet<FeatureExpr> getPresenceConditions();
+    //public HashSet<FeatureExpr> getPresenceConditions();
 
     public HashSet<FeatureExpr> getHashErrorConstraints();
 
