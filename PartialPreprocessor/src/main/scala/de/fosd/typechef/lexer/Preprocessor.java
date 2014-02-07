@@ -2570,20 +2570,21 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                 return parseErrorToken(tok, ppcmd == PP_ERROR);
 
                         case PP_ERROR:
-                            //write out the condition under which the #error occurred  only if it doesn't occur on True
-                            //otherwise, print out an error message
-                            FeatureExpr errorCondition = state.getFullPresenceCondition();
-                            if (!errorCondition.isTautology()) {
-                                addHashErrorConstraint(filepc, errorCondition);
-                            } else {
-                                System.err.println("ERROR: Preprocessor error occurring under condition TRUE");
-                            }
-
                             if (!isActive())
                                 return source_skipline(false);
-                            else
+                            else {
+
+                                //write out the condition under which the #error occurred  only if it doesn't occur on True
+                                //otherwise, print out an error message
+                                FeatureExpr errorCondition = state.getFullPresenceCondition();
+                                if (!errorCondition.isTautology()) {
+                                    addHashErrorConstraint(filepc, errorCondition);
+                                } else {
+                                    System.err.println("ERROR: Preprocessor error occurring under condition TRUE");
+                                }
                                 // cppError(tok, ppcmd == PP_ERROR);
                                 return parseErrorToken(tok, ppcmd == PP_ERROR);
+                            }
 
                         case PP_IF:
                             push_state();
