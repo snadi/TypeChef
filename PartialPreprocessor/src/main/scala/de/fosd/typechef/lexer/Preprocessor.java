@@ -2570,8 +2570,14 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                 return parseErrorToken(tok, ppcmd == PP_ERROR);
 
                         case PP_ERROR:
-                            //write out the condition under which the #error occurred
-                            addHashErrorConstraint(filepc, state.getFullPresenceCondition().not());
+                            //write out the condition under which the #error occurred  only if it doesn't occur on True
+                            //otherwise, print out an error message
+                            FeatureExpr errorCondition = state.getFullPresenceCondition();
+                            if (!errorCondition.isTautology()) {
+                                addHashErrorConstraint(filepc, errorCondition);
+                            } else {
+                                System.err.println("ERROR: Preprocessor error occurring under condition TRUE");
+                            }
 
                             if (!isActive())
                                 return source_skipline(false);
@@ -2800,15 +2806,11 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     private void addHashErrorConstraint(FeatureExpr filePc, FeatureExpr featureExpr2) {
         FeatureExpr constraint = filePc.implies(featureExpr2);
 
-        if (featureExpr2.isTautology()) {
-            System.err.println("ERROR: Preprocessor error occurring under condition TRUE");
-        } else {
             if (!hashErrorConstraints.contains(constraint)) {
                 if (!constraint.isTautology()) {
                     hashErrorConstraints.add(constraint);
                 }
             }
-        }
     }
 
     private void addWarningConstraint(FeatureExpr featureExpr1, FeatureExpr featureExpr2) {
