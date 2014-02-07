@@ -2578,7 +2578,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
                                 //otherwise, print out an error message
                                 FeatureExpr errorCondition = state.getFullPresenceCondition();
                                 if (!errorCondition.isTautology()) {
-                                    addHashErrorConstraint(filepc, errorCondition);
+                                    addHashErrorConstraint(filepc, errorCondition.not());
                                 } else {
                                     System.err.println("ERROR: Preprocessor error occurring under condition TRUE");
                                 }
