@@ -15,6 +15,7 @@ object MyUtil {
             def run() = f()
         }
 }
+
 //
 //object ParserMain {
 //    import scala.collection.JavaConversions._
@@ -43,13 +44,13 @@ object MyUtil {
 
 class ParserMain(p: CParser) {
 
-//    /**
-//     * debug and testing function only; do not use for serious processing since it ignores all lexer options
-//     */
-//    def parserMain(filePath: String, systemIncludePath: java.util.List[String], parserOptions: ParserOptions = DefaultParserOptions): TranslationUnit = {
-//        val lexer = (() => CLexer.lexFile(filePath, systemIncludePath, p.featureModel))
-//        parserMain(lexer, new CTypeContext(), parserOptions)
-//    }
+    //    /**
+    //     * debug and testing function only; do not use for serious processing since it ignores all lexer options
+    //     */
+    //    def parserMain(filePath: String, systemIncludePath: java.util.List[String], parserOptions: ParserOptions = DefaultParserOptions): TranslationUnit = {
+    //        val lexer = (() => CLexer.lexFile(filePath, systemIncludePath, p.featureModel))
+    //        parserMain(lexer, new CTypeContext(), parserOptions)
+    //    }
 
     def parserMain(tokenstream: TokenReader[CToken, CTypeContext], parserOptions: ParserOptions, fullFeatureModel: FeatureModel): TranslationUnit = {
         parserMain((() => tokenstream), new CTypeContext(), parserOptions, fullFeatureModel)

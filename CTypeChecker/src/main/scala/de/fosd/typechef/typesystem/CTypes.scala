@@ -322,7 +322,13 @@ class CFunction(val param: Seq[CType], val ret: CType) extends AType {
 
     override def isFunction: Boolean = true
     override def toText = param.map(_.toText).mkString("(", ", ", ")") + " => " + ret.toText
-    def toXML = <function>{param.map(x => <param>{x.toXML}</param>)}<ret>{ret.toXML}</ret></function>
+    def toXML = <function>
+        {param.map(x => <param>
+            {x.toXML}
+        </param>)}<ret>
+            {ret.toXML}
+        </ret>
+    </function>
     def markSecurityRelevant() = {
         securityRelevant = true;
         this
@@ -332,7 +338,7 @@ class CFunction(val param: Seq[CType], val ret: CType) extends AType {
         case thatf: CFunction => (this.param equals thatf.param) && (this.ret equals thatf.ret)
         case _ => super.equals(that)
     }
-    override def toString() = "CFunction("+param+","+ret+")"
+    override def toString() = "CFunction(" + param + "," + ret + ")"
 }
 
 

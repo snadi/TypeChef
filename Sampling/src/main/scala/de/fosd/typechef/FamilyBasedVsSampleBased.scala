@@ -677,7 +677,7 @@ object FamilyBasedVsSampleBased extends EnforceTreeHelper with ASTNavigation wit
     def parseFile(stream: InputStream, file: String, dir: String): TranslationUnit = {
         import scala.collection.JavaConversions._
         val ast: AST = new ParserMain(new CParser).parserMain(
-            CLexerAdapter.prepareTokens(new LexerFrontend().parseStream(stream, file, Collections.singletonList(dir), null)),SilentParserOptions)
+            CLexerAdapter.prepareTokens(new LexerFrontend().parseStream(stream, file, Collections.singletonList(dir), null)), SilentParserOptions)
         ast.asInstanceOf[TranslationUnit]
     }
 

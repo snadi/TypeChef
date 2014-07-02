@@ -94,7 +94,7 @@ class SATFeatureModel(val variables: Map[String, Int], val clauses: IVec[IVecInt
 
         writeToFile(fileName, res)
     }
-    def writeToDimacsFile(file: File) {
+    def writeToDimacsFile(file: File, prefix: String = "", suffix: String = "") {
         var fw: FileWriter = null
         try {
             fw = new FileWriter(file);
@@ -104,7 +104,8 @@ class SATFeatureModel(val variables: Map[String, Int], val clauses: IVec[IVecInt
                 a._2 < b._2
             }
             for ((varname, varid) <- vars.sortWith(sortFunction)) {
-                val realVarname = if (varname.startsWith("CONFIG_")) varname.replaceFirst("CONFIG_", "") else varname
+                var realVarname = if (varname.startsWith(prefix)) varname.replaceFirst(prefix, "") else varname
+                realVarname = if (varname.endsWith(suffix)) varname.replaceFirst(suffix, "") else realVarname
                 fw.write("c " + varid + " " + realVarname + "\n")
             }
             var numClauses = 0;
@@ -115,7 +116,7 @@ class SATFeatureModel(val variables: Map[String, Int], val clauses: IVec[IVecInt
                     for (entry: Int <- clause.toArray) {
                         clauseBuffer.append(entry + " ");
                     }
-                    clauseBuffer.append("0\n");
+                    clauseBuffer.append("1\n");
                 }
             }
             fw.write("p cnf " + vars.length + " " + numClauses + "\n")
@@ -190,6 +191,50 @@ object SATFeatureModel extends FeatureModelFactory {
         }
 
         new SATFeatureModel(variables, vecclauses, maxId)
+    }
+
+    def createFromDimacsFile(file: String, variablePrefix: String, suffix: String) = {
+        var variables: Map[String, Int] = Map()
+        val clauses = new Vec[IVecInt]()
+        var maxId = 0
+
+        for (line <- scala.io.Source.fromFile(file).getLines) {
+            if (line startsWith "c ") {
+                val entries = line.substring(2).split(" ")
+                val id = if (entries(0) endsWith "$")
+                    entries(0).substring(0, entries(0).length - 1).toInt
+                else if (entries(0) startsWith "$")
+                    entries(0).substring(1).toInt
+                else
+                    entries(0).toInt
+                maxId = scala.math.max(id, maxId)
+                variables = variables.updated(variablePrefix + entries(1) + suffix, id)
+
+            } else if ((line startsWith "p ") || (line.trim.size == 0)) {
+                //comment, do nothing
+            } else {
+                val vec = new VecInt()
+                val parts = line.split(" ")
+                var index = 0 //use the parts length to avoid ending in 0 vs ending in 1 problem
+                while (index < parts.length - 1) {
+                    //if (literal != "1")
+                    vec.push(parts(index).toInt)
+                    index += 1
+                }
+                assert(!vec.isEmpty)
+                clauses.push(vec)
+            }
+
+        }
+        assert(maxId == variables.size, "largest variable id " + maxId + " differs from number of variables " + variables.size)
+        /*   variables.foreach(entry => println(entry._1 + " : " + entry._2))
+        println("max id: " + maxId + " num of clauses: " + clauses.size() + " num of vars: " + variables.size)
+        val iterator = clauses.iterator()
+        while(iterator.hasNext){
+            println(iterator.next())
+        }*/
+
+        new SATFeatureModel(variables, clauses, maxId)
     }
 
 

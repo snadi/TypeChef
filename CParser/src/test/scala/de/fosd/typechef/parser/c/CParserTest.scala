@@ -99,7 +99,7 @@ class CParserTest extends TestHelper {
                 if (expectErrorMsg || unparsed.atEnd)
                     Assert.fail("parsing succeeded unexpectedly with " + ast + " - " + unparsed)
             }
-            case p.NoSuccess(msg, unparsed, inner) =>;
+            case p.NoSuccess(msg, unparsed, inner) => ;
         }
     }
 

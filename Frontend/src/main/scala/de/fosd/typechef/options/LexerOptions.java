@@ -1,5 +1,10 @@
 package de.fosd.typechef.options;
 
+import de.fosd.typechef.VALexer;
+import de.fosd.typechef.featureexpr.FeatureExpr;
+import de.fosd.typechef.featureexpr.FeatureExprFactory;
+import de.fosd.typechef.featureexpr.FeatureExprFactory$;
+import de.fosd.typechef.featureexpr.FeatureExprParserJava;
 import de.fosd.typechef.lexer.Feature;
 import de.fosd.typechef.lexer.Warning;
 import de.fosd.typechef.lexer.macrotable.MacroFilter;
@@ -27,7 +32,7 @@ public abstract class LexerOptions extends Options implements ILexerOptions {
     private static final char PP_LEXDEBUG = genOptionId();
     private static final char PP_LEXENABLE = genOptionId();
     private static final char PP_LEXDISABLE = genOptionId();
-    private static final char PP_NOSTDOUT = genOptionId();    
+    private static final char PP_NOSTDOUT = genOptionId();
     private final static char PP_XTC = genOptionId();
     private final static char PP_ADJUSTLINES = genOptionId();
 
@@ -37,7 +42,7 @@ public abstract class LexerOptions extends Options implements ILexerOptions {
 
         r.add(new OptionGroup("Preprocessor configuration", 50,
                 new Option("define", LongOpt.REQUIRED_ARGUMENT, 'D', "name[=definition]",
-                        "Defines the given macro (may currently not be used to define parametric macros)."),
+                        "Defines thefilePC given macro (may currently not be used to define parametric macros)."),
                 new Option("undefine", LongOpt.REQUIRED_ARGUMENT, 'U', "name",
                         "Undefines the given macro, previously either builtin or defined using -D."),
                 new Option("include", LongOpt.REQUIRED_ARGUMENT, PP_INCLUDE, "file",

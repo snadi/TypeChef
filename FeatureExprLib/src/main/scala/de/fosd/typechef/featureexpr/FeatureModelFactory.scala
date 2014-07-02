@@ -38,15 +38,15 @@ trait FeatureModelFactory {
     def createFromDimacsFilePrefix(file: String, prefix: String): FeatureModel = createFromDimacsFile(Source.fromFile(file), prefix + _)
 
 
-//    /**
-//     * special reader for the -2var model used by the LinuxAnalysis tools from waterloo
-//     *
-//     * prefixes all loaded names with CONFIG_ by default and translates _2 postfix in variable
-//     * names to _MODULE
-//     */
-//    def createFromDimacsFile_2Var(file: Source): FeatureModel = createFromDimacsFile(file,
-//        n => "CONFIG_" + (/*if (n.endsWith("_m")) n.dropRight(2)+"_MODULE" else*/ n)
-//    )
+    //    /**
+    //     * special reader for the -2var model used by the LinuxAnalysis tools from waterloo
+    //     *
+    //     * prefixes all loaded names with CONFIG_ by default and translates _2 postfix in variable
+    //     * names to _MODULE
+    //     */
+    //    def createFromDimacsFile_2Var(file: Source): FeatureModel = createFromDimacsFile(file,
+    //        n => "CONFIG_" + (/*if (n.endsWith("_m")) n.dropRight(2)+"_MODULE" else*/ n)
+    //    )
 
     /**
      * common part for loading dimacs files

@@ -45,7 +45,7 @@ object CLexerAdapter {
         val tokens = lexerResult.mapf(True, {
             case (f, s: LexerSuccess) => s.getTokens.map(t => {t.setFeature(t.getFeature and f); t})
             case _ => Nil
-        }).flatten((f,a,b)=>a ++ b)
+        }).flatten((f, a, b) => a ++ b)
         prepareTokens(tokens.toIterable)
     }
 

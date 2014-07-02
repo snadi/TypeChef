@@ -80,7 +80,7 @@ public class PreprocessorListener {
      */
     public void handleWarning(String source, int line, int column, String msg,
                               FeatureExpr featureExpr) throws LexerException {
-        if (featureExpr!=null && !featureExpr.isSatisfiable(pp.getFeatureModel()))
+        if (featureExpr != null && !featureExpr.isSatisfiable(pp.getFeatureModel()))
             return;
 
         if (options.isHandleWarningsAsErrors())
@@ -104,7 +104,7 @@ public class PreprocessorListener {
                             FeatureExpr featureExpr) throws LexerException {
         //do not report error if the error cannot occur in valid configurations
         //that is if (FM => !fexpr) is a tautology
-        if (featureExpr!=null && !featureExpr.isSatisfiable(pp.getFeatureModel()))
+        if (featureExpr != null && !featureExpr.isSatisfiable(pp.getFeatureModel()))
             return;
 
         errors++;

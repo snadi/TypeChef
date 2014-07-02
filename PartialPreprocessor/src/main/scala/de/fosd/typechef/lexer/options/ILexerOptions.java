@@ -1,6 +1,7 @@
 package de.fosd.typechef.lexer.options;
 
 import de.fosd.typechef.VALexer;
+import de.fosd.typechef.featureexpr.FeatureExpr;
 import de.fosd.typechef.featureexpr.FeatureModel;
 import de.fosd.typechef.lexer.Feature;
 import de.fosd.typechef.lexer.Warning;
@@ -42,6 +43,7 @@ public interface ILexerOptions {
 
 
     FeatureModel getSmallFeatureModel();
+
     FeatureModel getFullFeatureModel();
 
     PartialConfiguration getLexerPartialConfiguration();
@@ -55,7 +57,7 @@ public interface ILexerOptions {
     /**
      * by default only language tokens (that is, no white space, no tokens
      * representing preprocessor instructions and so forth) are returned
-     *
+     * <p/>
      * for debugging purposes this behavior can be overridden to return
      * also all other tokens
      *
@@ -65,7 +67,7 @@ public interface ILexerOptions {
 
     /**
      * debug facility to handle all warnings strictly as if they were errors
-     *
+     * <p/>
      * used in testing; false by default
      */
     boolean isHandleWarningsAsErrors();

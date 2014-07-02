@@ -12,7 +12,8 @@ import de.fosd.typechef.typesystem.{CVoid, CFunction, CFloat}
 @RunWith(classOf[JUnitRunner])
 class LinkerTest extends FunSuite with ShouldMatchers with TestHelper {
 
-    val tfun = CFunction(Seq(), CVoid()) // () -> void
+    val tfun = CFunction(Seq(), CVoid())
+    // () -> void
     val tfun2 = CFunction(Seq(CFloat()), CVoid()) // float -> void
 
     val ffoo = CSignature("foo", tfun, True, Seq())

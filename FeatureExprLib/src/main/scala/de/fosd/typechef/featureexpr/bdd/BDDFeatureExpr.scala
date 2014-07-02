@@ -554,4 +554,3 @@ object CastHelper {
             fm.asInstanceOf[BDDFeatureModel]
         }
 }
-

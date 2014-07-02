@@ -46,12 +46,12 @@ public class XtcPreprocessor implements VALexer {
 
         @Override
         public void error(PresenceConditionManager.PresenceCondition pc, String msg, Locatable location) {
+
             FeatureExpr fexpr = translate(pc);
             if (fexpr.isSatisfiable(featureModel)) {
                 if (msg.contains("#error")) {
                     addHashErrorConstraint(filePc, fexpr.not());
-                } else
-                    super.error(pc, msg, location);
+                }
             }
 
             //delegate to TypeChef error handler, unless none is registered; then fallback to the original Lexer error handler
@@ -70,7 +70,6 @@ public class XtcPreprocessor implements VALexer {
         }
     };
 
-    public XtcPreprocessor(final MacroFilter tcMacroFilter, FeatureModel featureModel, FeatureExpr filePc) {
 //            new LexerInterface.ExceptionErrorHandler() {
 //        public void error(PresenceConditionManager.PresenceCondition pc, String msg, Locatable location) {
 //            FeatureExpr fexpr = translate(pc);
@@ -78,6 +77,8 @@ public class XtcPreprocessor implements VALexer {
 //                super.error(pc, msg, location);
 //        }
 //    };
+
+    public XtcPreprocessor(final MacroFilter tcMacroFilter, FeatureModel featureModel, FeatureExpr filePc) {
         this.macroFilter = new XtcMacroFilter() {
             @Override
             public boolean isVariable(String macroName) {

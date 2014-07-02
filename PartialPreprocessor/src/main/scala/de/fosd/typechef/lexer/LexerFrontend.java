@@ -43,7 +43,7 @@ public class LexerFrontend {
                                         final boolean printToStdOutput,
                                         final FeatureModel featureModel) throws LexerException, IOException {
 
-        return run(new DefaultLexerOptions(input, printToStdOutput, featureModel), returnTokenList);
+        return run(new DefaultLexerOptions(input, printToStdOutput, featureModel), returnTokenList, FeatureExprFactory.True(), ""); //sn: temp fix: file pc is true
     }
 
     public static abstract class LexerResult {
@@ -98,18 +98,18 @@ public class LexerFrontend {
     }
 
 
-    public Conditional<LexerResult> run(final ILexerOptions options, boolean returnTokenList) throws LexerException, IOException {
+    public Conditional<LexerResult> run(final ILexerOptions options, boolean returnTokenList, final FeatureExpr filePc, String fileName) throws LexerException, IOException {
         return run(new VALexer.LexerFactory() {
             @Override
             public VALexer create(FeatureModel featureModel) {
                 if (options.useXtcLexer())
-                    return new XtcPreprocessor(options.getMacroFilter(), featureModel);
-                return new Preprocessor(options.getMacroFilter(), featureModel);
+                    return new XtcPreprocessor(options.getMacroFilter(), featureModel, filePc);
+                return new Preprocessor(options.getMacroFilter(), featureModel, filePc);
             }
-        }, options, returnTokenList);
+        }, options, returnTokenList, fileName);
     }
 
-    public Conditional<LexerResult> run(VALexer.LexerFactory lexerFactory, ILexerOptions options, boolean returnTokenList) throws LexerException, IOException {
+    public Conditional<LexerResult> run(VALexer.LexerFactory lexerFactory, ILexerOptions options, boolean returnTokenList, String fileName) throws LexerException, IOException {
         VALexer pp = lexerFactory.create(options.getSmallFeatureModel());
 
         for (Warning w : options.getWarnings())
@@ -209,6 +209,41 @@ public class LexerFrontend {
                 output.flush();
             if (output != null && !options.isLexPrintToStdout())
                 output.close();
+        }
+
+        //check for nested and hasherror, and hashWarning constraints
+        //HashSet<FeatureExpr> presenceConditions = pp.getPresenceConditions();
+        HashSet<FeatureExpr> hashErrorConstraints = pp.getHashErrorConstraints();
+        HashSet<String> warningConstraints = pp.getHashWarningConstraints();
+
+
+//        if (presenceConditions != null && !presenceConditions.isEmpty()) {
+//            //create file to dump implications from nested ifdefs in
+//            PrintWriter nestedIfDefWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".nested2"));
+//            for (FeatureExpr constraint : presenceConditions)
+//                nestedIfDefWriter.println(constraint);
+//
+//            nestedIfDefWriter.close();
+//        }
+
+        if (hashErrorConstraints != null && !hashErrorConstraints.isEmpty()) {
+            //create file to dump conditions from #error directives in it
+            PrintWriter errorDirWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".hasherr"));
+            for (FeatureExpr constraint : hashErrorConstraints) {
+                constraint.print(errorDirWriter);
+                errorDirWriter.println();
+            }
+
+            errorDirWriter.close();
+        }
+
+        if (warningConstraints != null && !warningConstraints.isEmpty()) {
+            //create file to dump conditions from #error directives in it
+            PrintWriter warningConsWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".hashwarn"));
+            for (String constraint : warningConstraints)
+                warningConsWriter.println(constraint);
+
+            warningConsWriter.close();
         }
 
         // creating conditional result by nesting the result with all the errors received so far
@@ -328,7 +363,7 @@ public class LexerFrontend {
 
     private List<LexerToken> parse(VALexer.LexerInput source, List<String> systemIncludePath, FeatureModel featureModel)
             throws LexerException, IOException {
-        Conditional<LexerResult> result = run(new DebugLexerOptions(source, systemIncludePath, featureModel), true);
+        Conditional<LexerResult> result = run(new DebugLexerOptions(source, systemIncludePath, featureModel), true, FeatureExprFactory.True(), "");//sn: TODO temp fix with value true
         if (result instanceof One) {
             LexerResult lexerResult = ((One<LexerResult>) result).value();
             if (lexerResult instanceof LexerSuccess)
@@ -467,6 +502,7 @@ public class LexerFrontend {
         public FeatureModel getSmallFeatureModel() {
             return featureModel;
         }
+
         @Override
         public FeatureModel getFullFeatureModel() {
             return featureModel;
@@ -590,6 +626,7 @@ public class LexerFrontend {
         public FeatureModel getSmallFeatureModel() {
             return featureModel;
         }
+
         @Override
         public FeatureModel getFullFeatureModel() {
             return featureModel;

@@ -1094,22 +1094,23 @@ return 1;
                    |void foo() { int x = A; }
                  """.stripMargin)
         error( """
-                   |enum {
-                   |   A = 0,
-                   |   B = A + 0
-                   |};
-                   |void foo() { int x = C; }
-                 """.stripMargin)
+                 |enum {
+                 |   A = 0,
+                 |   B = A + 0
+                 |};
+                 |void foo() { int x = C; }
+               """.stripMargin)
 
         error( """
-                  |enum {
-                  |   _1_A = 0,
-                  |   B = A + 0
-                  |};
-                """.stripMargin)
+                 |enum {
+                 |   _1_A = 0,
+                 |   B = A + 0
+                 |};
+               """.stripMargin)
 
     }
-    ignore("enum scoping in struct") { // this problem occurs in one file in linux. not easy to fix
+    ignore("enum scoping in struct") {
+        // this problem occurs in one file in linux. not easy to fix
         correct( """
                    |struct A {
                    |    enum C { AA, BB };
@@ -1121,11 +1122,11 @@ return 1;
                    |}
                  """.stripMargin)
         error( """
-                   |struct A {
-                   |    enum C { Ax, BB };
-                   |} D;
-                   |int x() { return AA; }
-                 """.stripMargin)
+                 |struct A {
+                 |    enum C { Ax, BB };
+                 |} D;
+                 |int x() { return AA; }
+               """.stripMargin)
     }
 }
 

@@ -10,7 +10,7 @@ import org.junit.Ignore
 import org.scalatest.Suite
 
 @RunWith(classOf[JUnitRunner])
-class ASTNavigationTest extends ShouldMatchers with ASTNavigation with ConditionalNavigation with EnforceTreeHelper with TestHelper with Suite{
+class ASTNavigationTest extends ShouldMatchers with ASTNavigation with ConditionalNavigation with EnforceTreeHelper with TestHelper with Suite {
 
 
     val ast = getAST("void foo() {}" +

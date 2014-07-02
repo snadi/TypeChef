@@ -9,7 +9,7 @@ import parser.TokenReader
 import de.fosd.typechef.options.{FrontendOptionsWithConfigFiles, FrontendOptions, OptionException}
 import de.fosd.typechef.parser.c.CTypeContext
 import de.fosd.typechef.parser.c.TranslationUnit
-import featureexpr.{FeatureExprFactory, FeatureExpr}
+import de.fosd.typechef.featureexpr.{FeatureExprFactory, FeatureExpr}
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 
 object Frontend extends EnforceTreeHelper {
@@ -148,9 +148,9 @@ object Frontend extends EnforceTreeHelper {
 
                 // some dataflow analyses require typing information
                 val ts = if (opt.typechecksa)
-                            new CTypeSystemFrontend(ast, fullFM, opt) with CTypeCache with CDeclUse
-                         else
-                            new CTypeSystemFrontend(ast, fullFM, opt)
+                    new CTypeSystemFrontend(ast, fullFM, opt) with CTypeCache with CDeclUse
+                else
+                    new CTypeSystemFrontend(ast, fullFM, opt)
 
 
                 /** I did some experiments with the TypeChef FeatureModel of Linux, in case I need the routines again, they are saved here. */
@@ -180,7 +180,7 @@ object Frontend extends EnforceTreeHelper {
                     stopWatch.start("dumpCFG")
 
                     //run without feature model, because otherwise too expensive runtimes in systems such as linux
-                    val cf = new CInterAnalysisFrontend(ast/*, fm_ts*/)
+                    val cf = new CInterAnalysisFrontend(ast /*, fm_ts*/)
                     val writer = new CFGCSVWriter(new FileWriter(new File(opt.getCCFGFilename)))
                     val dotwriter = new DotGraph(new FileWriter(new File(opt.getCCFGDotFilename)))
                     cf.writeCFG(opt.getFile, new ComposedWriter(List(dotwriter, writer)))
@@ -235,8 +235,7 @@ object Frontend extends EnforceTreeHelper {
 
 
     def lex(opt: FrontendOptions): TokenReader[CToken, CTypeContext] = {
-        val tokens = new lexer.Main().run(opt, opt.parse, opt.getFilePresenceCondition, opt.getFile)
-
+        val tokens = new lexer.LexerFrontend().run(opt, opt.parse, opt.getFilePresenceCondition, opt.getFile)
         val in = CLexerAdapter.prepareTokens(tokens)
 
         val ignoreFilePc = opt.noFilePc
@@ -276,6 +275,7 @@ object Frontend extends EnforceTreeHelper {
                 nestedIfDefWriter.close()
             }
         }
+
         in
     }
 

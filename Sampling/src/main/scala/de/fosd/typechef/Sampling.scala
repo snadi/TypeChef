@@ -60,7 +60,7 @@ object Sampling extends EnforceTreeHelper {
                 ast = Frontend.loadSerializedAST(opt.getSerializedASTFilename)
 
             } catch {
-                case e: Throwable => println(e.getMessage); ast=null
+                case e: Throwable => println(e.getMessage); ast = null
             }
             if (ast == null)
                 println("... failed reading AST\n")

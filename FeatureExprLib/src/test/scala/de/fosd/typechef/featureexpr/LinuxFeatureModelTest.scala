@@ -20,7 +20,7 @@ abstract class AbstractLinuxFeatureModelTest {
 
 
     val dimacsFile = this.getClass.getResource("/x86.dimacs").toURI
-//    val dimacsFile = this.getClass.getResource("/2.6.33.3-2var.dimacs").toURI
+    //    val dimacsFile = this.getClass.getResource("/2.6.33.3-2var.dimacs").toURI
 
     def getFeatureExprFactory: AbstractFeatureExprFactory
     def getFeatureModel: FeatureModel
@@ -86,7 +86,7 @@ abstract class AbstractLinuxFeatureModelTest {
 }
 
 class BDDLinuxFeatureModelTest extends AbstractLinuxFeatureModelTest {
-    val featureModel:BDDFeatureModel = BDDFeatureModel.createFromDimacsFile(Source.fromURI(dimacsFile)).asInstanceOf[BDDFeatureModel]
+    val featureModel: BDDFeatureModel = BDDFeatureModel.createFromDimacsFile(Source.fromURI(dimacsFile)).asInstanceOf[BDDFeatureModel]
     def getFeatureModel = featureModel
     def getFeatureExprFactory = FeatureExprFactory.bdd
 

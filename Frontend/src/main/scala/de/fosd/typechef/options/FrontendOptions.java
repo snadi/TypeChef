@@ -3,6 +3,7 @@ package de.fosd.typechef.options;
 import de.fosd.typechef.VALexer;
 import de.fosd.typechef.error.Position;
 import de.fosd.typechef.featureexpr.FeatureExpr;
+import de.fosd.typechef.featureexpr.FeatureExprFactory;
 import de.fosd.typechef.featureexpr.FeatureExprFactory$;
 import de.fosd.typechef.featureexpr.FeatureExprParserJava;
 import de.fosd.typechef.parser.c.ParserOptions;
@@ -29,9 +30,9 @@ public class FrontendOptions extends CAnalysisOptions implements ParserOptions {
             parserStatistics = false,
             parserResults = true,
             writePI = false,
-            printVersion = false,
             noFilePc = false,
-            excludeHeaderTokens = false;                        
+            excludeHeaderTokens = false,
+            printVersion = false;
     protected File errorXMLFile = null;
     private final File _autoErrorXMLFile = new File(".");
     String outputStem = "";
@@ -51,10 +52,10 @@ public class FrontendOptions extends CAnalysisOptions implements ParserOptions {
     private final static char F_HIDEPARSERRESULTS = Options.genOptionId();
     private final static char F_BDD = Options.genOptionId();
     private final static char F_ERRORXML = Options.genOptionId();
-    private final static char F_DO_NOT_WRITE_FILE_PC = Options.genOptionId();
-    private final static char F_EXCLUDE_HEADER_TOKENS = Options.genOptionId();
     private static final char TY_VERSION = genOptionId();
     private static final char TY_HELP = genOptionId();
+    private final static char F_DO_NOT_WRITE_FILE_PC = Options.genOptionId();
+    private final static char F_EXCLUDE_HEADER_TOKENS = Options.genOptionId();
     private Function3<FeatureExpr, String, Position, Object> _renderParserError;
 
 
@@ -281,4 +282,3 @@ public class FrontendOptions extends CAnalysisOptions implements ParserOptions {
     }
 
 }
-

@@ -334,8 +334,9 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
 
     protected void error(int line, int column, String msg)
             throws LexerException {
-        error(line,column, msg, null);
+        error(line, column, msg, null);
     }
+
     /**
      * Handles an error.
      * <p/>
@@ -345,11 +346,11 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
     protected void error(int line, int column, String msg, FeatureExpr pc)
             throws LexerException {
 
-        if (pc ==null)
-            pc =  state.getFullPresenceCondition();
+        if (pc == null)
+            pc = state.getFullPresenceCondition();
         if (listener != null)
             listener.handleError(sourceManager.getSource().getName(), line, column, msg,
-                   pc);
+                    pc);
         else
             throw new LexerException("Error at " + line + ":" + column + ": "
                     + msg, pc);
@@ -375,7 +376,7 @@ public class Preprocessor extends DebuggingPreprocessor implements Closeable, VA
      */
     protected void warning(int line, int column, String msg)
             throws LexerException {
-        FeatureExpr fexpr =  state.getFullPresenceCondition();
+        FeatureExpr fexpr = state.getFullPresenceCondition();
         if (warnings.contains(Warning.ERROR))
             error(line, column, msg);
         else if (listener != null)

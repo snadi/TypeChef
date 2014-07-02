@@ -120,7 +120,7 @@ public class JcppFileTest extends AbstractCheckTests {
 
     @Test
     public void testVariadic() throws LexerException, IOException {
-        testFile("variadic.c",true);
+        testFile("variadic.c", true);
     }
 
     @Test
@@ -176,7 +176,7 @@ public class JcppFileTest extends AbstractCheckTests {
 
     @Test
     public void testDivByZero4() throws LexerException, IOException {
-        testFile("test_div_by_zero4.c",true);
+        testFile("test_div_by_zero4.c", true);
     }
 
 
@@ -207,12 +207,12 @@ public class JcppFileTest extends AbstractCheckTests {
 
     @Test
     public void testAlternativeDifferentArities1() throws LexerException, IOException {
-        testFile("alternDiffArities1.c",true,true);
+        testFile("alternDiffArities1.c", true, true);
     }
 
     @Test
     public void testAlternativeDifferentArities2() throws LexerException, IOException {
-        testFile("alternDiffArities2.c",true);
+        testFile("alternDiffArities2.c", true);
     }
 
     @Test
