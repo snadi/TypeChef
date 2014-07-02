@@ -1,5 +1,6 @@
 package de.fosd.typechef.options;
 
+import de.fosd.typechef.VALexer;
 import de.fosd.typechef.error.Position;
 import de.fosd.typechef.featureexpr.FeatureExpr;
 import de.fosd.typechef.featureexpr.FeatureExprFactory$;
@@ -10,6 +11,7 @@ import gnu.getopt.LongOpt;
 import scala.Function3;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -27,8 +29,9 @@ public class FrontendOptions extends CAnalysisOptions implements ParserOptions {
             parserStatistics = false,
             parserResults = true,
             writePI = false,
+            printVersion = false,
             noFilePc = false,
-            excludeHeaderTokens = false;
+            excludeHeaderTokens = false;                        
     protected File errorXMLFile = null;
     private final File _autoErrorXMLFile = new File(".");
     String outputStem = "";
@@ -50,6 +53,8 @@ public class FrontendOptions extends CAnalysisOptions implements ParserOptions {
     private final static char F_ERRORXML = Options.genOptionId();
     private final static char F_DO_NOT_WRITE_FILE_PC = Options.genOptionId();
     private final static char F_EXCLUDE_HEADER_TOKENS = Options.genOptionId();
+    private static final char TY_VERSION = genOptionId();
+    private static final char TY_HELP = genOptionId();
     private Function3<FeatureExpr, String, Position, Object> _renderParserError;
 
 
@@ -103,6 +108,12 @@ public class FrontendOptions extends CAnalysisOptions implements ParserOptions {
                 new Option("parserstatistics", LongOpt.NO_ARGUMENT, F_PARSERSTATS, null,
                         "Print parser statistics.")
         ));
+        r.add(new OptionGroup("Misc", 1000,
+                new Option("version", LongOpt.NO_ARGUMENT, TY_VERSION, null,
+                        "Prints version number"),
+                new Option("help", LongOpt.NO_ARGUMENT, TY_HELP, null,
+                        "Displays help and usage information.")
+        ));
 
         return r;
 
@@ -151,6 +162,11 @@ public class FrontendOptions extends CAnalysisOptions implements ParserOptions {
                 checkFileWritable(g.getOptarg());
                 errorXMLFile = new File(g.getOptarg());
             }
+        } else if (c == TY_VERSION) { // --version
+            printVersion = true;
+        } else if (c == TY_HELP) {//--help
+            printUsage();
+            printVersion = true;
         } else if (c == F_DO_NOT_WRITE_FILE_PC) {
             noFilePc = true;
         } else if (c == F_EXCLUDE_HEADER_TOKENS) {
@@ -258,6 +274,10 @@ public class FrontendOptions extends CAnalysisOptions implements ParserOptions {
             return new File(getFile() + ".xml");
         else
             return errorXMLFile;
+    }
+
+    public boolean isPrintVersion() {
+        return printVersion;
     }
 
 }

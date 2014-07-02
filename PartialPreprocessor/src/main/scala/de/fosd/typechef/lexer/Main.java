@@ -41,7 +41,7 @@ import java.util.*;
 public class Main {
 
 
-//    public static void main(String[] args) throws Exception {
+    //    public static void main(String[] args) throws Exception {
 //        (new Main()).run(args, false, true, null);
 //    }
 //
@@ -136,25 +136,26 @@ public class Main {
                 return true;
             }
         };
-        return run(options, returnTokenList, null, null);
+        return run(options, returnTokenList);
     }
 
-    public List<LexerToken> run(final ILexerOptions options, boolean returnTokenList, final FeatureExpr filePc, final String fileName) throws Exception {
+    public List<LexerToken> run(final ILexerOptions options, boolean returnTokenList) throws Exception {
         return run(new VALexer.LexerFactory() {
             @Override
             public VALexer create(FeatureModel featureModel) {
                 if (options.useXtcLexer())
-                    return new XtcPreprocessor(options.getMacroFilter(), featureModel, filePc);
-                return new Preprocessor(options.getMacroFilter(), featureModel, filePc);
+                    return new XtcPreprocessor(options.getMacroFilter(), featureModel);
+                return new Preprocessor(options.getMacroFilter(), featureModel);
             }
-        }, options, returnTokenList, fileName);
+        }, options, returnTokenList);
     }
 
-    public List<LexerToken> run(VALexer.LexerFactory lexerFactory, ILexerOptions options, boolean returnTokenList, String fileName) throws Exception {
+    public List<LexerToken> run(VALexer.LexerFactory lexerFactory, ILexerOptions options, boolean returnTokenList) throws Exception {
         if (options.isPrintVersion()) {
             version(System.out);
             return new ArrayList<LexerToken>();
         }
+
 
         VALexer pp = lexerFactory.create(options.getLexerFeatureModel());
 
@@ -163,7 +164,7 @@ public class Main {
         for (Feature f : options.getFeatures())
             pp.addFeature(f);
 
-        PreprocessorListener listener = new PreprocessorListener(pp);
+        PreprocessorListener listener=new PreprocessorListener(pp);
         pp.setListener(listener);
         pp.addMacro("__TYPECHEF__", FeatureExprLib.True());
 
@@ -255,44 +256,10 @@ public class Main {
                 output.close();
         }
 
-        //check for nested and hasherror, and hashWarning constraints
-        //HashSet<FeatureExpr> presenceConditions = pp.getPresenceConditions();
-        HashSet<FeatureExpr> hashErrorConstraints = pp.getHashErrorConstraints();
-        HashSet<String> warningConstraints = pp.getHashWarningConstraints();
-
-//        if (presenceConditions != null && !presenceConditions.isEmpty()) {
-//            //create file to dump implications from nested ifdefs in
-//            PrintWriter nestedIfDefWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".nested2"));
-//            for (FeatureExpr constraint : presenceConditions)
-//                nestedIfDefWriter.println(constraint);
-//
-//            nestedIfDefWriter.close();
-//        }
-
-        if (hashErrorConstraints != null && !hashErrorConstraints.isEmpty()) {
-            //create file to dump conditions from #error directives in it
-            PrintWriter errorDirWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".hasherr"));
-            for (FeatureExpr constraint : hashErrorConstraints) {
-                constraint.print(errorDirWriter);
-                errorDirWriter.println();
-            }
-
-            errorDirWriter.close();
-        }
-
-        if (warningConstraints != null && !warningConstraints.isEmpty()) {
-            //create file to dump conditions from #error directives in it
-            PrintWriter warningConsWriter = new PrintWriter(new FileWriter(fileName.replace(".c", "") + ".hashwarn"));
-            for (String constraint : warningConstraints)
-                warningConsWriter.println(constraint);
-
-            warningConsWriter.close();
-        }
-
         // if there was a lexer error in some configurations, restrict all tokens with that condition
-        FeatureExpr invalidConfigurations = listener.getInvalidConfigurations();
+        FeatureExpr invalidConfigurations= listener.getInvalidConfigurations();
         if (!invalidConfigurations.isContradiction())
-            for (LexerToken tok : resultTokenList)
+            for (LexerToken tok: resultTokenList)
                 tok.setFeature(tok.getFeature().andNot(invalidConfigurations));
 
         return resultTokenList;

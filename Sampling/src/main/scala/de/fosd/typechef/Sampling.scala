@@ -60,12 +60,12 @@ object Sampling extends EnforceTreeHelper {
                 ast = Frontend.loadSerializedAST(opt.getSerializedASTFilename)
 
             } catch {
-                case e: Throwable => println(e.getMessage); ast = null
+                case e: Throwable => println(e.getMessage); ast=null
             }
             if (ast == null)
                 println("... failed reading AST\n")
         } else {
-            new lexer.Main().run(opt, opt.parse, null, null)
+            new lexer.LexerFrontend().run(opt, opt.parse)
             val in = lex(opt)
             val parserMain = new ParserMain(new CParser(fm))
             ast = parserMain.parserMain(in, opt).asInstanceOf[TranslationUnit]
@@ -85,8 +85,8 @@ object Sampling extends EnforceTreeHelper {
     }
 
     def lex(opt: FamilyBasedVsSampleBasedOptions): TokenReader[CToken, CTypeContext] = {
-        val tokens = new lexer.Main().run(opt, opt.parse, null, null)
-        val in = CLexer.prepareTokens(tokens)
+        val tokens = new lexer.LexerFrontend().run(opt, opt.parse)
+        val in = CLexerAdapter.prepareTokens(tokens)
         in
     }
 }

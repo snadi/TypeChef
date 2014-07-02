@@ -39,7 +39,12 @@ public class XtcPreprocessor implements VALexer {
     private StringBuilder commandLine = new StringBuilder();
     private final XtcMacroFilter macroFilter;
     private final FeatureModel featureModel;
-    private LexerInterface.ErrorHandler exceptionErrorHandler = new LexerInterface.ExceptionErrorHandler() {
+
+
+    private LexerInterface.ErrorHandler exceptionErrorHandler = new LexerInterface.ErrorHandler() {
+        final LexerInterface.ErrorHandler defaultErrorHandler = new LexerInterface.ExceptionErrorHandler();
+
+        @Override
         public void error(PresenceConditionManager.PresenceCondition pc, String msg, Locatable location) {
             FeatureExpr fexpr = translate(pc);
             if (fexpr.isSatisfiable(featureModel)) {
@@ -48,10 +53,31 @@ public class XtcPreprocessor implements VALexer {
                 } else
                     super.error(pc, msg, location);
             }
+
+            //delegate to TypeChef error handler, unless none is registered; then fallback to the original Lexer error handler
+            if (listener == null)
+                defaultErrorHandler.error(pc, msg, location);
+
+            String file = (location.hasLocation() ? location.getLocation().file : "");
+            int line = (location.hasLocation() ? location.getLocation().line : -1);
+            int col = (location.hasLocation() ? location.getLocation().column : -1);
+
+            try {
+                listener.handleError(file, line, col, msg, translate(pc));
+            } catch (LexerException e) {
+                throw new RuntimeException(msg, e);
+            }
         }
     };
 
     public XtcPreprocessor(final MacroFilter tcMacroFilter, FeatureModel featureModel, FeatureExpr filePc) {
+//            new LexerInterface.ExceptionErrorHandler() {
+//        public void error(PresenceConditionManager.PresenceCondition pc, String msg, Locatable location) {
+//            FeatureExpr fexpr = translate(pc);
+//            if (fexpr.isSatisfiable(featureModel))
+//                super.error(pc, msg, location);
+//        }
+//    };
         this.macroFilter = new XtcMacroFilter() {
             @Override
             public boolean isVariable(String macroName) {
@@ -61,6 +87,13 @@ public class XtcPreprocessor implements VALexer {
         hashErrorConstraints = new HashSet<FeatureExpr>();
         this.featureModel = featureModel;
         this.filePc = filePc;
+
+        try {
+            this.addMacro("__DATE__", FeatureExprFactory.True(), String.format(Locale.US, "\"%1$tb %1$2te %1$tY\"", Calendar.getInstance()));
+            this.addMacro("__TIME__", FeatureExprFactory.True(), String.format(Locale.US, "\"%1$tT\"", Calendar.getInstance()));
+        } catch (LexerException e) {
+            //won't happen
+        }
     }
 
 

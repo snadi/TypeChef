@@ -27,9 +27,7 @@ public abstract class LexerOptions extends Options implements ILexerOptions {
     private static final char PP_LEXDEBUG = genOptionId();
     private static final char PP_LEXENABLE = genOptionId();
     private static final char PP_LEXDISABLE = genOptionId();
-    private static final char PP_NOSTDOUT = genOptionId();
-    private static final char TY_VERSION = genOptionId();
-    private static final char TY_HELP = genOptionId();
+    private static final char PP_NOSTDOUT = genOptionId();    
     private final static char PP_XTC = genOptionId();
     private final static char PP_ADJUSTLINES = genOptionId();
 
@@ -82,12 +80,6 @@ public abstract class LexerOptions extends Options implements ILexerOptions {
                 new Option("adjustLines", LongOpt.NO_ARGUMENT, PP_ADJUSTLINES, null,
                         "Report line numbers in output (.pi) file instead of source (.c and .h) files.")
         ));
-        r.add(new OptionGroup("Misc", 1000,
-                new Option("version", LongOpt.NO_ARGUMENT, TY_VERSION, null,
-                        "Prints version number"),
-                new Option("help", LongOpt.NO_ARGUMENT, TY_HELP, null,
-                        "Displays help and usage information.")
-        ));
         return r;
 
     }
@@ -137,7 +129,6 @@ public abstract class LexerOptions extends Options implements ILexerOptions {
     protected Set<Warning> warnings = new HashSet<Warning>();
     protected Set<Feature> features = getDefaultFeatures();
     protected String lexOutputFile = "";
-    protected boolean printVersion = false;
     protected boolean lexPrintToStdout = true;
     protected boolean xtc = false;
     protected boolean adjustlines = false;
@@ -203,8 +194,6 @@ public abstract class LexerOptions extends Options implements ILexerOptions {
             } catch (IOException e) {
                 throw new OptionException("file not found " + g.getOptarg());
             }
-        } else if (c == TY_VERSION) { // --version
-            printVersion = true;
         } else if (c == 'v') {
             features.add(Feature.DEBUG_VERBOSE);
             features.add(Feature.DEBUG_INCLUDEPATH);
@@ -221,9 +210,6 @@ public abstract class LexerOptions extends Options implements ILexerOptions {
             features.remove(Enum.valueOf(Feature.class, arg));
         } else if (c == PP_NOSTDOUT) {//--lexNoStdout
             lexPrintToStdout = false;
-        } else if (c == TY_HELP) {//--help
-            printUsage();
-            printVersion = true;
         } else if (c == PP_XTC) {
             xtc = true;
         } else if (c == PP_ADJUSTLINES) {
@@ -285,11 +271,6 @@ public abstract class LexerOptions extends Options implements ILexerOptions {
         return lexOutputFile;
     }
 
-    @Override
-    public boolean isPrintVersion() {
-        return printVersion;
-    }
-
 
     @Override
     public Set<Warning> getWarnings() {
@@ -320,4 +301,37 @@ public abstract class LexerOptions extends Options implements ILexerOptions {
     public boolean isAdjustLineNumbers() {
         return adjustlines;
     }
+
+
+    @Override
+    public List<VALexer.LexerInput> getInput() {
+        List<VALexer.LexerInput> result = new ArrayList(files.size());
+        for (String file : files)
+            result.add(
+                    new VALexer.FileSource(new File(file)));
+
+        return result;
+    }
+
+
+    @Override
+    public boolean isPrintWarnings() {
+        return true;
+    }
+
+    @Override
+    public boolean isPrintLexingSuccess() {
+        return true;
+    }
+
+    @Override
+    public boolean isReturnLanguageTokensOnly() {
+        return true;
+    }
+
+    @Override
+    public boolean isHandleWarningsAsErrors() {
+        return false;
+    }
+
 }
